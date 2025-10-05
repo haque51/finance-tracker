@@ -273,7 +273,7 @@ function AccountsView() {
   const [editingAccount, setEditingAccount] = useState(null);
 
   const handleDelete = (id) => {
-    if (confirm('Are you sure? This will delete all associated transactions.')) {
+    if (window.confirm('Are you sure? This will delete all associated transactions.')) {
       updateState({
         accounts: state.accounts.filter(a => a.id !== id),
         transactions: state.transactions.filter(t => t.accountId !== id)
@@ -388,7 +388,7 @@ function TransactionsView() {
 
   const handleDelete = (id) => {
     const txn = state.transactions.find(t => t.id === id);
-    if (confirm('Delete this transaction?')) {
+    if (window.confirm('Delete this transaction?')) {
       const updatedAccounts = state.accounts.map(acc => {
         if (acc.id === txn.accountId) {
           return { ...acc, currentBalance: acc.currentBalance - txn.amount };
