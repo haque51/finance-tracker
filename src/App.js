@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Target, Settings, FileText, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, Check, Bell, Zap, Download, RefreshCw, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, Wallet, CreditCard, Target, Settings, FileText, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, Check, Bell, Zap } from 'lucide-react';
 
 const AppContext = createContext();
 
