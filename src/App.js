@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, CreditCard, Target, Settings, FileText, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, Check, Bell, Zap, ArrowRightLeft } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft } from 'lucide-react';
 
 const AppContext = createContext();
 
@@ -674,7 +674,6 @@ function CategoriesView() {
   const expenseCategories = state.categories.filter(c => c.type === 'expense' && !c.parentId);
 
   const handleDelete = (id) => {
-    const category = state.categories.find(c => c.id === id);
     const hasSubcategories = state.categories.some(c => c.parentId === id);
     const hasTransactions = state.transactions.some(t => t.categoryId === id || t.subcategoryId === id);
     
