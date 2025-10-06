@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload } from 'lucide-react';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -3886,34 +3886,604 @@ function CustomReportBuilder({ transactions, filters }) {
     </div>
   );
 }
-
 function SettingsView() {
   const { state, updateState } = useApp();
+  const [activeTab, setActiveTab] = useState('profile');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetInput, setResetInput] = useState('');
+
+  const refreshExchangeRates = () => {
+    // Simulating exchange rate refresh - in production, this would call an API
+    const newRates = {
+      USD: (1.08 + Math.random() * 0.04).toFixed(4),
+      BDT: (0.0089 + Math.random() * 0.0004).toFixed(6),
+      EUR: 1
+    };
+    updateState({ exchangeRates: newRates });
+    alert('Exchange rates updated successfully!');
+  };
+
+  const handleStartOver = () => {
+    if (resetInput === 'DELETE ALL DATA') {
+      // Reset to initial state
+      updateState({
+        accounts: initialState.accounts,
+        transactions: initialState.transactions,
+        categories: initialState.categories,
+        budgets: initialState.budgets,
+        goals: initialState.goals,
+        recurringTransactions: initialState.recurringTransactions,
+        templates: initialState.templates,
+        debtPayoffPlans: initialState.debtPayoffPlans,
+        alerts: initialState.alerts,
+        autoCategorization: initialState.autoCategorization
+      });
+      setShowResetConfirm(false);
+      setResetInput('');
+      alert('All data has been reset to defaults!');
+    } else {
+      alert('Please type "DELETE ALL DATA" exactly to confirm.');
+    }
+  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h2>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">User Profile</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
-            <input type="text" value={state.user.name} onChange={e => updateState({ user: { ...state.user, name: e.target.value }})} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'profile'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          User Profile
+        </button>
+        <button
+          onClick={() => setActiveTab('currency')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'currency'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Currency
+        </button>
+        <button
+          onClick={() => setActiveTab('goals')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'goals'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Financial Goals
+        </button>
+        <button
+          onClick={() => setActiveTab('defaults')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'defaults'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Defaults
+        </button>
+        <button
+          onClick={() => setActiveTab('data')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'data'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Data Management
+        </button>
+        <button
+          onClick={() => setActiveTab('danger')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'danger'
+              ? 'text-red-600 border-b-2 border-red-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Danger Zone
+        </button>
+      </div>
+
+      {/* User Profile Tab */}
+      {activeTab === 'profile' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">User Profile</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={state.user.name}
+                  onChange={e => updateState({ user: { ...state.user, name: e.target.value }})}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="Enter your name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={state.user.email}
+                  onChange={e => updateState({ user: { ...state.user, email: e.target.value }})}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  User ID
+                </label>
+                <input
+                  type="text"
+                  value={state.user.id}
+                  disabled
+                  className="w-full px-4 py-2 border rounded-lg bg-gray-100 dark:bg-gray-600 dark:border-gray-600 dark:text-gray-300 cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Your unique user identifier (read-only)
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-            <input type="email" value={state.user.email} onChange={e => updateState({ user: { ...state.user, email: e.target.value }})} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base Currency</label>
-            <select value={state.user.baseCurrency} onChange={e => updateState({ user: { ...state.user, baseCurrency: e.target.value }})} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option value="EUR">EUR</option>
-              <option value="USD">USD</option>
-              <option value="BDT">BDT</option>
-            </select>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Appearance</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Theme
+                </label>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => updateState({ user: { ...state.user, theme: 'light' }})}
+                    className={`flex-1 p-4 border-2 rounded-lg transition-all ${
+                      state.user.theme === 'light'
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-2xl">☀️</span>
+                      <span className="font-medium text-gray-900 dark:text-white">Light</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => updateState({ user: { ...state.user, theme: 'dark' }})}
+                    className={`flex-1 p-4 border-2 rounded-lg transition-all ${
+                      state.user.theme === 'dark'
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="text-2xl">🌙</span>
+                      <span className="font-medium text-gray-900 dark:text-white">Dark</span>
+                    </div>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Current theme: <span className="font-semibold capitalize">{state.user.theme}</span>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Currency Settings Tab */}
+      {activeTab === 'currency' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Base Currency</h3>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select your primary currency
+              </label>
+              <select
+                value={state.user.baseCurrency}
+                onChange={e => updateState({ user: { ...state.user, baseCurrency: e.target.value }})}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="EUR">EUR - Euro (€)</option>
+                <option value="USD">USD - US Dollar ($)</option>
+                <option value="BDT">BDT - Bangladeshi Taka (৳)</option>
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                All multi-currency transactions will be converted to this currency
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Exchange Rates</h3>
+              <button
+                onClick={refreshExchangeRates}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <span>🔄</span>
+                <span>Refresh Rates</span>
+              </button>
+            </div>
+            <div className="space-y-3">
+              {Object.entries(state.exchangeRates).map(([currency, rate]) => (
+                <div
+                  key={currency}
+                  className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {currency}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {currency === 'EUR' && '(Base Currency)'}
+                      {currency === 'USD' && 'US Dollar'}
+                      {currency === 'BDT' && 'Bangladeshi Taka'}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {rate}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      per 1 {state.user.baseCurrency}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              Exchange rates are for reference only. Click refresh to update with simulated rates.
+              In production, these would connect to a live exchange rate API.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Financial Goals Tab */}
+      {activeTab === 'goals' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Monthly Financial Targets
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Set your target monthly income and savings goals. These will be used for tracking progress across the application.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Monthly Income Goal (€)
+                </label>
+                <input
+                  type="number"
+                  step="100"
+                  value={state.user.monthlyIncomeGoal}
+                  onChange={e => updateState({ 
+                    user: { ...state.user, monthlyIncomeGoal: parseFloat(e.target.value) || 0 }
+                  })}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="5000"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Your target monthly income
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Monthly Savings Goal (€)
+                </label>
+                <input
+                  type="number"
+                  step="50"
+                  value={state.user.monthlySavingsGoal}
+                  onChange={e => updateState({ 
+                    user: { ...state.user, monthlySavingsGoal: parseFloat(e.target.value) || 0 }
+                  })}
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="1000"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Your target monthly savings
+                </p>
+              </div>
+            </div>
+
+            {state.user.monthlyIncomeGoal > 0 && state.user.monthlySavingsGoal > 0 && (
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <Target className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                      Your Savings Target
+                    </h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      You're aiming to save{' '}
+                      <span className="font-semibold">
+                        {((state.user.monthlySavingsGoal / state.user.monthlyIncomeGoal) * 100).toFixed(1)}%
+                      </span>{' '}
+                      of your monthly income (€{state.user.monthlySavingsGoal.toLocaleString()} out of €
+                      {state.user.monthlyIncomeGoal.toLocaleString()})
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Account Defaults Tab */}
+      {activeTab === 'defaults' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Default Account for Transactions
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Select which account should be pre-selected when adding new transactions
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Default Account
+              </label>
+              <select
+                value={state.user.defaultAccountId || ''}
+                onChange={e => updateState({ 
+                  user: { ...state.user, defaultAccountId: e.target.value }
+                })}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">None (Always ask)</option>
+                {state.accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.type})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                This account will be automatically selected in transaction forms
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Other Preferences
+            </h3>
+            <div className="space-y-4">
+              <label className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={state.user.showBalanceInHeader || false}
+                  onChange={e => updateState({ 
+                    user: { ...state.user, showBalanceInHeader: e.target.checked }
+                  })}
+                  className="w-4 h-4"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Show total balance in header
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Display your net worth at the top of every page
+                  </p>
+                </div>
+              </label>
+
+              <label className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={state.user.confirmBeforeDelete || true}
+                  onChange={e => updateState({ 
+                    user: { ...state.user, confirmBeforeDelete: e.target.checked }
+                  })}
+                  className="w-4 h-4"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    Confirm before deleting
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Show confirmation dialog when deleting transactions or accounts
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Management Tab */}
+      {activeTab === 'data' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Export & Backup
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Export your financial data for backup or analysis
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  const dataStr = JSON.stringify(state, null, 2);
+                  const blob = new Blob([dataStr], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `lumina-finances-backup-${new Date().toISOString().split('T')[0]}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <Download className="w-5 h-5 text-blue-600" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      Export All Data (JSON)
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Download complete backup of all your data
+                    </p>
+                  </div>
+                </div>
+                <span className="text-gray-400">→</span>
+              </button>
+
+              <button
+                className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors opacity-50 cursor-not-allowed"
+                disabled
+              >
+                <div className="flex items-center space-x-3">
+                  <Upload className="w-5 h-5 text-gray-400" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      Import Data (Coming Soon)
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Restore from a previous backup
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Data Statistics
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">{state.accounts.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Accounts</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">{state.transactions.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Transactions</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-2xl font-bold text-purple-600">{state.categories.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Categories</p>
+              </div>
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-2xl font-bold text-orange-600">{state.goals.length}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Goals</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Danger Zone Tab */}
+      {activeTab === 'danger' && (
+        <div className="space-y-6">
+          <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg border-2 border-red-200 dark:border-red-800">
+            <div className="flex items-start space-x-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-xl font-semibold text-red-900 dark:text-red-400 mb-2">
+                  Danger Zone
+                </h3>
+                <p className="text-sm text-red-800 dark:text-red-300">
+                  These actions are irreversible. Please proceed with caution.
+                </p>
+              </div>
+            </div>
+
+            {!showResetConfirm ? (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="w-full mt-4 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
+              >
+                Start Over - Delete All Data
+              </button>
+            ) : (
+              <div className="mt-4 space-y-4">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    ⚠️ This will permanently delete:
+                  </p>
+                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
+                    <li>All accounts and transactions</li>
+                    <li>All categories and budgets</li>
+                    <li>All goals and debt payoff plans</li>
+                    <li>All recurring transactions and templates</li>
+                    <li>All alerts and auto-categorization rules</li>
+                  </ul>
+                  <p className="text-sm font-semibold text-red-600 mt-3">
+                    This action cannot be undone!
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Type <span className="font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">DELETE ALL DATA</span> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={resetInput}
+                    onChange={e => setResetInput(e.target.value)}
+                    placeholder="DELETE ALL DATA"
+                    className="w-full px-4 py-2 border-2 border-red-300 dark:border-red-700 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleStartOver}
+                    disabled={resetInput !== 'DELETE ALL DATA'}
+                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Confirm Reset
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowResetConfirm(false);
+                      setResetInput('');
+                    }}
+                    className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+              <strong>Tip:</strong> Before resetting, consider exporting your data from the Data Management tab to create a backup.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
