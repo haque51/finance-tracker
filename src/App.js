@@ -1776,64 +1776,69 @@ function DebtPayoffView() {
   const totalDebt = debtAccounts.reduce((sum, acc) => sum + Math.abs(acc.currentBalance), 0);
 
   const calculatePayoffProjection = (plan) => {
-    const accounts = plan.accountIds.map(id => state.accounts.find(a => a.id === id)).filter(Boolean);
+  const accounts = plan.accountIds.map(id => state.accounts.find(a => a.id === id)).filter(Boolean);
+  
+  if (plan.strategy === 'avalanche') {
+    accounts.sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0));
+  } else if (plan.strategy === 'snowball') {
+    accounts.sort((a, b) => Math.abs(a.currentBalance) - Math.abs(b.currentBalance));
+  }
+
+  let monthsToPayoff = 0;
+  let totalInterestPaid = 0;
+  let remainingDebts = accounts.map(a => ({
+    ...a,
+    balance: Math.abs(a.currentBalance)
+  }));
+
+  const extraPayment = plan.extraMonthlyPayment;
+  
+  while (remainingDebts.some(d => d.balance > 0) && monthsToPayoff < 360) {
+    monthsToPayoff++;
     
-    if (plan.strategy === 'avalanche') {
-      accounts.sort((a, b) => (b.interestRate || 0) - (a.interestRate || 0));
-    } else if (plan.strategy === 'snowball') {
-      accounts.sort((a, b) => Math.abs(a.currentBalance) - Math.abs(b.currentBalance));
+    // Calculate interest and payments for this month
+    const updatedDebts = [];
+    let monthInterest = 0;
+    
+    for (let i = 0; i < remainingDebts.length; i++) {
+      const debt = remainingDebts[i];
+      
+      if (debt.balance <= 0) {
+        updatedDebts.push(debt);
+        continue;
+      }
+      
+      const monthlyRate = (debt.interestRate || 0) / 100 / 12;
+      const interestCharge = debt.balance * monthlyRate;
+      
+      const minPayment = Math.max(25, debt.balance * 0.02);
+      let payment = minPayment;
+      
+      const firstDebtWithBalance = remainingDebts.find(d => d.balance > 0);
+      if (debt === firstDebtWithBalance) {
+        payment += extraPayment;
+      }
+      
+      payment = Math.min(payment, debt.balance + interestCharge);
+      const newBalance = Math.max(0, debt.balance + interestCharge - payment);
+      
+      updatedDebts.push({ ...debt, balance: newBalance, interestCharge });
+      monthInterest += interestCharge;
     }
+    
+    totalInterestPaid += monthInterest;
+    remainingDebts = updatedDebts;
+  }
 
-    let monthsToPayoff = 0;
-    let totalInterestPaid = 0;
-    let remainingDebts = accounts.map(a => ({
-      ...a,
-      balance: Math.abs(a.currentBalance)
-    }));
+  const payoffDate = new Date();
+  payoffDate.setMonth(payoffDate.getMonth() + monthsToPayoff);
 
-    const extraPayment = plan.extraMonthlyPayment;
-    
-    while (remainingDebts.some(d => d.balance > 0) && monthsToPayoff < 360) {
-  monthsToPayoff++;
-  
-  // Calculate interest and payments for this month
-  const updatedDebts = remainingDebts.map(debt => {
-    if (debt.balance <= 0) return debt;
-    
-    const monthlyRate = (debt.interestRate || 0) / 100 / 12;
-    const interestCharge = debt.balance * monthlyRate;
-    
-    const minPayment = Math.max(25, debt.balance * 0.02);
-    let payment = minPayment;
-    
-    if (debt === remainingDebts.find(d => d.balance > 0)) {
-      payment += extraPayment;
-    }
-    
-    payment = Math.min(payment, debt.balance + interestCharge);
-    const newBalance = Math.max(0, debt.balance + interestCharge - payment);
-    
-    return { ...debt, balance: newBalance, interestCharge };
-  });
-  
-  // Add up interest for this month
-  updatedDebts.forEach(debt => {
-    totalInterestPaid += debt.interestCharge || 0;
-  });
-  
-  remainingDebts = updatedDebts;
-}
-
-    const payoffDate = new Date();
-    payoffDate.setMonth(payoffDate.getMonth() + monthsToPayoff);
-
-    return {
-      monthsToPayoff,
-      payoffDate: payoffDate.toISOString().split('T')[0],
-      totalInterestPaid: totalInterestPaid.toFixed(2)
-    };
+  return {
+    monthsToPayoff,
+    payoffDate: payoffDate.toISOString().split('T')[0],
+    totalInterestPaid: totalInterestPaid.toFixed(2)
   };
-
+};
   const handleDeletePlan = (id) => {
     if (window.confirm('Delete this payoff plan?')) {
       updateState({
