@@ -1794,28 +1794,35 @@ function DebtPayoffView() {
     const extraPayment = plan.extraMonthlyPayment;
     
     while (remainingDebts.some(d => d.balance > 0) && monthsToPayoff < 360) {
-      monthsToPayoff++;
-      
-      remainingDebts = remainingDebts.map(debt => {
-        if (debt.balance <= 0) return debt;
-        
-        const monthlyRate = (debt.interestRate || 0) / 100 / 12;
-        const interestCharge = debt.balance * monthlyRate;
-        totalInterestPaid += interestCharge;
-        
-        const minPayment = Math.max(25, debt.balance * 0.02);
-        let payment = minPayment;
-        
-        if (debt === remainingDebts.find(d => d.balance > 0)) {
-          payment += extraPayment;
-        }
-        
-        payment = Math.min(payment, debt.balance + interestCharge);
-        const newBalance = Math.max(0, debt.balance + interestCharge - payment);
-        
-        return { ...debt, balance: newBalance };
-      });
+  monthsToPayoff++;
+  
+  // Calculate interest and payments for this month
+  const updatedDebts = remainingDebts.map(debt => {
+    if (debt.balance <= 0) return debt;
+    
+    const monthlyRate = (debt.interestRate || 0) / 100 / 12;
+    const interestCharge = debt.balance * monthlyRate;
+    
+    const minPayment = Math.max(25, debt.balance * 0.02);
+    let payment = minPayment;
+    
+    if (debt === remainingDebts.find(d => d.balance > 0)) {
+      payment += extraPayment;
     }
+    
+    payment = Math.min(payment, debt.balance + interestCharge);
+    const newBalance = Math.max(0, debt.balance + interestCharge - payment);
+    
+    return { ...debt, balance: newBalance, interestCharge };
+  });
+  
+  // Add up interest for this month
+  updatedDebts.forEach(debt => {
+    totalInterestPaid += debt.interestCharge || 0;
+  });
+  
+  remainingDebts = updatedDebts;
+}
 
     const payoffDate = new Date();
     payoffDate.setMonth(payoffDate.getMonth() + monthsToPayoff);
