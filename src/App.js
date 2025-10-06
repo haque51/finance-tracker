@@ -1342,30 +1342,420 @@ function BudgetView() {
   );
 }
 function GoalsView() {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
+  const [showForm, setShowForm] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this goal?')) {
+      updateState({
+        goals: state.goals.filter(g => g.id !== id)
+      });
+    }
+  };
+
+  const handleContribute = (goalId, amount) => {
+    const contribution = parseFloat(amount);
+    if (isNaN(contribution) || contribution <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    updateState({
+      goals: state.goals.map(g => 
+        g.id === goalId 
+          ? { ...g, currentAmount: g.currentAmount + contribution }
+          : g
+      )
+    });
+  };
+
+  // Sync linked account balances with goals
+  const goalsWithLinkedAccounts = state.goals.map(goal => {
+    if (goal.linkedAccountId) {
+      const linkedAccount = state.accounts.find(a => a.id === goal.linkedAccountId);
+      if (linkedAccount) {
+        return { ...goal, currentAmount: linkedAccount.currentBalance };
+      }
+    }
+    return goal;
+  });
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Goals</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {state.goals.map(goal => {
-          const progress = (goal.currentAmount / goal.targetAmount * 100).toFixed(1);
-          return (
-            <div key={goal.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{goal.name}</h3>
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">€{goal.currentAmount.toLocaleString()} / €{goal.targetAmount.toLocaleString()}</span>
-                  <span className="text-blue-600 font-semibold">{progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-blue-600 h-3 rounded-full" style={{ width: `${Math.min(parseFloat(progress), 100)}%` }}></div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Target: {goal.targetDate}</p>
-            </div>
-          );
-        })}
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Goals</h2>
+        <button 
+          onClick={() => { setShowForm(true); setEditingGoal(null); }}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Goal</span>
+        </button>
       </div>
+
+      {showForm && (
+        <GoalForm 
+          goal={editingGoal} 
+          onClose={() => { setShowForm(false); setEditingGoal(null); }} 
+        />
+      )}
+
+      {goalsWithLinkedAccounts.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-center">
+          <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No Goals Yet
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Start by creating your first financial goal
+          </p>
+          <button 
+            onClick={() => setShowForm(true)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Create Your First Goal
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {goalsWithLinkedAccounts.map(goal => {
+            const progress = (goal.currentAmount / goal.targetAmount * 100).toFixed(1);
+            const remaining = goal.targetAmount - goal.currentAmount;
+            const daysUntilTarget = Math.ceil((new Date(goal.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
+            const isOverdue = daysUntilTarget < 0;
+            const isCompleted = goal.currentAmount >= goal.targetAmount;
+            
+            const linkedAccount = goal.linkedAccountId 
+              ? state.accounts.find(a => a.id === goal.linkedAccountId)
+              : null;
+
+            return (
+              <div 
+                key={goal.id} 
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+              >
+                {/* Goal Header */}
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        {goal.name}
+                      </h3>
+                      {linkedAccount && (
+                        <div className="flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400">
+                          <span>🔗</span>
+                          <span>Linked to {linkedAccount.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => { setEditingGoal(goal); setShowForm(true); }}
+                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(goal.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        €{goal.currentAmount.toLocaleString()} / €{goal.targetAmount.toLocaleString()}
+                      </span>
+                      <span className={`font-semibold ${
+                        isCompleted ? 'text-green-600' : 'text-blue-600'
+                      }`}>
+                        {progress}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                      <div 
+                        className={`h-3 rounded-full transition-all ${
+                          isCompleted ? 'bg-green-600' : 'bg-blue-600'
+                        }`}
+                        style={{ width: `${Math.min(parseFloat(progress), 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Goal Stats */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Remaining</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          €{remaining.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Target Date</p>
+                        <p className={`text-sm font-semibold ${
+                          isOverdue ? 'text-red-600' : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {new Date(goal.targetDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="mt-4">
+                    {isCompleted ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Goal Achieved!
+                      </span>
+                    ) : isOverdue ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                        Overdue by {Math.abs(daysUntilTarget)} days
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                        {daysUntilTarget} days remaining
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contribution Section */}
+                {!goal.linkedAccountId && !isCompleted && (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50">
+                    <ContributionForm 
+                      goalId={goal.id} 
+                      onContribute={handleContribute}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GoalForm({ goal, onClose }) {
+  const { state, updateState } = useApp();
+  const [formData, setFormData] = useState(goal || {
+    name: '',
+    targetAmount: '',
+    currentAmount: 0,
+    targetDate: '',
+    linkedAccountId: ''
+  });
+
+  const handleSubmit = () => {
+    const targetAmount = parseFloat(formData.targetAmount);
+    if (isNaN(targetAmount) || targetAmount <= 0) {
+      alert('Please enter a valid target amount');
+      return;
+    }
+
+    if (!formData.name || !formData.targetDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // If linking to an account, use the account's balance as current amount
+    let currentAmount = formData.currentAmount;
+    if (formData.linkedAccountId) {
+      const linkedAccount = state.accounts.find(a => a.id === formData.linkedAccountId);
+      if (linkedAccount) {
+        currentAmount = linkedAccount.currentBalance;
+      }
+    }
+
+    if (goal) {
+      // Edit existing goal
+      updateState({
+        goals: state.goals.map(g =>
+          g.id === goal.id
+            ? {
+                ...g,
+                name: formData.name,
+                targetAmount: targetAmount,
+                targetDate: formData.targetDate,
+                linkedAccountId: formData.linkedAccountId || null,
+                currentAmount: formData.linkedAccountId ? currentAmount : g.currentAmount
+              }
+            : g
+        )
+      });
+    } else {
+      // Add new goal
+      const newGoal = {
+        id: 'goal' + Date.now(),
+        name: formData.name,
+        targetAmount: targetAmount,
+        currentAmount: currentAmount,
+        targetDate: formData.targetDate,
+        linkedAccountId: formData.linkedAccountId || null
+      };
+      updateState({
+        goals: [...state.goals, newGoal]
+      });
+    }
+
+    onClose();
+  };
+
+  const savingsAccounts = state.accounts.filter(a => 
+    a.type === 'savings' || a.type === 'investment'
+  );
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {goal ? 'Edit Goal' : 'Add New Goal'}
+        </h3>
+        <button
+          onClick={onClose}
+          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Goal Name
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={e => setFormData({ ...formData, name: e.target.value })}
+            placeholder="e.g., Emergency Fund, Vacation, New Car"
+            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target Amount (€)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.targetAmount}
+              onChange={e => setFormData({ ...formData, targetAmount: e.target.value })}
+              placeholder="10000"
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Target Date
+            </label>
+            <input
+              type="date"
+              value={formData.targetDate}
+              onChange={e => setFormData({ ...formData, targetDate: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Link to Savings Account (Optional)
+          </label>
+          <select
+            value={formData.linkedAccountId || ''}
+            onChange={e => setFormData({ ...formData, linkedAccountId: e.target.value })}
+            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            <option value="">No Account Link</option>
+            {savingsAccounts.map(acc => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} (€{acc.currentBalance.toLocaleString()})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            When linked, the goal's current amount will automatically match the account balance
+          </p>
+        </div>
+
+        {!goal && !formData.linkedAccountId && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Initial Amount (€)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.currentAmount}
+              onChange={e => setFormData({ ...formData, currentAmount: parseFloat(e.target.value) || 0 })}
+              placeholder="0"
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+        )}
+
+        <div className="flex space-x-3">
+          <button
+            onClick={handleSubmit}
+            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            {goal ? 'Update Goal' : 'Create Goal'}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContributionForm({ goalId, onContribute }) {
+  const [amount, setAmount] = useState('');
+
+  const handleAdd = () => {
+    if (amount) {
+      onContribute(goalId, amount);
+      setAmount('');
+    }
+  };
+
+  return (
+    <div className="flex items-center space-x-2">
+      <TrendingUp className="w-5 h-5 text-green-600" />
+      <input
+        type="number"
+        step="0.01"
+        value={amount}
+        onChange={e => setAmount(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && handleAdd()}
+        placeholder="Add contribution"
+        className="flex-1 px-3 py-2 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+      />
+      <button
+        onClick={handleAdd}
+        className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
+      >
+        Add
+      </button>
     </div>
   );
 }
