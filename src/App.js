@@ -1064,38 +1064,283 @@ function TemplateForm({ onClose }) {
 }
 
 function BudgetView() {
-  const { state } = useApp();
-  const selectedMonth = '2025-10';
+  const { state, updateState } = useApp();
+  const [selectedMonth, setSelectedMonth] = useState('2025-10');
+  const [editingBudget, setEditingBudget] = useState({});
+
+  // Get all expense categories (parent categories only)
   const expenseCategories = state.categories.filter(c => c.type === 'expense' && !c.parentId);
+
+  // Get transactions for selected month
+  const monthTransactions = state.transactions.filter(t => 
+    t.date.startsWith(selectedMonth) && t.type === 'expense'
+  );
+
+  // Calculate spending by category for selected month
+  const getSpentByCategory = (categoryId) => {
+    const spent = monthTransactions
+      .filter(t => t.categoryId === categoryId)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    return spent;
+  };
+
+  // Get budget for category and month
+  const getBudget = (categoryId) => {
+    const budget = state.budgets.find(b => 
+      b.categoryId === categoryId && b.month === selectedMonth
+    );
+    return budget?.budgeted || 0;
+  };
+
+  // Calculate totals
+  const totalBudgeted = expenseCategories.reduce((sum, cat) => sum + getBudget(cat.id), 0);
+  const totalSpent = expenseCategories.reduce((sum, cat) => sum + getSpentByCategory(cat.id), 0);
+  const totalRemaining = totalBudgeted - totalSpent;
+
+  // Handle budget update
+  const updateBudget = (categoryId, amount) => {
+    const existingBudget = state.budgets.find(b => 
+      b.categoryId === categoryId && b.month === selectedMonth
+    );
+
+    if (existingBudget) {
+      updateState({
+        budgets: state.budgets.map(b => 
+          b.id === existingBudget.id 
+            ? { ...b, budgeted: parseFloat(amount) || 0 }
+            : b
+        )
+      });
+    } else {
+      const newBudget = {
+        id: 'bud' + Date.now(),
+        month: selectedMonth,
+        categoryId: categoryId,
+        budgeted: parseFloat(amount) || 0
+      };
+      updateState({
+        budgets: [...state.budgets, newBudget]
+      });
+    }
+    setEditingBudget({});
+  };
+
+  // Month navigation
+  const changeMonth = (direction) => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    let newMonth = month + direction;
+    let newYear = year;
+
+    if (newMonth > 12) {
+      newMonth = 1;
+      newYear++;
+    } else if (newMonth < 1) {
+      newMonth = 12;
+      newYear--;
+    }
+
+    setSelectedMonth(`${newYear}-${String(newMonth).padStart(2, '0')}`);
+  };
+
+  // Format month display
+  const formatMonthDisplay = (monthStr) => {
+    const [year, month] = monthStr.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Budget</h2>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Category</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Budgeted</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {expenseCategories.map(cat => {
-              const budget = state.budgets.find(b => b.categoryId === cat.id && b.month === selectedMonth);
-              return (
-                <tr key={cat.id}>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{cat.icon} {cat.name}</td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-900 dark:text-white">€{budget?.budgeted || 0}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* Header with Month Navigation */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Budget</h2>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => changeMonth(-1)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-900 dark:text-white" />
+          </button>
+          <span className="text-lg font-semibold text-gray-900 dark:text-white min-w-[200px] text-center">
+            {formatMonthDisplay(selectedMonth)}
+          </span>
+          <button
+            onClick={() => changeMonth(1)}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-900 dark:text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Budgeted</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                €{totalBudgeted.toLocaleString()}
+              </p>
+            </div>
+            <TrendingUp className="w-8 h-8 text-blue-600" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Spent</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                €{totalSpent.toLocaleString()}
+              </p>
+            </div>
+            <TrendingDown className="w-8 h-8 text-red-600" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                {totalRemaining >= 0 ? 'Remaining' : 'Overspent'}
+              </p>
+              <p className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                €{Math.abs(totalRemaining).toLocaleString()}
+              </p>
+            </div>
+            {totalRemaining >= 0 ? (
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            ) : (
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Category Budget Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Budgeted
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Spent
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Remaining
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Progress
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {expenseCategories.map(category => {
+                const budgeted = getBudget(category.id);
+                const spent = getSpentByCategory(category.id);
+                const remaining = budgeted - spent;
+                const percentSpent = budgeted > 0 ? (spent / budgeted) * 100 : 0;
+                const isOverBudget = remaining < 0;
+
+                return (
+                  <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl">{category.icon}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {category.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {editingBudget[category.id] ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          autoFocus
+                          defaultValue={budgeted}
+                          onBlur={(e) => updateBudget(category.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              updateBudget(category.id, e.target.value);
+                            } else if (e.key === 'Escape') {
+                              setEditingBudget({});
+                            }
+                          }}
+                          className="w-24 px-2 py-1 text-right border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => setEditingBudget({ [category.id]: true })}
+                          className="text-sm font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                        >
+                          €{budgeted.toLocaleString()}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        €{spent.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={`text-sm font-semibold ${
+                        isOverBudget ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {isOverBudget && '-'}€{Math.abs(remaining).toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-1">
+                          <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full transition-all ${
+                                isOverBudget 
+                                  ? 'bg-red-600' 
+                                  : percentSpent > 80 
+                                  ? 'bg-yellow-500' 
+                                  : 'bg-green-600'
+                              }`}
+                              style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className={`text-xs font-medium ${
+                          isOverBudget 
+                            ? 'text-red-600' 
+                            : percentSpent > 80 
+                            ? 'text-yellow-600' 
+                            : 'text-green-600'
+                        }`}>
+                          {percentSpent.toFixed(0)}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Help Text */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-300">
+          <strong>Tip:</strong> Click on any budgeted amount to edit it. Press Enter to save or Escape to cancel.
+        </p>
       </div>
     </div>
   );
 }
-
 function GoalsView() {
   const { state } = useApp();
   return (
