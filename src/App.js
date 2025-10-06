@@ -3195,6 +3195,698 @@ function AutoCatRule({ rule, onClose }) {
   );
 }
 
+// NEW: Reports Module
+function ReportsView() {
+  const { state } = useApp();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [filters, setFilters] = useState({
+    startDate: '2025-01-01',
+    endDate: '2025-12-31',
+    accountIds: [],
+    categoryIds: []
+  });
+
+  const filteredTransactions = state.transactions.filter(txn => {
+    const dateMatch = txn.date >= filters.startDate && txn.date <= filters.endDate;
+    const accountMatch = filters.accountIds.length === 0 || filters.accountIds.includes(txn.accountId);
+    const categoryMatch = filters.categoryIds.length === 0 || filters.categoryIds.includes(txn.categoryId);
+    return dateMatch && accountMatch && categoryMatch;
+  });
+
+  const toggleAccountFilter = (accountId) => {
+    setFilters(prev => ({
+      ...prev,
+      accountIds: prev.accountIds.includes(accountId)
+        ? prev.accountIds.filter(id => id !== accountId)
+        : [...prev.accountIds, accountId]
+    }));
+  };
+
+  const toggleCategoryFilter = (categoryId) => {
+    setFilters(prev => ({
+      ...prev,
+      categoryIds: prev.categoryIds.includes(categoryId)
+        ? prev.categoryIds.filter(id => id !== categoryId)
+        : [...prev.categoryIds, categoryId]
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      accountIds: [],
+      categoryIds: []
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Reports</h2>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Report Filters</h3>
+          <button
+            onClick={clearFilters}
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400"
+          >
+            Clear All Filters
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={e => setFilters({ ...filters, startDate: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={e => setFilters({ ...filters, endDate: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Accounts ({filters.accountIds.length} selected)
+            </label>
+            <div className="relative">
+              <select
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                onChange={e => toggleAccountFilter(e.target.value)}
+                value=""
+              >
+                <option value="">Select accounts...</option>
+                {state.accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>
+                    {filters.accountIds.includes(acc.id) ? '✓ ' : ''}{acc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Categories ({filters.categoryIds.length} selected)
+            </label>
+            <div className="relative">
+              <select
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                onChange={e => toggleCategoryFilter(e.target.value)}
+                value=""
+              >
+                <option value="">Select categories...</option>
+                {state.categories.filter(c => !c.parentId).map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {filters.categoryIds.includes(cat.id) ? '✓ ' : ''}{cat.icon} {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Filters Display */}
+        {(filters.accountIds.length > 0 || filters.categoryIds.length > 0) && (
+          <div className="flex flex-wrap gap-2">
+            {filters.accountIds.map(id => {
+              const account = state.accounts.find(a => a.id === id);
+              return account ? (
+                <span
+                  key={id}
+                  className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-sm"
+                >
+                  <span>{account.name}</span>
+                  <button onClick={() => toggleAccountFilter(id)} className="hover:text-blue-600">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ) : null;
+            })}
+            {filters.categoryIds.map(id => {
+              const category = state.categories.find(c => c.id === id);
+              return category ? (
+                <span
+                  key={id}
+                  className="inline-flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-sm"
+                >
+                  <span>{category.icon} {category.name}</span>
+                  <button onClick={() => toggleCategoryFilter(id)} className="hover:text-green-600">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ) : null;
+            })}
+          </div>
+        )}
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+          Showing {filteredTransactions.length} of {state.transactions.length} transactions
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'overview'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Overview Report
+        </button>
+        <button
+          onClick={() => setActiveTab('custom')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'custom'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Custom Report Builder
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <OverviewReport transactions={filteredTransactions} filters={filters} />
+      )}
+      {activeTab === 'custom' && (
+        <CustomReportBuilder transactions={filteredTransactions} filters={filters} />
+      )}
+    </div>
+  );
+}
+
+function OverviewReport({ transactions, filters }) {
+  const { state } = useApp();
+
+  const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const expenses = Math.abs(transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const netSavings = income - expenses;
+  const savingsRate = income > 0 ? ((netSavings / income) * 100).toFixed(1) : 0;
+
+  // Category breakdown
+  const categoryBreakdown = {};
+  transactions.filter(t => t.type === 'expense').forEach(t => {
+    const cat = state.categories.find(c => c.id === t.categoryId);
+    const catName = cat ? cat.name : 'Uncategorized';
+    categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + Math.abs(t.amount);
+  });
+
+  const categoryData = Object.entries(categoryBreakdown)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+
+  // Monthly trend
+  const monthlyData = {};
+  transactions.forEach(t => {
+    const month = t.date.substring(0, 7);
+    if (!monthlyData[month]) {
+      monthlyData[month] = { month, income: 0, expenses: 0 };
+    }
+    if (t.type === 'income') {
+      monthlyData[month].income += t.amount;
+    } else if (t.type === 'expense') {
+      monthlyData[month].expenses += Math.abs(t.amount);
+    }
+  });
+
+  const monthlyTrendData = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
+
+  // Account breakdown
+  const accountBreakdown = {};
+  transactions.forEach(t => {
+    const acc = state.accounts.find(a => a.id === t.accountId);
+    const accName = acc ? acc.name : 'Unknown';
+    if (!accountBreakdown[accName]) {
+      accountBreakdown[accName] = { income: 0, expenses: 0, transactions: 0 };
+    }
+    accountBreakdown[accName].transactions += 1;
+    if (t.type === 'income') {
+      accountBreakdown[accName].income += t.amount;
+    } else if (t.type === 'expense') {
+      accountBreakdown[accName].expenses += Math.abs(t.amount);
+    }
+  });
+
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+  const exportToPDF = () => {
+    const reportContent = `
+Financial Overview Report
+Date Range: ${filters.startDate} to ${filters.endDate}
+Generated: ${new Date().toLocaleDateString()}
+
+SUMMARY
+--------
+Total Income: €${income.toLocaleString()}
+Total Expenses: €${expenses.toLocaleString()}
+Net Savings: €${netSavings.toLocaleString()}
+Savings Rate: ${savingsRate}%
+
+EXPENSES BY CATEGORY
+--------------------
+${categoryData.map(c => `${c.name}: €${c.value.toLocaleString()}`).join('\n')}
+
+TRANSACTIONS BY ACCOUNT
+-----------------------
+${Object.entries(accountBreakdown).map(([name, data]) => 
+  `${name}: ${data.transactions} transactions, €${data.income.toLocaleString()} income, €${data.expenses.toLocaleString()} expenses`
+).join('\n')}
+    `.trim();
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `financial-report-${filters.startDate}-to-${filters.endDate}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          onClick={exportToPDF}
+          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          <Download className="w-4 h-4" />
+          <span>Export Report</span>
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Income</p>
+          <p className="text-2xl font-bold text-green-600">€{income.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {transactions.filter(t => t.type === 'income').length} transactions
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Expenses</p>
+          <p className="text-2xl font-bold text-red-600">€{expenses.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {transactions.filter(t => t.type === 'expense').length} transactions
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Net Savings</p>
+          <p className={`text-2xl font-bold ${netSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            €{netSavings.toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {netSavings >= 0 ? 'Surplus' : 'Deficit'}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Savings Rate</p>
+          <p className="text-2xl font-bold text-blue-600">{savingsRate}%</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            of income saved
+          </p>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Expenses by Category
+          </h3>
+          {categoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={entry => entry.name}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400 py-12">No expense data</p>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Monthly Trend
+          </h3>
+          {monthlyTrendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={monthlyTrendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2} />
+                <Line type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400 py-12">No trend data</p>
+          )}
+        </div>
+      </div>
+
+      {/* Category Details Table */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Category Breakdown
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  % of Total
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                  Transactions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {categoryData.map((cat, index) => {
+                const txnCount = transactions.filter(
+                  t => t.type === 'expense' && state.categories.find(c => c.id === t.categoryId)?.name === cat.name
+                ).length;
+                const percentage = ((cat.value / expenses) * 100).toFixed(1);
+
+                return (
+                  <tr key={index}>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{cat.name}</td>
+                    <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900 dark:text-white">
+                      €{cat.value.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-400">
+                      {percentage}%
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-400">
+                      {txnCount}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Account Breakdown */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Activity by Account
+        </h3>
+        <div className="space-y-4">
+          {Object.entries(accountBreakdown).map(([name, data]) => (
+            <div key={name} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-semibold text-gray-900 dark:text-white">{name}</h4>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {data.transactions} transactions
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Income</p>
+                  <p className="text-lg font-semibold text-green-600">€{data.income.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Expenses</p>
+                  <p className="text-lg font-semibold text-red-600">€{data.expenses.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CustomReportBuilder({ transactions, filters }) {
+  const { state } = useApp();
+  const [selectedColumns, setSelectedColumns] = useState([
+    'date', 'type', 'payee', 'category', 'amount'
+  ]);
+
+  const availableColumns = [
+    { id: 'date', label: 'Date' },
+    { id: 'type', label: 'Type' },
+    { id: 'account', label: 'Account' },
+    { id: 'payee', label: 'Payee' },
+    { id: 'category', label: 'Category' },
+    { id: 'subcategory', label: 'Subcategory' },
+    { id: 'amount', label: 'Amount' },
+    { id: 'currency', label: 'Currency' },
+    { id: 'memo', label: 'Memo' }
+  ];
+
+  const toggleColumn = (columnId) => {
+    setSelectedColumns(prev =>
+      prev.includes(columnId)
+        ? prev.filter(id => id !== columnId)
+        : [...prev, columnId]
+    );
+  };
+
+  const getColumnValue = (transaction, columnId) => {
+    switch (columnId) {
+      case 'date':
+        return transaction.date;
+      case 'type':
+        return transaction.type;
+      case 'account':
+        return state.accounts.find(a => a.id === transaction.accountId)?.name || 'Unknown';
+      case 'payee':
+        return transaction.payee;
+      case 'category':
+        return state.categories.find(c => c.id === transaction.categoryId)?.name || 'Uncategorized';
+      case 'subcategory':
+        return transaction.subcategoryId
+          ? state.categories.find(c => c.id === transaction.subcategoryId)?.name || '-'
+          : '-';
+      case 'amount':
+        return transaction.amount;
+      case 'currency':
+        return transaction.currency;
+      case 'memo':
+        return transaction.memo || '-';
+      default:
+        return '';
+    }
+  };
+
+  const exportToCSV = () => {
+    const headers = selectedColumns.map(
+      colId => availableColumns.find(c => c.id === colId)?.label
+    ).join(',');
+
+    const rows = transactions.map(txn =>
+      selectedColumns.map(colId => {
+        const value = getColumnValue(txn, colId);
+        return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+      }).join(',')
+    );
+
+    const csv = [headers, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `custom-report-${filters.startDate}-to-${filters.endDate}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToPDF = () => {
+    const reportLines = [
+      'Custom Financial Report',
+      `Date Range: ${filters.startDate} to ${filters.endDate}`,
+      `Generated: ${new Date().toLocaleString()}`,
+      '',
+      'TRANSACTIONS',
+      '------------',
+      ''
+    ];
+
+    transactions.forEach((txn, index) => {
+      reportLines.push(`Transaction ${index + 1}:`);
+      selectedColumns.forEach(colId => {
+        const label = availableColumns.find(c => c.id === colId)?.label;
+        const value = getColumnValue(txn, colId);
+        reportLines.push(`  ${label}: ${value}`);
+      });
+      reportLines.push('');
+    });
+
+    reportLines.push('', `Total Transactions: ${transactions.length}`);
+
+    const reportContent = reportLines.join('\n');
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `custom-report-${filters.startDate}-to-${filters.endDate}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Select Columns to Include
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {availableColumns.map(col => (
+            <label
+              key={col.id}
+              className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+            >
+              <input
+                type="checkbox"
+                checked={selectedColumns.includes(col.id)}
+                onChange={() => toggleColumn(col.id)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-gray-900 dark:text-white">{col.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {selectedColumns.length} column{selectedColumns.length !== 1 ? 's' : ''} selected • 
+          {transactions.length} transaction{transactions.length !== 1 ? 's' : ''} to export
+        </p>
+        <div className="flex space-x-2">
+          <button
+            onClick={exportToCSV}
+            disabled={selectedColumns.length === 0}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={exportToPDF}
+            disabled={selectedColumns.length === 0}
+            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export TXT</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Preview Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="p-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Report Preview</h3>
+        </div>
+        <div className="overflow-x-auto max-h-96">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0">
+              <tr>
+                {selectedColumns.map(colId => {
+                  const col = availableColumns.find(c => c.id === colId);
+                  return (
+                    <th
+                      key={colId}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap"
+                    >
+                      {col?.label}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {transactions.slice(0, 50).map((txn, index) => (
+                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  {selectedColumns.map(colId => (
+                    <td
+                      key={colId}
+                      className="px-6 py-4 text-sm text-gray-900 dark:text-white whitespace-nowrap"
+                    >
+                      {colId === 'amount' ? (
+                        <span className={txn.amount >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          {getColumnValue(txn, colId)}
+                        </span>
+                      ) : (
+                        getColumnValue(txn, colId)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {transactions.length > 50 && (
+          <div className="p-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Showing first 50 of {transactions.length} transactions. Export to see all data.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SettingsView() {
   const { state, updateState } = useApp();
 
