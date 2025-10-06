@@ -1979,7 +1979,7 @@ function DebtPayoffView() {
         })}
         {state.debtPayoffPlans.length === 0 && (
           <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-center">
-            <TrendingDownIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No Payoff Plans Yet
             </h3>
