@@ -1,7 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap } from 'lucide-react';
-
+import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download } from 'lucide-react';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -133,8 +132,9 @@ export default function FinanceTrackerApp() {
               <NavItem icon={<DollarSign className="w-5 h-5" />} label="Budget" view="budget" />
               <NavItem icon={<Target className="w-5 h-5" />} label="Goals" view="goals" />
               <NavItem icon={<CreditCard className="w-5 h-5" />} label="Debt Payoff" view="debt" />
-              <NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
-              <NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
+<NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
+<NavItem icon={<BarChart3 className="w-5 h-5" />} label="Reports" view="reports" />
+<NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
             </nav>
           </aside>
 
@@ -149,7 +149,8 @@ export default function FinanceTrackerApp() {
               {currentView === 'goals' && <GoalsView />}
               {currentView === 'debt' && <DebtPayoffView />}
               {currentView === 'insights' && <InsightsView />}
-              {currentView === 'settings' && <SettingsView />}
+{currentView === 'reports' && <ReportsView />}
+{currentView === 'settings' && <SettingsView />}
             </div>
           </main>
         </div>
