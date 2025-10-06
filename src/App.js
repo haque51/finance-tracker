@@ -2334,7 +2334,6 @@ function PeriodComparison({ comparisonPeriod, setComparisonPeriod }) {
   const { state } = useApp();
   
   const getCurrentPeriodData = () => {
-    const now = new Date('2025-10-06');
     let currentStart, previousStart, label;
     
     if (comparisonPeriod === 'month') {
