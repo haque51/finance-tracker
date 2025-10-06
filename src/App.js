@@ -2181,7 +2181,6 @@ function DebtPayoffPlanForm({ plan, onClose }) {
 
 // NEW: Insights Module
 function InsightsView() {
-  const { state } = useApp();
   const [activeTab, setActiveTab] = useState('spending');
   const [comparisonPeriod, setComparisonPeriod] = useState('month');
 
