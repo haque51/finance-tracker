@@ -964,7 +964,13 @@ function DeleteConfirmModal({ account, onClose, onConfirm }) {
 }
 
 function TransactionsView() {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [deletingTransaction, setDeletingTransaction] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [filterAccount, setFilterAccount] = useState('all');
 
   const getTransactionDisplay = (txn) => {
     if (txn.type === 'transfer') {
@@ -972,53 +978,723 @@ function TransactionsView() {
       const toAccount = state.accounts.find(a => a.id === txn.toAccountId);
       return {
         icon: <ArrowRightLeft className="w-4 h-4 text-blue-600" />,
-        description: `From ${fromAccount?.name || 'Unknown'} → To ${toAccount?.name || 'Unknown'}`,
-        colorClass: 'text-blue-600'
+        description: `From ${fromAccount?.name || 'Unknown'} to ${toAccount?.name || 'Unknown'}`,
+        colorClass: 'text-blue-600',
+        account: fromAccount?.name || 'Unknown',
+        category: null
       };
     } else {
+      const account = state.accounts.find(a => a.id === txn.accountId);
+      const category = state.categories.find(c => c.id === txn.categoryId);
       return {
         icon: null,
         description: txn.payee,
-        colorClass: txn.amount >= 0 ? 'text-green-600' : 'text-red-600'
+        colorClass: txn.amount >= 0 ? 'text-green-600' : 'text-red-600',
+        account: account?.name || 'Unknown',
+        category: category?.name || 'Uncategorized'
       };
     }
   };
 
+  const filteredTransactions = state.transactions.filter(txn => {
+    const display = getTransactionDisplay(txn);
+    const matchesSearch = searchTerm === '' || 
+      display.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      display.account.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (txn.memo && txn.memo.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesType = filterType === 'all' || txn.type === filterType;
+    
+    const matchesAccount = filterAccount === 'all' || 
+      txn.accountId === filterAccount ||
+      txn.fromAccountId === filterAccount ||
+      txn.toAccountId === filterAccount;
+    
+    return matchesSearch && matchesType && matchesAccount;
+  }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = Math.abs(state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const netCashFlow = totalIncome - totalExpenses;
+
+  const handleAddTransaction = (txnData) => {
+    const newTxn = {
+      id: 'txn' + Date.now(),
+      ...txnData,
+      isReconciled: false
+    };
+
+    let updatedAccounts = [...state.accounts];
+    
+    if (txnData.type === 'transfer') {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === txnData.fromAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance - txnData.amount };
+        }
+        if (acc.id === txnData.toAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance + txnData.amount };
+        }
+        return acc;
+      });
+    } else {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === txnData.accountId) {
+          return { ...acc, currentBalance: acc.currentBalance + txnData.amount };
+        }
+        return acc;
+      });
+    }
+
+    updateState({
+      transactions: [...state.transactions, newTxn],
+      accounts: updatedAccounts
+    });
+    setShowAddModal(false);
+  };
+
+  const handleEditTransaction = (txnData) => {
+    const oldTxn = state.transactions.find(t => t.id === editingTransaction.id);
+    
+    let updatedAccounts = [...state.accounts];
+    
+    if (oldTxn.type === 'transfer') {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === oldTxn.fromAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance + oldTxn.amount };
+        }
+        if (acc.id === oldTxn.toAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance - oldTxn.amount };
+        }
+        return acc;
+      });
+    } else {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === oldTxn.accountId) {
+          return { ...acc, currentBalance: acc.currentBalance - oldTxn.amount };
+        }
+        return acc;
+      });
+    }
+
+    if (txnData.type === 'transfer') {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === txnData.fromAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance - txnData.amount };
+        }
+        if (acc.id === txnData.toAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance + txnData.amount };
+        }
+        return acc;
+      });
+    } else {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === txnData.accountId) {
+          return { ...acc, currentBalance: acc.currentBalance + txnData.amount };
+        }
+        return acc;
+      });
+    }
+
+    updateState({
+      transactions: state.transactions.map(t => 
+        t.id === editingTransaction.id ? { ...t, ...txnData } : t
+      ),
+      accounts: updatedAccounts
+    });
+    setEditingTransaction(null);
+  };
+
+  const handleDeleteTransaction = () => {
+    const txn = deletingTransaction;
+    let updatedAccounts = [...state.accounts];
+    
+    if (txn.type === 'transfer') {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === txn.fromAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance + txn.amount };
+        }
+        if (acc.id === txn.toAccountId) {
+          return { ...acc, currentBalance: acc.currentBalance - txn.amount };
+        }
+        return acc;
+      });
+    } else {
+      updatedAccounts = updatedAccounts.map(acc => {
+        if (acc.id === txn.accountId) {
+          return { ...acc, currentBalance: acc.currentBalance - txn.amount };
+        }
+        return acc;
+      });
+    }
+
+    updateState({
+      transactions: state.transactions.filter(t => t.id !== txn.id),
+      accounts: updatedAccounts
+    });
+    setDeletingTransaction(null);
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
-        Transactions
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
+          Transactions
+        </h2>
+        <button onClick={() => setShowAddModal(true)}
+          className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105">
+          <Plus className="w-4 h-4" />
+          <span>Add Transaction</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Income</p>
+              <p className="text-3xl font-bold text-green-600">€{totalIncome.toLocaleString()}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Expenses</p>
+              <p className="text-3xl font-bold text-red-600">€{totalExpenses.toLocaleString()}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-red-500/10 to-rose-500/10">
+              <TrendingDown className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Net Cash Flow</p>
+              <p className={`text-3xl font-bold ${netCashFlow >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                €{Math.abs(netCashFlow).toLocaleString()}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10">
+              <DollarSign className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-4 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search transactions..."
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+            <option value="all">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+            <option value="transfer">Transfer</option>
+          </select>
+
+          <select
+            value={filterAccount}
+            onChange={(e) => setFilterAccount(e.target.value)}
+            className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+            <option value="all">All Accounts</option>
+            {state.accounts.map(acc => (
+              <option key={acc.id} value={acc.id}>{acc.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50/80 dark:bg-gray-700/80">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Date</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Type</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Description</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Account</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Category</th>
               <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Amount</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200/50">
-            {state.transactions.map(txn => {
+            {filteredTransactions.map(txn => {
               const display = getTransactionDisplay(txn);
               return (
-                <tr key={txn.id} className="hover:bg-blue-50/30 transition">
+                <tr key={txn.id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition">
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{txn.date}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      txn.type === 'income' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                      txn.type === 'expense' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                    }`}>
+                      {txn.type === 'transfer' && display.icon}
+                      <span className="ml-1">{txn.type}</span>
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    <div className="flex items-center space-x-2">
-                      {display.icon}
-                      <span>{display.description}</span>
+                    <div>
+                      <div className="font-medium">{display.description}</div>
+                      {txn.memo && <div className="text-xs text-gray-500 dark:text-gray-400">{txn.memo}</div>}
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{display.account}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{display.category || '-'}</td>
                   <td className={`px-6 py-4 text-sm text-right font-semibold ${display.colorClass}`}>
                     €{Math.abs(txn.amount).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end space-x-2">
+                      <button onClick={() => setEditingTransaction(txn)}
+                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+                        <Edit2 className="w-4 h-4 text-blue-600" />
+                      </button>
+                      <button onClick={() => setDeletingTransaction(txn)}
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all">
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+
+        {filteredTransactions.length === 0 && (
+          <div className="text-center py-12">
+            <Receipt className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">No transactions found</p>
+          </div>
+        )}
+      </div>
+
+      {showAddModal && (
+        <TransactionFormModal
+          title="Add Transaction"
+          onClose={() => setShowAddModal(false)}
+          onSave={handleAddTransaction}
+        />
+      )}
+
+      {editingTransaction && (
+        <TransactionFormModal
+          title="Edit Transaction"
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          onSave={handleEditTransaction}
+        />
+      )}
+
+      {deletingTransaction && (
+        <DeleteTransactionModal
+          transaction={deletingTransaction}
+          onClose={() => setDeletingTransaction(null)}
+          onConfirm={handleDeleteTransaction}
+        />
+      )}
+    </div>
+  );
+}
+
+function TransactionFormModal({ title, transaction, onClose, onSave }) {
+  const { state } = useApp();
+  const [formData, setFormData] = useState({
+    type: transaction?.type || 'expense',
+    date: transaction?.date || new Date().toISOString().split('T')[0],
+    accountId: transaction?.accountId || state.user.defaultAccount || state.accounts[0]?.id,
+    fromAccountId: transaction?.fromAccountId || state.accounts[0]?.id,
+    toAccountId: transaction?.toAccountId || (state.accounts[1]?.id || state.accounts[0]?.id),
+    payee: transaction?.payee || '',
+    categoryId: transaction?.categoryId || '',
+    subcategoryId: transaction?.subcategoryId || '',
+    amount: transaction ? Math.abs(transaction.amount) : '',
+    currency: transaction?.currency || state.user.baseCurrency,
+    memo: transaction?.memo || ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!formData.date) newErrors.date = 'Date is required';
+    
+    if (formData.type === 'transfer') {
+      if (!formData.fromAccountId) newErrors.fromAccountId = 'From account is required';
+      if (!formData.toAccountId) newErrors.toAccountId = 'To account is required';
+      if (formData.fromAccountId === formData.toAccountId) {
+        newErrors.toAccountId = 'Must be different from source account';
+      }
+    } else {
+      if (!formData.accountId) newErrors.accountId = 'Account is required';
+      if (!formData.payee.trim()) newErrors.payee = 'Payee is required';
+      if (!formData.categoryId) newErrors.categoryId = 'Category is required';
+    }
+    
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      newErrors.amount = 'Amount must be greater than 0';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validate()) {
+      const txnData = {
+        ...formData,
+        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))
+      };
+      
+      if (formData.type === 'transfer') {
+        delete txnData.accountId;
+        delete txnData.payee;
+        delete txnData.categoryId;
+        delete txnData.subcategoryId;
+      } else {
+        delete txnData.fromAccountId;
+        delete txnData.toAccountId;
+      }
+      
+      onSave(txnData);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const categories = state.categories.filter(c => 
+    formData.type === 'income' ? c.type === 'income' : c.type === 'expense'
+  ).filter(c => !c.parentId);
+
+  const subcategories = formData.categoryId 
+    ? state.categories.filter(c => c.parentId === formData.categoryId)
+    : [];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 backdrop-blur-xl bg-white/90 dark:bg-gray-800/90 px-6 py-4 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-between items-center">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h3>
+          <button onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Transaction Type *
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {['income', 'expense', 'transfer'].map(type => (
+                <button
+                  key={type}
+                  onClick={() => handleChange('type', type)}
+                  type="button"
+                  className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                    formData.type === type
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                      : 'border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Date *
+            </label>
+            <input
+              type="date"
+              value={formData.date}
+              onChange={(e) => handleChange('date', e.target.value)}
+              className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all ${
+                errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+            />
+            {errors.date && <p className="text-xs text-red-600 mt-1">{errors.date}</p>}
+          </div>
+
+          {formData.type === 'transfer' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  From Account *
+                </label>
+                <select
+                  value={formData.fromAccountId}
+                  onChange={(e) => handleChange('fromAccountId', e.target.value)}
+                  className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 ${
+                    errors.fromAccountId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                  {state.accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency} {acc.currentBalance.toLocaleString()})</option>
+                  ))}
+                </select>
+                {errors.fromAccountId && <p className="text-xs text-red-600 mt-1">{errors.fromAccountId}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  To Account *
+                </label>
+                <select
+                  value={formData.toAccountId}
+                  onChange={(e) => handleChange('toAccountId', e.target.value)}
+                  className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 ${
+                    errors.toAccountId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                  {state.accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency} {acc.currentBalance.toLocaleString()})</option>
+                  ))}
+                </select>
+                {errors.toAccountId && <p className="text-xs text-red-600 mt-1">{errors.toAccountId}</p>}
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Account *
+                </label>
+                <select
+                  value={formData.accountId}
+                  onChange={(e) => handleChange('accountId', e.target.value)}
+                  className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 ${
+                    errors.accountId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                  {state.accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
+                  ))}
+                </select>
+                {errors.accountId && <p className="text-xs text-red-600 mt-1">{errors.accountId}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Payee *
+                </label>
+                <input
+                  type="text"
+                  value={formData.payee}
+                  onChange={(e) => handleChange('payee', e.target.value)}
+                  className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.payee ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="e.g., Supermarket, Employer"
+                />
+                {errors.payee && <p className="text-xs text-red-600 mt-1">{errors.payee}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category *
+                </label>
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => {
+                    handleChange('categoryId', e.target.value);
+                    handleChange('subcategoryId', '');
+                  }}
+                  className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 ${
+                    errors.categoryId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                  <option value="">Select category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                  ))}
+                </select>
+                {errors.categoryId && <p className="text-xs text-red-600 mt-1">{errors.categoryId}</p>}
+              </div>
+
+              {subcategories.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Subcategory
+                  </label>
+                  <select
+                    value={formData.subcategoryId}
+                    onChange={(e) => handleChange('subcategoryId', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <option value="">None</option>
+                    {subcategories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Amount *
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                {formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : '৳'}
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.amount}
+                onChange={(e) => handleChange('amount', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                className={`w-full pl-8 pr-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 ${
+                  errors.amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="0.00"
+              />
+            </div>
+            {errors.amount && <p className="text-xs text-red-600 mt-1">{errors.amount}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Memo
+            </label>
+            <textarea
+              value={formData.memo}
+              onChange={(e) => handleChange('memo', e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 resize-none"
+              placeholder="Optional notes about this transaction"
+            />
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              onClick={handleSubmit}
+              type="button"
+              className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 font-semibold">
+              {transaction ? 'Update Transaction' : 'Create Transaction'}
+            </button>
+            <button
+              onClick={onClose}
+              type="button"
+              className="flex-1 px-5 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteTransactionModal({ transaction, onClose, onConfirm }) {
+  const { state } = useApp();
+  
+  const getTransactionDetails = () => {
+    if (transaction.type === 'transfer') {
+      const fromAccount = state.accounts.find(a => a.id === transaction.fromAccountId);
+      const toAccount = state.accounts.find(a => a.id === transaction.toAccountId);
+      return {
+        description: `Transfer from ${fromAccount?.name} to ${toAccount?.name}`,
+        details: [
+          `From: ${fromAccount?.name}`,
+          `To: ${toAccount?.name}`,
+          `Amount: ${transaction.currency} ${Math.abs(transaction.amount).toLocaleString()}`
+        ]
+      };
+    } else {
+      const account = state.accounts.find(a => a.id === transaction.accountId);
+      const category = state.categories.find(c => c.id === transaction.categoryId);
+      return {
+        description: transaction.payee,
+        details: [
+          `Account: ${account?.name}`,
+          `Category: ${category?.name || 'Uncategorized'}`,
+          `Amount: ${transaction.currency} ${Math.abs(transaction.amount).toLocaleString()}`
+        ]
+      };
+    }
+  };
+
+  const details = getTransactionDetails();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border-2 border-red-200 dark:border-red-800 w-full max-w-md">
+        <div className="p-6">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Delete Transaction
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Are you sure you want to delete this transaction?
+              </p>
+              <div className="p-3 bg-red-50/50 dark:bg-red-900/10 rounded-lg mb-4">
+                <p className="text-xs text-red-800 dark:text-red-400 font-medium mb-2">
+                  ⚠️ This action will:
+                </p>
+                <ul className="text-xs text-red-800 dark:text-red-400 space-y-1 ml-2">
+                  <li>• Permanently delete the transaction</li>
+                  <li>• Update account balances automatically</li>
+                  <li>• Cannot be undone</li>
+                </ul>
+              </div>
+              <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                <p><strong>Transaction Details:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Date: {transaction.date}</li>
+                  <li>Type: {transaction.type}</li>
+                  <li>Description: {details.description}</li>
+                  {details.details.map((detail, index) => (
+                    <li key={index}>{detail}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 mt-6">
+            <button
+              onClick={onConfirm}
+              type="button"
+              className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-semibold">
+              Yes, Delete Transaction
+            </button>
+            <button
+              onClick={onClose}
+              type="button"
+              className="flex-1 px-5 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold">
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
