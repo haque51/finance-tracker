@@ -176,11 +176,33 @@ function NavItem({ icon, label, view }) {
 function DashboardView() {
   const { state } = useApp();
   const currentMonth = '2025-10';
+  const lastMonth = '2025-09';
+  
   const currentMonthTxns = state.transactions.filter(t => t.date.startsWith(currentMonth));
+  const lastMonthTxns = state.transactions.filter(t => t.date.startsWith(lastMonth));
+  
   const monthlyIncome = currentMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const lastMonthIncome = lastMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const incomeChange = monthlyIncome - lastMonthIncome;
+  const incomeChangePercent = lastMonthIncome > 0 ? ((incomeChange / lastMonthIncome) * 100).toFixed(1) : 0;
+  
   const monthlyExpenses = Math.abs(currentMonthTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const lastMonthExpenses = Math.abs(lastMonthTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const expenseChange = monthlyExpenses - lastMonthExpenses;
+  const expenseChangePercent = lastMonthExpenses > 0 ? ((expenseChange / lastMonthExpenses) * 100).toFixed(1) : 0;
+  
   const netWorth = state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
+  const netWorthChange = 700;
+  const netWorthChangePercent = 2.3;
+  
   const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome * 100).toFixed(1) : 0;
+  const lastSavingsRate = lastMonthIncome > 0 ? ((lastMonthIncome - lastMonthExpenses) / lastMonthIncome * 100).toFixed(1) : 0;
+  const savingsRateChange = (savingsRate - lastSavingsRate).toFixed(1);
+
+  const incomeExpenseData = [
+    { name: 'Income', value: monthlyIncome, fill: '#10B981' },
+    { name: 'Expenses', value: monthlyExpenses, fill: '#EF4444' }
+  ];
 
   const spendingByCategory = {};
   currentMonthTxns.filter(t => t.type === 'expense').forEach(t => {
@@ -188,56 +210,93 @@ function DashboardView() {
     const catName = cat ? cat.name : 'Uncategorized';
     spendingByCategory[catName] = (spendingByCategory[catName] || 0) + Math.abs(t.amount);
   });
-  const categoryData = Object.entries(spendingByCategory).map(([name, value]) => ({ name, value }));
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const categoryData = Object.entries(spendingByCategory).map(([name, value], index) => ({
+    name, value, fill: ['#6366F1', '#10B981', '#F59E0B', '#EF4444'][index % 4]
+  }));
+
+  const months = ['2025-05', '2025-06', '2025-07', '2025-08', '2025-09', '2025-10'];
+  const monthNames = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+  const monthlyTrendsData = months.map((month, index) => {
+    const monthTxns = state.transactions.filter(t => t.date.startsWith(month));
+    const income = monthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = Math.abs(monthTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+    return { month: monthNames[index], Income: income, Expenses: expenses, Savings: income - expenses };
+  });
+
+  const accountTypeData = {};
+  state.accounts.forEach(acc => {
+    const typeName = acc.type.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    accountTypeData[typeName] = (accountTypeData[typeName] || 0) + acc.currentBalance;
+  });
+  const netWorthByTypeData = Object.entries(accountTypeData).map(([name, value]) => ({
+    name, value, fill: value >= 0 ? '#3B82F6' : '#EF4444'
+  }));
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
-        Dashboard
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Monthly Income" value={`€${monthlyIncome.toLocaleString()}`} 
-          icon={<TrendingUp className="w-6 h-6 text-green-600" />} change="+7.1%" isPositive={true} />
-        <MetricCard title="Monthly Expenses" value={`€${monthlyExpenses.toLocaleString()}`} 
-          icon={<TrendingDown className="w-6 h-6 text-red-600" />} change="-18.7%" isPositive={true} />
-        <MetricCard title="Net Worth" value={`€${netWorth.toLocaleString()}`} 
-          icon={<Wallet className="w-6 h-6 text-blue-600" />} change="+2.3%" isPositive={true} />
-        <MetricCard title="Savings Rate" value={`${savingsRate}%`} 
-          icon={<Target className="w-6 h-6 text-purple-600" />} change="+1.2% pts" isPositive={true} />
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">Dashboard</h2>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg bg-gray-100/50 dark:bg-gray-800/50">October 2025</span>
       </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard title="Monthly Income" value={`€${monthlyIncome.toLocaleString()}`} icon={<TrendingUp className="w-6 h-6 text-green-600" />} change="+7.1%" isPositive={true} />
+        <MetricCard title="Monthly Expenses" value={`€${monthlyExpenses.toLocaleString()}`} icon={<TrendingDown className="w-6 h-6 text-red-600" />} change="-18.7%" isPositive={true} />
+        <MetricCard title="Net Worth" value={`€${netWorth.toLocaleString()}`} icon={<Wallet className="w-6 h-6 text-blue-600" />} change="+2.3%" isPositive={true} />
+        <MetricCard title="Savings Rate" value={`${savingsRate}%`} icon={<Target className="w-6 h-6 text-purple-600" />} change="+1.2% pts" isPositive={true} />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Spending by Category</h3>
-          {categoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={categoryData} cx="50%" cy="50%" outerRadius={80} dataKey="value">
-                  {categoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : <p className="text-center text-gray-500 py-12">No data</p>}
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2"><TrendingUp className="w-5 h-5" />Income vs Expenses</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={incomeExpenseData} cx="50%" cy="50%" outerRadius={100} innerRadius={60} dataKey="value" label>
+                {incomeExpenseData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+              </Pie>
+              <Tooltip formatter={(value) => `€${value.toLocaleString()}`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-
         <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Account Balances</h3>
-          <div className="space-y-3">
-            {state.accounts.map(account => (
-              <div key={account.id} className="flex justify-between p-3 bg-gray-50/50 dark:bg-gray-700/50 rounded-xl">
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">{account.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{account.type}</p>
-                </div>
-                <p className={`text-lg font-bold ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  €{account.currentBalance.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2"><BarChart3 className="w-5 h-5" />Spending by Category</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie data={categoryData} cx="50%" cy="50%" outerRadius={90} dataKey="value" label={(entry) => entry.name}>
+                {categoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+              </Pie>
+              <Tooltip formatter={(value) => `€${value.toLocaleString()}`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2"><Calendar className="w-5 h-5" />Monthly Trends</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={monthlyTrendsData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis dataKey="month" stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+              <YAxis stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+              <Tooltip formatter={(value) => `€${value.toLocaleString()}`} />
+              <Legend />
+              <Line type="monotone" dataKey="Income" stroke="#10B981" strokeWidth={2} dot={{ fill: '#10B981', r: 4 }} />
+              <Line type="monotone" dataKey="Expenses" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444', r: 4 }} />
+              <Line type="monotone" dataKey="Savings" stroke="#3B82F6" strokeWidth={2} dot={{ fill: '#3B82F6', r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2"><Wallet className="w-5 h-5" />Net Worth by Account Type</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={netWorthByTypeData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+              <XAxis dataKey="name" stroke="#9CA3AF" style={{ fontSize: '11px' }} angle={-15} textAnchor="end" height={80} />
+              <YAxis stroke="#9CA3AF" style={{ fontSize: '12px' }} />
+              <Tooltip formatter={(value) => `€${value.toLocaleString()}`} />
+              <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                {netWorthByTypeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
