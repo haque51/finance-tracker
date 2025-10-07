@@ -21,7 +21,9 @@ const initialState = {
     { id: 'txn1', date: '2025-10-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat1', amount: 4500, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
     { id: 'txn2', date: '2025-10-02', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat5', subcategoryId: 'cat7', amount: -120, currency: 'EUR', memo: 'Groceries', isReconciled: false },
     { id: 'txn3', date: '2025-10-03', type: 'expense', accountId: 'acc3', payee: 'Restaurant', categoryId: 'cat5', subcategoryId: 'cat6', amount: -85, currency: 'EUR', memo: 'Dinner', isReconciled: false },
-    { id: 'txn4', date: '2025-09-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat1', amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false }
+    { id: 'txn4', date: '2025-09-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat1', amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
+    { id: 'txn5', date: '2025-08-15', type: 'expense', accountId: 'acc1', payee: 'Gas Station', categoryId: 'cat8', amount: -65, currency: 'EUR', memo: 'Fuel', isReconciled: false },
+    { id: 'txn6', date: '2025-08-20', type: 'expense', accountId: 'acc3', payee: 'Cinema', categoryId: 'cat9', amount: -30, currency: 'EUR', memo: 'Movie night', isReconciled: false }
   ],
   categories: [
     { id: 'cat1', name: 'Salary', type: 'income', parentId: null, icon: '💰' },
@@ -119,6 +121,7 @@ export default function FinanceTrackerApp() {
               <NavItem icon={<Target className="w-5 h-5" />} label="Goals" view="goals" />
               <NavItem icon={<CreditCard className="w-5 h-5" />} label="Debt Payoff" view="debt" />
               <NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
+              <NavItem icon={<Receipt className="w-5 h-5" />} label="Reports" view="reports" />
               <NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
             </nav>
           </aside>
@@ -134,6 +137,7 @@ export default function FinanceTrackerApp() {
               {currentView === 'goals' && <GoalsView />}
               {currentView === 'debt' && <DebtPayoffView />}
               {currentView === 'insights' && <InsightsView />}
+              {currentView === 'reports' && <ReportsView />}
               {currentView === 'settings' && <SettingsView />}
             </div>
           </main>
@@ -1057,6 +1061,352 @@ Provide specific, practical advice in a friendly tone.`
             Click the button above to get personalized insights
           </p>
         </div>
+      )}
+    </div>
+  );
+}
+
+function ReportsView() {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
+        Reports Module
+      </h2>
+
+      <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        {['overview', 'custom'].map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 font-medium whitespace-nowrap ${
+              activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 dark:text-gray-400'
+            }`}>
+            {tab === 'overview' && 'Overview Report'}
+            {tab === 'custom' && 'Custom Report Builder'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && <OverviewReport />}
+      {activeTab === 'custom' && <CustomReportBuilder />}
+    </div>
+  );
+}
+
+function OverviewReport() {
+  const { state } = useApp();
+  
+  const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = Math.abs(state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const netCashFlow = totalIncome - totalExpenses;
+  const totalAccounts = state.accounts.length;
+  const netWorth = state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
+  const totalTransactions = state.transactions.length;
+
+  const exportToCSV = () => {
+    const headers = ['Date', 'Type', 'Account', 'Payee', 'Category', 'Amount', 'Currency', 'Memo'];
+    const rows = state.transactions.map(txn => {
+      const account = state.accounts.find(a => a.id === txn.accountId);
+      const category = state.categories.find(c => c.id === txn.categoryId);
+      return [
+        txn.date,
+        txn.type,
+        account?.name || 'Unknown',
+        txn.payee,
+        category?.name || 'Uncategorized',
+        txn.amount,
+        txn.currency,
+        txn.memo || ''
+      ];
+    });
+
+    const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `lumina-overview-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <p className="text-gray-600 dark:text-gray-400">Comprehensive overview of your financial activity</p>
+        <button onClick={exportToCSV}
+          className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105">
+          <DollarSign className="w-4 h-4" />
+          <span>Export CSV</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Income</p>
+          <p className="text-3xl font-bold text-green-600">€{totalIncome.toLocaleString()}</p>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Expenses</p>
+          <p className="text-3xl font-bold text-red-600">€{totalExpenses.toLocaleString()}</p>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Net Cash Flow</p>
+          <p className={`text-3xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            €{netCashFlow.toLocaleString()}
+          </p>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Net Worth</p>
+          <p className="text-3xl font-bold text-blue-600">€{netWorth.toLocaleString()}</p>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Accounts</p>
+          <p className="text-3xl font-bold text-purple-600">{totalAccounts}</p>
+        </div>
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Transactions</p>
+          <p className="text-3xl font-bold text-indigo-600">{totalTransactions}</p>
+        </div>
+      </div>
+
+      <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Transactions Preview (First 50)</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50/80 dark:bg-gray-700/80">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Payee</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Category</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200/50">
+              {state.transactions.slice(0, 50).map(txn => {
+                const category = state.categories.find(c => c.id === txn.categoryId);
+                return (
+                  <tr key={txn.id} className="hover:bg-blue-50/30 transition">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{txn.date}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{txn.payee}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      {category?.icon} {category?.name || 'Uncategorized'}
+                    </td>
+                    <td className={`px-4 py-3 text-sm text-right font-semibold ${txn.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      €{txn.amount.toLocaleString()}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {state.transactions.length > 50 && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">
+            Showing first 50 of {state.transactions.length} transactions. Export CSV for full data.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CustomReportBuilder() {
+  const { state } = useApp();
+  const [startDate, setStartDate] = useState('2025-01-01');
+  const [endDate, setEndDate] = useState('2025-12-31');
+  const [selectedAccounts, setSelectedAccounts] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [reportGenerated, setReportGenerated] = useState(false);
+  const [filteredData, setFilteredData] = useState([]);
+
+  const toggleAccount = (accountId) => {
+    setSelectedAccounts(prev => 
+      prev.includes(accountId) ? prev.filter(id => id !== accountId) : [...prev, accountId]
+    );
+  };
+
+  const toggleCategory = (categoryId) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) ? prev.filter(id => id !== categoryId) : [...prev, categoryId]
+    );
+  };
+
+  const generateReport = () => {
+    let filtered = state.transactions.filter(txn => {
+      const dateInRange = txn.date >= startDate && txn.date <= endDate;
+      const accountMatch = selectedAccounts.length === 0 || selectedAccounts.includes(txn.accountId);
+      const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(txn.categoryId);
+      return dateInRange && accountMatch && categoryMatch;
+    });
+
+    setFilteredData(filtered);
+    setReportGenerated(true);
+  };
+
+  const exportCustomToCSV = () => {
+    const headers = ['Date', 'Type', 'Account', 'Payee', 'Category', 'Amount', 'Currency', 'Memo'];
+    const rows = filteredData.map(txn => {
+      const account = state.accounts.find(a => a.id === txn.accountId);
+      const category = state.categories.find(c => c.id === txn.categoryId);
+      return [
+        txn.date,
+        txn.type,
+        account?.name || 'Unknown',
+        txn.payee,
+        category?.name || 'Uncategorized',
+        txn.amount,
+        txn.currency,
+        txn.memo || ''
+      ];
+    });
+
+    const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `lumina-custom-${startDate}-to-${endDate}.csv`;
+    link.click();
+  };
+
+  const totalIncome = filteredData.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = Math.abs(filteredData.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+  const netAmount = totalIncome - totalExpenses;
+
+  return (
+    <div className="space-y-6">
+      <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+        <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Report Filters</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date</label>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Accounts (optional)</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {state.accounts.map(account => (
+                <label key={account.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer">
+                  <input type="checkbox" checked={selectedAccounts.includes(account.id)}
+                    onChange={() => toggleAccount(account.id)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" />
+                  <span className="text-sm text-gray-900 dark:text-white">{account.name}</span>
+                </label>
+              ))}
+            </div>
+            {selectedAccounts.length === 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">All accounts selected</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Categories (optional)</label>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {state.categories.filter(c => !c.parentId).map(category => (
+                <label key={category.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 rounded-lg cursor-pointer">
+                  <input type="checkbox" checked={selectedCategories.includes(category.id)}
+                    onChange={() => toggleCategory(category.id)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" />
+                  <span className="text-sm text-gray-900 dark:text-white">{category.icon} {category.name}</span>
+                </label>
+              ))}
+            </div>
+            {selectedCategories.length === 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">All categories selected</p>
+            )}
+          </div>
+        </div>
+
+        <button onClick={generateReport}
+          className="w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 font-semibold">
+          Generate Report
+        </button>
+      </div>
+
+      {reportGenerated && (
+        <>
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Report Results</h3>
+            <button onClick={exportCustomToCSV}
+              className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105">
+              <DollarSign className="w-4 h-4" />
+              <span>Export CSV</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Income</p>
+              <p className="text-3xl font-bold text-green-600">€{totalIncome.toLocaleString()}</p>
+            </div>
+            <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Expenses</p>
+              <p className="text-3xl font-bold text-red-600">€{totalExpenses.toLocaleString()}</p>
+            </div>
+            <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Net Amount</p>
+              <p className={`text-3xl font-bold ${netAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                €{netAmount.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Filtered Transactions ({filteredData.length} results) - Preview (First 50)
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50/80 dark:bg-gray-700/80">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Account</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Payee</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Category</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200/50">
+                  {filteredData.slice(0, 50).map(txn => {
+                    const account = state.accounts.find(a => a.id === txn.accountId);
+                    const category = state.categories.find(c => c.id === txn.categoryId);
+                    return (
+                      <tr key={txn.id} className="hover:bg-blue-50/30 transition">
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{txn.date}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{account?.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{txn.payee}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          {category?.icon} {category?.name || 'Uncategorized'}
+                        </td>
+                        <td className={`px-4 py-3 text-sm text-right font-semibold ${txn.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          €{txn.amount.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {filteredData.length > 50 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">
+                Showing first 50 of {filteredData.length} transactions. Export CSV for full data.
+              </p>
+            )}
+            {filteredData.length === 0 && (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No transactions found matching your filters.
+              </p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
