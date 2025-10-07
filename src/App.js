@@ -1701,34 +1701,458 @@ function DeleteTransactionModal({ transaction, onClose, onConfirm }) {
 }
 
 function CategoriesView() {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [deletingCategory, setDeletingCategory] = useState(null);
+
   const incomeCategories = state.categories.filter(c => c.type === 'income' && !c.parentId);
   const expenseCategories = state.categories.filter(c => c.type === 'expense' && !c.parentId);
 
+  const getSubcategories = (parentId) => {
+    return state.categories.filter(c => c.parentId === parentId);
+  };
+
+  const handleAddCategory = (categoryData) => {
+    const newCategory = {
+      id: 'cat' + Date.now(),
+      ...categoryData
+    };
+    updateState({ categories: [...state.categories, newCategory] });
+    setShowAddModal(false);
+  };
+
+  const handleEditCategory = (categoryData) => {
+    updateState({
+      categories: state.categories.map(c => 
+        c.id === editingCategory.id ? { ...c, ...categoryData } : c
+      )
+    });
+    setEditingCategory(null);
+  };
+
+  const handleDeleteCategory = () => {
+    // Check for associated transactions
+    const categoryTransactions = state.transactions.filter(
+      t => t.categoryId === deletingCategory.id || t.subcategoryId === deletingCategory.id
+    );
+    
+    if (categoryTransactions.length > 0) {
+      alert(`Cannot delete category with ${categoryTransactions.length} associated transactions. Please remove or recategorize transactions first.`);
+      setDeletingCategory(null);
+      return;
+    }
+
+    // Check for child categories (subcategories)
+    const childCategories = state.categories.filter(c => c.parentId === deletingCategory.id);
+    if (childCategories.length > 0) {
+      alert(`Cannot delete category with ${childCategories.length} subcategories. Please delete subcategories first.`);
+      setDeletingCategory(null);
+      return;
+    }
+
+    // Safe to delete
+    updateState({
+      categories: state.categories.filter(c => c.id !== deletingCategory.id)
+    });
+    setDeletingCategory(null);
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
-        Categories
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
+          Categories
+        </h2>
+        <button onClick={() => setShowAddModal(true)}
+          className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105">
+          <Plus className="w-4 h-4" />
+          <span>Add Category</span>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* INCOME CATEGORIES SECTION */}
         <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
-          <h3 className="text-xl font-semibold mb-4 text-green-600">Income Categories</h3>
-          <div className="space-y-2">
-            {incomeCategories.map(cat => (
-              <div key={cat.id} className="p-3 bg-green-50/50 dark:bg-green-900/10 rounded-xl">
-                <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
-              </div>
-            ))}
+          <h3 className="text-xl font-semibold mb-4 text-green-600 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            Income Categories
+          </h3>
+          <div className="space-y-3">
+            {incomeCategories.map(cat => {
+              const subcats = getSubcategories(cat.id);
+              return (
+                <div key={cat.id} className="space-y-2">
+                  {/* Parent Category */}
+                  <div className="p-4 bg-green-50/50 dark:bg-green-900/10 rounded-xl flex justify-between items-center group hover:shadow-md transition-all">
+                    <span className="text-gray-900 dark:text-white font-medium text-lg">
+                      {cat.icon} {cat.name}
+                    </span>
+                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => setEditingCategory(cat)}
+                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+                        <Edit2 className="w-4 h-4 text-blue-600" />
+                      </button>
+                      <button onClick={() => setDeletingCategory(cat)}
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all">
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Subcategories */}
+                  {subcats.length > 0 && (
+                    <div className="ml-8 space-y-2">
+                      {subcats.map(subcat => (
+                        <div key={subcat.id} className="p-3 bg-green-50/30 dark:bg-green-900/5 rounded-lg flex justify-between items-center group hover:shadow-sm transition-all">
+                          <span className="text-gray-700 dark:text-gray-300 text-sm">
+                            ↳ {subcat.icon} {subcat.name}
+                          </span>
+                          <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setEditingCategory(subcat)}
+                              className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+                              <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                            </button>
+                            <button onClick={() => setDeletingCategory(subcat)}
+                              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all">
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* EXPENSE CATEGORIES SECTION */}
         <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50">
-          <h3 className="text-xl font-semibold mb-4 text-red-600">Expense Categories</h3>
-          <div className="space-y-2">
-            {expenseCategories.map(cat => (
-              <div key={cat.id} className="p-3 bg-red-50/50 dark:bg-red-900/10 rounded-xl">
-                <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
+          <h3 className="text-xl font-semibold mb-4 text-red-600 flex items-center gap-2">
+            <TrendingDown className="w-5 h-5" />
+            Expense Categories
+          </h3>
+          <div className="space-y-3">
+            {expenseCategories.map(cat => {
+              const subcats = getSubcategories(cat.id);
+              return (
+                <div key={cat.id} className="space-y-2">
+                  {/* Parent Category */}
+                  <div className="p-4 bg-red-50/50 dark:bg-red-900/10 rounded-xl flex justify-between items-center group hover:shadow-md transition-all">
+                    <span className="text-gray-900 dark:text-white font-medium text-lg">
+                      {cat.icon} {cat.name}
+                    </span>
+                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => setEditingCategory(cat)}
+                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+                        <Edit2 className="w-4 h-4 text-blue-600" />
+                      </button>
+                      <button onClick={() => setDeletingCategory(cat)}
+                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all">
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Subcategories */}
+                  {subcats.length > 0 && (
+                    <div className="ml-8 space-y-2">
+                      {subcats.map(subcat => (
+                        <div key={subcat.id} className="p-3 bg-red-50/30 dark:bg-red-900/5 rounded-lg flex justify-between items-center group hover:shadow-sm transition-all">
+                          <span className="text-gray-700 dark:text-gray-300 text-sm">
+                            ↳ {subcat.icon} {subcat.name}
+                          </span>
+                          <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setEditingCategory(subcat)}
+                              className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+                              <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                            </button>
+                            <button onClick={() => setDeletingCategory(subcat)}
+                              className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all">
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* MODALS */}
+      {showAddModal && (
+        <CategoryFormModal
+          title="Add Category"
+          onClose={() => setShowAddModal(false)}
+          onSave={handleAddCategory}
+        />
+      )}
+
+      {editingCategory && (
+        <CategoryFormModal
+          title="Edit Category"
+          category={editingCategory}
+          onClose={() => setEditingCategory(null)}
+          onSave={handleEditCategory}
+        />
+      )}
+
+      {deletingCategory && (
+        <DeleteCategoryModal
+          category={deletingCategory}
+          onClose={() => setDeletingCategory(null)}
+          onConfirm={handleDeleteCategory}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// CATEGORY FORM MODAL - Add/Edit Category
+// ============================================================================
+
+function CategoryFormModal({ title, category, onClose, onSave }) {
+  const { state } = useApp();
+  const [formData, setFormData] = useState({
+    name: category?.name || '',
+    type: category?.type || 'expense',
+    icon: category?.icon || '📁',
+    parentId: category?.parentId || null
+  });
+
+  const [errors, setErrors] = useState({});
+
+  // Icon options for picker
+  const iconOptions = [
+    '💰', '💼', '🏠', '🍽️', '🛒', '🚗', '🎬', '📱', 
+    '💊', '🎓', '👕', '✈️', '🎮', '📚', '⚡', '💳',
+    '🏥', '🏋️', '🎨', '🎵', '🐕', '🎁', '🔧', '📁'
+  ];
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Category name is required';
+    if (!formData.icon) newErrors.icon = 'Please select an icon';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validate()) {
+      onSave(formData);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  // Get parent categories for dropdown (exclude current category to prevent circular reference)
+  const parentCategories = state.categories.filter(c => 
+    c.type === formData.type && !c.parentId && c.id !== category?.id
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        
+        {/* Modal Header */}
+        <div className="sticky top-0 backdrop-blur-xl bg-white/90 dark:bg-gray-800/90 px-6 py-4 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-between items-center">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h3>
+          <button onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 space-y-5">
+          
+          {/* Category Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Category Name *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all ${
+                errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="e.g., Groceries, Utilities"
+            />
+            {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
+          </div>
+
+          {/* Category Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Category Type *
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleChange('type', 'income')}
+                type="button"
+                className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                  formData.type === 'income'
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                    : 'border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}>
+                Income
+              </button>
+              <button
+                onClick={() => handleChange('type', 'expense')}
+                type="button"
+                className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                  formData.type === 'expense'
+                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg'
+                    : 'border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}>
+                Expense
+              </button>
+            </div>
+          </div>
+
+          {/* Icon Picker */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Icon *
+            </label>
+            <div className="grid grid-cols-8 gap-2">
+              {iconOptions.map(icon => (
+                <button
+                  key={icon}
+                  onClick={() => handleChange('icon', icon)}
+                  type="button"
+                  className={`p-3 text-2xl rounded-xl transition-all ${
+                    formData.icon === icon
+                      ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500 scale-110'
+                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}>
+                  {icon}
+                </button>
+              ))}
+            </div>
+            {errors.icon && <p className="text-xs text-red-600 mt-1">{errors.icon}</p>}
+          </div>
+
+          {/* Parent Category (Optional for Subcategories) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Parent Category (Optional)
+            </label>
+            <select
+              value={formData.parentId || ''}
+              onChange={(e) => handleChange('parentId', e.target.value || null)}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              <option value="">None (Top Level Category)</option>
+              {parentCategories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Select a parent to create a subcategory
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3 pt-4">
+            <button
+              onClick={handleSubmit}
+              type="button"
+              className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 font-semibold">
+              {category ? 'Update Category' : 'Create Category'}
+            </button>
+            <button
+              onClick={onClose}
+              type="button"
+              className="flex-1 px-5 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// DELETE CATEGORY MODAL - Confirmation with Protection
+// ============================================================================
+
+function DeleteCategoryModal({ category, onClose, onConfirm }) {
+  const { state } = useApp();
+  const subcategories = state.categories.filter(c => c.parentId === category.id);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border-2 border-red-200 dark:border-red-800 w-full max-w-md">
+        <div className="p-6">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Delete Category
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-white">"{category.icon} {category.name}"</span>?
+              </p>
+              
+              {/* Warning Box */}
+              <div className="p-3 bg-red-50/50 dark:bg-red-900/10 rounded-lg mb-4">
+                <p className="text-xs text-red-800 dark:text-red-400 font-medium mb-2">
+                  ⚠️ This action will:
+                </p>
+                <ul className="text-xs text-red-800 dark:text-red-400 space-y-1 ml-2">
+                  <li>• Permanently delete the category</li>
+                  <li>• Cannot be undone</li>
+                  {subcategories.length > 0 && (
+                    <li className="font-bold">• ❌ Blocked: Category has {subcategories.length} subcategories</li>
+                  )}
+                </ul>
               </div>
-            ))}
+              
+              {/* Category Details */}
+              <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                <p><strong>Category Details:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Type: {category.type}</li>
+                  <li>Icon: {category.icon}</li>
+                  {category.parentId && (
+                    <li>Subcategory of: {state.categories.find(c => c.id === category.parentId)?.name}</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-3 mt-6">
+            <button
+              onClick={onConfirm}
+              type="button"
+              className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-semibold">
+              Yes, Delete Category
+            </button>
+            <button
+              onClick={onClose}
+              type="button"
+              className="flex-1 px-5 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
