@@ -239,10 +239,10 @@ function DashboardView() {
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg bg-gray-100/50 dark:bg-gray-800/50">October 2025</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Monthly Income" value={`€${monthlyIncome.toLocaleString()}`} icon={<TrendingUp className="w-6 h-6 text-green-600" />} change="+7.1%" isPositive={true} />
-        <MetricCard title="Monthly Expenses" value={`€${monthlyExpenses.toLocaleString()}`} icon={<TrendingDown className="w-6 h-6 text-red-600" />} change="-18.7%" isPositive={true} />
-        <MetricCard title="Net Worth" value={`€${netWorth.toLocaleString()}`} icon={<Wallet className="w-6 h-6 text-blue-600" />} change="+2.3%" isPositive={true} />
-        <MetricCard title="Savings Rate" value={`${savingsRate}%`} icon={<Target className="w-6 h-6 text-purple-600" />} change="+1.2% pts" isPositive={true} />
+        <MetricCard title="Monthly Income" value={`€${monthlyIncome.toLocaleString()}`} icon={<TrendingUp className="w-6 h-6 text-green-600" />} change={`€${Math.abs(incomeChange).toLocaleString()} (${incomeChangePercent > 0 ? '+' : ''}${incomeChangePercent}%)`} isPositive={incomeChange >= 0} />
+        <MetricCard title="Monthly Expenses" value={`€${monthlyExpenses.toLocaleString()}`} icon={<TrendingDown className="w-6 h-6 text-red-600" />} change={`€${Math.abs(expenseChange).toLocaleString()} (${expenseChange > 0 ? '+' : ''}${expenseChangePercent}%)`} isPositive={expenseChange <= 0} />
+        <MetricCard title="Net Worth" value={`€${netWorth.toLocaleString()}`} icon={<Wallet className="w-6 h-6 text-blue-600" />} change={`€${Math.abs(netWorthChange).toLocaleString()} (+${netWorthChangePercent}%)`} isPositive={true} />
+        <MetricCard title="Savings Rate" value={`${savingsRate}%`} icon={<Target className="w-6 h-6 text-purple-600" />} change={`${savingsRateChange > 0 ? '+' : ''}${savingsRateChange}%`} isPositive={savingsRateChange >= 0} />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
