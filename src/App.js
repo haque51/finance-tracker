@@ -323,22 +323,641 @@ function MetricCard({ title, value, icon, change, isPositive }) {
 }
 
 function AccountsView() {
-  const { state } = useApp();
+  const { state, updateState } = useApp();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [deletingAccount, setDeletingAccount] = useState(null);
+
+  const totalNetWorth = state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
+  const totalAssets = state.accounts.filter(a => a.currentBalance > 0).reduce((sum, a) => sum + a.currentBalance, 0);
+  const totalLiabilities = Math.abs(state.accounts.filter(a => a.currentBalance < 0).reduce((sum, a) => sum + a.currentBalance, 0));
+  const activeAccountsCount = state.accounts.filter(a => a.isActive).length;
+
+  const groupedAccounts = {
+    banking: state.accounts.filter(a => ['checking', 'savings', 'cash'].includes(a.type)),
+    credit: state.accounts.filter(a => a.type === 'credit_card'),
+    loans: state.accounts.filter(a => a.type === 'loan'),
+    investment: state.accounts.filter(a => a.type === 'investment')
+  };
+
+  const handleAddAccount = (accountData) => {
+    const newAccount = {
+      id: 'acc' + Date.now(),
+      ...accountData,
+      currentBalance: accountData.openingBalance,
+      isActive: true
+    };
+    updateState({ accounts: [...state.accounts, newAccount] });
+    setShowAddModal(false);
+  };
+
+  const handleEditAccount = (accountData) => {
+    updateState({
+      accounts: state.accounts.map(a => 
+        a.id === editingAccount.id ? { ...a, ...accountData } : a
+      )
+    });
+    setEditingAccount(null);
+  };
+
+  const handleDeleteAccount = () => {
+    const accountTransactions = state.transactions.filter(
+      t => t.accountId === deletingAccount.id || 
+           t.fromAccountId === deletingAccount.id || 
+           t.toAccountId === deletingAccount.id
+    );
+    
+    if (accountTransactions.length > 0) {
+      alert(`Cannot delete account with ${accountTransactions.length} associated transactions. Please remove transactions first.`);
+      setDeletingAccount(null);
+      return;
+    }
+
+    updateState({
+      accounts: state.accounts.filter(a => a.id !== deletingAccount.id)
+    });
+    setDeletingAccount(null);
+  };
+
+  const getAccountTypeIcon = (type) => {
+    const icons = {
+      checking: '💳',
+      savings: '🏦',
+      credit_card: '💰',
+      loan: '📊',
+      investment: '📈',
+      cash: '💵'
+    };
+    return icons[type] || '💼';
+  };
+
+  const getAccountTypeColor = (type) => {
+    const colors = {
+      checking: 'from-blue-500 to-blue-600',
+      savings: 'from-green-500 to-green-600',
+      credit_card: 'from-purple-500 to-purple-600',
+      loan: 'from-red-500 to-red-600',
+      investment: 'from-indigo-500 to-indigo-600',
+      cash: 'from-gray-500 to-gray-600'
+    };
+    return colors[type] || 'from-gray-500 to-gray-600';
+  };
+
+  const formatAccountType = (type) => {
+    return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
-        Accounts
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {state.accounts.map(account => (
-          <div key={account.id} className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{account.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{account.type}</p>
-            <p className={`text-2xl font-bold ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              €{account.currentBalance.toLocaleString()}
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">
+          Accounts
+        </h2>
+        <button onClick={() => setShowAddModal(true)}
+          className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105">
+          <Plus className="w-4 h-4" />
+          <span>Add Account</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Net Worth</p>
+              <p className={`text-3xl font-bold ${totalNetWorth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                €{totalNetWorth.toLocaleString()}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10">
+              <Wallet className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Assets</p>
+              <p className="text-3xl font-bold text-green-600">
+                €{totalAssets.toLocaleString()}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Liabilities</p>
+              <p className="text-3xl font-bold text-red-600">
+                €{totalLiabilities.toLocaleString()}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-red-500/10 to-rose-500/10">
+              <TrendingDown className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 p-6 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Active Accounts</p>
+              <p className="text-3xl font-bold text-blue-600">
+                {activeAccountsCount}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+              <CreditCard className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {groupedAccounts.banking.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Wallet className="w-5 h-5" />
+            Banking Accounts
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {groupedAccounts.banking.map(account => (
+              <AccountCard 
+                key={account.id} 
+                account={account}
+                onEdit={() => setEditingAccount(account)}
+                onDelete={() => setDeletingAccount(account)}
+                getIcon={getAccountTypeIcon}
+                getColor={getAccountTypeColor}
+                formatType={formatAccountType}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {groupedAccounts.credit.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Credit Cards
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {groupedAccounts.credit.map(account => (
+              <AccountCard 
+                key={account.id} 
+                account={account}
+                onEdit={() => setEditingAccount(account)}
+                onDelete={() => setDeletingAccount(account)}
+                getIcon={getAccountTypeIcon}
+                getColor={getAccountTypeColor}
+                formatType={formatAccountType}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {groupedAccounts.loans.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Receipt className="w-5 h-5" />
+            Loans
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {groupedAccounts.loans.map(account => (
+              <AccountCard 
+                key={account.id} 
+                account={account}
+                onEdit={() => setEditingAccount(account)}
+                onDelete={() => setDeletingAccount(account)}
+                getIcon={getAccountTypeIcon}
+                getColor={getAccountTypeColor}
+                formatType={formatAccountType}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {groupedAccounts.investment.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            Investment Accounts
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {groupedAccounts.investment.map(account => (
+              <AccountCard 
+                key={account.id} 
+                account={account}
+                onEdit={() => setEditingAccount(account)}
+                onDelete={() => setDeletingAccount(account)}
+                getIcon={getAccountTypeIcon}
+                getColor={getAccountTypeColor}
+                formatType={formatAccountType}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showAddModal && (
+        <AccountFormModal
+          title="Add New Account"
+          onClose={() => setShowAddModal(false)}
+          onSave={handleAddAccount}
+        />
+      )}
+
+      {editingAccount && (
+        <AccountFormModal
+          title="Edit Account"
+          account={editingAccount}
+          onClose={() => setEditingAccount(null)}
+          onSave={handleEditAccount}
+        />
+      )}
+
+      {deletingAccount && (
+        <DeleteConfirmModal
+          account={deletingAccount}
+          onClose={() => setDeletingAccount(null)}
+          onConfirm={handleDeleteAccount}
+        />
+      )}
+    </div>
+  );
+}
+
+function AccountCard({ account, onEdit, onDelete, getIcon, getColor, formatType }) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  return (
+    <div className="backdrop-blur-xl bg-white/60 dark:bg-gray-800/60 rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+      <div className={`h-1.5 bg-gradient-to-r ${getColor(account.type)}`} />
+      
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl">{getIcon(account.type)}</span>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {account.name}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {formatType(account.type)}
+              </p>
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <button onClick={onEdit}
+              className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all">
+              <Edit2 className="w-4 h-4 text-blue-600" />
+            </button>
+            <button onClick={onDelete}
+              className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all">
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Balance</p>
+          <p className={`text-3xl font-bold ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {account.currency} {Math.abs(account.currentBalance).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between py-3 border-t border-gray-200/50 dark:border-gray-700/50">
+          <span className="text-sm text-gray-600 dark:text-gray-400">Institution</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
+            {account.institution}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between py-3 border-t border-gray-200/50 dark:border-gray-700/50">
+          <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+            account.isActive 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+          }`}>
+            {account.isActive ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+
+        {account.interestRate && (
+          <div className="flex items-center justify-between py-3 border-t border-gray-200/50 dark:border-gray-700/50">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Interest Rate</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {account.interestRate}%
+            </span>
+          </div>
+        )}
+
+        <button onClick={() => setShowDetails(!showDetails)}
+          className="w-full mt-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center space-x-1">
+          <span>{showDetails ? 'Hide' : 'Show'} Details</span>
+          <ChevronRight className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-90' : ''}`} />
+        </button>
+
+        {showDetails && (
+          <div className="mt-4 pt-4 border-t border-gray-200/50 dark:border-gray-700/50 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600 dark:text-gray-400">Opening Balance</span>
+              <span className="text-xs font-medium text-gray-900 dark:text-white">
+                {account.currency} {account.openingBalance.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600 dark:text-gray-400">Change</span>
+              <span className={`text-xs font-medium ${
+                (account.currentBalance - account.openingBalance) >= 0 
+                  ? 'text-green-600' 
+                  : 'text-red-600'
+              }`}>
+                {(account.currentBalance - account.openingBalance) >= 0 ? '+' : ''}
+                {account.currency} {(account.currentBalance - account.openingBalance).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-600 dark:text-gray-400">Account ID</span>
+              <span className="text-xs font-mono text-gray-900 dark:text-white">
+                {account.id}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AccountFormModal({ title, account, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    name: account?.name || '',
+    type: account?.type || 'checking',
+    currency: account?.currency || 'EUR',
+    institution: account?.institution || '',
+    openingBalance: account?.openingBalance || 0,
+    currentBalance: account?.currentBalance || account?.openingBalance || 0,
+    interestRate: account?.interestRate || '',
+    isActive: account?.isActive ?? true
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const accountTypes = [
+    { value: 'checking', label: 'Checking Account' },
+    { value: 'savings', label: 'Savings Account' },
+    { value: 'credit_card', label: 'Credit Card' },
+    { value: 'loan', label: 'Loan' },
+    { value: 'investment', label: 'Investment Account' },
+    { value: 'cash', label: 'Cash' }
+  ];
+
+  const currencies = [
+    { value: 'EUR', label: 'EUR (€)' },
+    { value: 'USD', label: 'USD ($)' },
+    { value: 'BDT', label: 'BDT (৳)' }
+  ];
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Account name is required';
+    if (!formData.institution.trim()) newErrors.institution = 'Institution is required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (validate()) {
+      onSave(formData);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 backdrop-blur-xl bg-white/90 dark:bg-gray-800/90 px-6 py-4 border-b border-gray-200/50 dark:border-gray-700/50 flex justify-between items-center">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h3>
+          <button onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Account Name *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all ${
+                errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="e.g., Main Checking"
+            />
+            {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Account Type *
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => handleChange('type', e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              {accountTypes.map(type => (
+                <option key={type.value} value={type.value}>{type.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Institution *
+            </label>
+            <input
+              type="text"
+              value={formData.institution}
+              onChange={(e) => handleChange('institution', e.target.value)}
+              className={`w-full px-4 py-2.5 border rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all ${
+                errors.institution ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="e.g., Chase Bank"
+            />
+            {errors.institution && <p className="text-xs text-red-600 mt-1">{errors.institution}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Currency *
+            </label>
+            <select
+              value={formData.currency}
+              onChange={(e) => handleChange('currency', e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500">
+              {currencies.map(curr => (
+                <option key={curr.value} value={curr.value}>{curr.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Opening Balance
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                {formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : '৳'}
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.openingBalance}
+                onChange={(e) => handleChange('openingBalance', parseFloat(e.target.value) || 0)}
+                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Initial balance when account was opened
             </p>
           </div>
-        ))}
+
+          {account && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Current Balance
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                  {formData.currency === 'EUR' ? '€' : formData.currency === 'USD' ? '$' : '৳'}
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.currentBalance}
+                  onChange={(e) => handleChange('currentBalance', parseFloat(e.target.value) || 0)}
+                  className="w-full pl-8 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Current account balance
+              </p>
+            </div>
+          )}
+
+          {(formData.type === 'loan' || formData.type === 'credit_card') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Interest Rate (%)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.interestRate}
+                onChange={(e) => handleChange('interestRate', parseFloat(e.target.value) || '')}
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={(e) => handleChange('isActive', e.target.checked)}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Account is active
+            </label>
+          </div>
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 font-semibold">
+              {account ? 'Update Account' : 'Create Account'}
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 px-5 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteConfirmModal({ account, onClose, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border-2 border-red-200 dark:border-red-800 w-full max-w-md">
+        <div className="p-6">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Delete Account
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Are you sure you want to delete the account <span className="font-semibold text-gray-900 dark:text-white">"{account.name}"</span>?
+              </p>
+              <div className="p-3 bg-red-50/50 dark:bg-red-900/10 rounded-lg mb-4">
+                <p className="text-xs text-red-800 dark:text-red-400 font-medium">
+                  ⚠️ This action cannot be undone. The account will be permanently deleted.
+                </p>
+              </div>
+              <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                <p><strong>Account Details:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Type: {account.type}</li>
+                  <li>Institution: {account.institution}</li>
+                  <li>Balance: {account.currency} {account.currentBalance.toLocaleString()}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 mt-6">
+            <button
+              onClick={onConfirm}
+              className="flex-1 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-semibold">
+              Yes, Delete Account
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 px-5 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold">
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
