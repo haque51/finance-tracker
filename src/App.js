@@ -92,7 +92,7 @@ export default function FinanceTrackerApp() {
               <div className="flex items-center space-x-3">
                 <Wallet className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 dark:from-white dark:via-blue-100 dark:to-indigo-100 bg-clip-text text-transparent">
-                  Lumina Finance v8
+                  Lumina Finance v9
                 </h1>
               </div>
               <div className="hidden md:flex items-center space-x-4">
@@ -727,7 +727,6 @@ function TransactionsView() {
     
     let updatedAccounts = [...state.accounts];
     
-    // Revert old transaction
     if (oldTxn.type === 'transfer') {
       updatedAccounts = updatedAccounts.map(acc => {
         if (acc.id === oldTxn.fromAccountId) return { ...acc, currentBalance: acc.currentBalance + oldTxn.amount };
@@ -741,7 +740,6 @@ function TransactionsView() {
       });
     }
     
-    // Apply new transaction
     if (txnData.type === 'transfer') {
       updatedAccounts = updatedAccounts.map(acc => {
         if (acc.id === txnData.fromAccountId) return { ...acc, currentBalance: acc.currentBalance - txnData.amount };
@@ -1581,6 +1579,22 @@ function SettingsView() {
     URL.revokeObjectURL(url);
   };
 
+  const toggleSecondaryCurrency = (currencyCode) => {
+    const currencyInUse = state.accounts.some(acc => acc.currency === currencyCode) || 
+                         state.transactions.some(txn => txn.currency === currencyCode);
+    
+    if (currencyInUse && state.user.secondaryCurrencies.includes(currencyCode)) {
+      alert(`Cannot disable ${currencyCode}. This currency is currently used by accounts or transactions.`);
+      return;
+    }
+    
+    const newSecondaries = state.user.secondaryCurrencies.includes(currencyCode)
+      ? state.user.secondaryCurrencies.filter(c => c !== currencyCode)
+      : [...state.user.secondaryCurrencies, currencyCode];
+    
+    updateState({ user: { ...state.user, secondaryCurrencies: newSecondaries } });
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 dark:from-white dark:to-blue-100 bg-clip-text text-transparent">Settings</h2>
@@ -1619,24 +1633,96 @@ function SettingsView() {
           )}
 
           {activeTab === 'currency' && (
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Currency Settings</h3>
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Base Currency</label>
-                <select value={state.user.baseCurrency} onChange={(e) => updateState({ user: { ...state.user, baseCurrency: e.target.value } })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="BDT">BDT (৳)</option>
-                </select>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Primary Currency</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Base Currency</label>
+                  <select value={state.user.baseCurrency} onChange={(e) => updateState({ user: { ...state.user, baseCurrency: e.target.value } })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                    <option value="EUR">EUR (€) - Euro</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="BDT">BDT (৳) - Bangladeshi Taka</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">This is your primary currency. It will be the default for new accounts and transactions.</p>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                {Object.entries(state.exchangeRates).map(([currency, rate]) => (
-                  <div key={currency} className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{currency}</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{rate}</p>
+
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Secondary Currencies</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Enable additional currencies you want to use. Only enabled currencies will appear in account and transaction forms.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { code: 'EUR', name: 'Euro', symbol: '€' },
+                    { code: 'USD', name: 'US Dollar', symbol: '$' },
+                    { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳' },
+                    { code: 'GBP', name: 'British Pound', symbol: '£' },
+                    { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
+                    { code: 'INR', name: 'Indian Rupee', symbol: '₹' }
+                  ].filter(curr => curr.code !== state.user.baseCurrency).map(curr => {
+                    const isEnabled = state.user.secondaryCurrencies.includes(curr.code);
+                    const isInUse = state.accounts.some(acc => acc.currency === curr.code) || 
+                                   state.transactions.some(txn => txn.currency === curr.code);
+                    
+                    return (
+                      <div 
+                        key={curr.code} 
+                        onClick={() => toggleSecondaryCurrency(curr.code)}
+                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                          isEnabled 
+                            ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/20' 
+                            : 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${
+                              isEnabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 dark:border-gray-600'
+                            }`}>
+                              {isEnabled && <CheckCircle className="w-4 h-4 text-white" />}
+                            </div>
+                            <span className="text-2xl font-bold text-gray-900 dark:text-white">{curr.symbol}</span>
+                          </div>
+                          {isInUse && (
+                            <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                              In Use
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{curr.code}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{curr.name}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Enabled Currencies</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Currently enabled: <span className="font-medium">{[state.user.baseCurrency, ...state.user.secondaryCurrencies].join(', ')}</span>
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        💡 You cannot disable currencies that are currently in use by accounts or transactions.
+                      </p>
+                    </div>
                   </div>
-                ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Exchange Rates</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {Object.entries(state.exchangeRates).map(([currency, rate]) => (
+                    <div key={currency} className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{currency}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{rate}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
