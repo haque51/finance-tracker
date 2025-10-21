@@ -181,7 +181,7 @@ export function AppProvider({ children }) {
    */
   const login = async (email, password) => {
     try {
-      const user = await authService.login(email, password);
+      const user = await authService.login({ email, password });
       setUser(user);
       setIsAuthenticated(true);
       return user;
