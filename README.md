@@ -81,10 +81,18 @@ A modern, full-featured personal finance management application built with React
 
 If you get **"Failed to fetch"** or **"Unable to connect to server"** errors:
 
-1. **Check Backend Status**: Ensure the backend server is running and accessible
-2. **Verify API URL**: Make sure `.env` has the correct `REACT_APP_API_URL`
-3. **Check CORS**: Backend must allow requests from your frontend origin
-4. **See Full Guide**: Read `docs/API_TROUBLESHOOTING.md` for detailed solutions
+1. **Use Demo Mode**: Try the app without backend → `http://localhost:3000/demo`
+2. **Check Backend Status**: Ensure the backend server is running and accessible
+3. **Verify API URL**: Make sure `.env` has the correct `REACT_APP_API_URL`
+4. **Check CORS**: Backend must allow requests from your frontend origin
+5. **See Full Guides**:
+   - `docs/DEMO_MODE.md` - Use app without backend
+   - `docs/API_TROUBLESHOOTING.md` - Fix connection issues
+
+**🎮 Quick Start with Demo Mode (No Backend Needed):**
+```
+http://localhost:3000/demo
+```
 
 **Quick fix for local development:**
 ```env
