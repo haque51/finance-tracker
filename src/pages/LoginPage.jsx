@@ -72,8 +72,23 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <div className="space-y-3">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+                {error.includes('Unable to connect to server') && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-2">
+                      💡 <strong>Server unavailable?</strong> You can still explore the app:
+                    </p>
+                    <Link
+                      to="/server-error"
+                      className="inline-block text-sm bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      View Options & Demo Mode →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

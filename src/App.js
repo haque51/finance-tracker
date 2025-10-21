@@ -13,6 +13,7 @@ import OfflineBanner from './components/OfflineBanner';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import DemoModePage from './pages/DemoModePage';
 import FinanceTrackerApp from './FinanceTrackerApp';
 
 function App() {
@@ -26,6 +27,10 @@ function App() {
               {/* Public Routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/server-error" element={<DemoModePage />} />
+
+              {/* Demo Mode - No authentication required */}
+              <Route path="/demo" element={<FinanceTrackerApp />} />
 
               {/* Protected Routes */}
               <Route
