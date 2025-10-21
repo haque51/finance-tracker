@@ -8,6 +8,11 @@ import authService from '../services/authService';
 import accountService from '../services/accountService';
 import transactionService from '../services/transactionService';
 import categoryService from '../services/categoryService';
+import budgetService from '../services/budgetService';
+import goalService from '../services/goalService';
+import recurringService from '../services/recurringService';
+import analyticsService from '../services/analyticsService';
+import currencyService from '../services/currencyService';
 import { getUser, getAccessToken } from '../utils/tokenManager';
 
 export const AppContext = createContext();
@@ -90,6 +95,81 @@ export function AppProvider({ children }) {
       return data;
     } catch (error) {
       console.error('Failed to load categories:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load budgets from API (Phase 4)
+   */
+  const loadBudgets = async (month, year) => {
+    try {
+      const data = await budgetService.getBudgets(month, year);
+      setBudgets(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load budgets:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load goals from API (Phase 4)
+   */
+  const loadGoals = async (status) => {
+    try {
+      const data = await goalService.getGoals(status);
+      setGoals(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load goals:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load recurring transactions from API (Phase 4)
+   */
+  const loadRecurringTransactions = async () => {
+    try {
+      const data = await recurringService.getRecurringTransactions();
+      setRecurringTransactions(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load recurring transactions:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load exchange rates from API (Phase 4)
+   */
+  const loadExchangeRates = async () => {
+    try {
+      const data = await currencyService.getExchangeRates();
+      // Convert array to object for easier lookup
+      const ratesObject = {};
+      data.forEach(rate => {
+        const key = `${rate.base_currency}_${rate.target_currency}`;
+        ratesObject[key] = rate.rate;
+      });
+      setExchangeRates(ratesObject);
+      return ratesObject;
+    } catch (error) {
+      console.error('Failed to load exchange rates:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load dashboard data (Phase 4)
+   */
+  const loadDashboard = async (month) => {
+    try {
+      const data = await analyticsService.getDashboard(month);
+      return data;
+    } catch (error) {
+      console.error('Failed to load dashboard:', error);
       throw error;
     }
   };
@@ -209,6 +289,13 @@ export function AppProvider({ children }) {
     loadTransactions,
     loadCategories,
     initializeAppData,
+
+    // Phase 4 loading functions
+    loadBudgets,
+    loadGoals,
+    loadRecurringTransactions,
+    loadExchangeRates,
+    loadDashboard,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
