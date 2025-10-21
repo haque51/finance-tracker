@@ -1,6 +1,9 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload } from 'lucide-react';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './context/ToastContext';
+import OfflineBanner from './components/OfflineBanner';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -96,8 +99,11 @@ export default function FinanceTrackerApp() {
   const contextValue = { state, updateState, currentView, setCurrentView };
 
   return (
-    <AppContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <ErrorBoundary>
+      <ToastProvider>
+        <AppContext.Provider value={contextValue}>
+          <OfflineBanner />
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -154,8 +160,10 @@ export default function FinanceTrackerApp() {
             </div>
           </main>
         </div>
-      </div>
-    </AppContext.Provider>
+          </div>
+        </AppContext.Provider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 
