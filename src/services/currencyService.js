@@ -8,4 +8,5 @@ class CurrencyService {
   // Placeholder - will implement in Phase 4
 }
 
-export default new CurrencyService();
+const currencyService = new CurrencyService();
+export default currencyService;

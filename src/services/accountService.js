@@ -152,4 +152,5 @@ class AccountService {
   }
 }
 
-export default new AccountService();
+const accountService = new AccountService();
+export default accountService;
