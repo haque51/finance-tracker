@@ -8,4 +8,5 @@ class GoalService {
   // Placeholder - will implement in Phase 4
 }
 
-export default new GoalService();
+const goalService = new GoalService();
+export default goalService;

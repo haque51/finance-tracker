@@ -8,4 +8,5 @@ class AnalyticsService {
   // Placeholder - will implement in Phase 4
 }
 
-export default new AnalyticsService();
+const analyticsService = new AnalyticsService();
+export default analyticsService;
