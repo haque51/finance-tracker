@@ -19,14 +19,24 @@ export const getErrorMessage = (error) => {
     return error.response.data.message;
   }
 
+  // Failed to fetch (CORS, network error, server down)
+  if (error?.message?.includes('Failed to fetch') || error?.message?.includes('fetch')) {
+    return 'Unable to connect to server. The API server may be down or unreachable. Please try again later or contact support.';
+  }
+
   // Network error
-  if (error?.message === 'Network Error') {
-    return 'Network error. Please check your connection.';
+  if (error?.message === 'Network Error' || error?.name === 'NetworkError') {
+    return 'Network error. Please check your internet connection and try again.';
   }
 
   // Timeout error
-  if (error?.code === 'ECONNABORTED') {
-    return 'Request timeout. Please try again.';
+  if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+    return 'Request timeout. The server is taking too long to respond. Please try again.';
+  }
+
+  // CORS error
+  if (error?.message?.includes('CORS')) {
+    return 'Server configuration error (CORS). Please contact support.';
   }
 
   // Generic error message

@@ -53,15 +53,46 @@ A modern, full-featured personal finance management application built with React
    npm install
    ```
 
-3. **Start development server:**
+3. **Configure API URL** (Important!):
+
+   Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and set your backend API URL:
+   ```env
+   REACT_APP_API_URL=https://your-backend-url.com
+   # Or for local development:
+   # REACT_APP_API_URL=http://localhost:5000
+   ```
+
+4. **Start development server:**
    ```bash
    npm start
    ```
 
-4. **Open in browser:**
+5. **Open in browser:**
    ```
    http://localhost:3000
    ```
+
+### ⚠️ Troubleshooting "Failed to Fetch" Errors
+
+If you get **"Failed to fetch"** or **"Unable to connect to server"** errors:
+
+1. **Check Backend Status**: Ensure the backend server is running and accessible
+2. **Verify API URL**: Make sure `.env` has the correct `REACT_APP_API_URL`
+3. **Check CORS**: Backend must allow requests from your frontend origin
+4. **See Full Guide**: Read `docs/API_TROUBLESHOOTING.md` for detailed solutions
+
+**Quick fix for local development:**
+```env
+# In .env file
+REACT_APP_API_URL=http://localhost:5000
+```
+
+Then restart the dev server: `npm start`
 
 ## Project Structure
 

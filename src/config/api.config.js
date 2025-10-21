@@ -3,7 +3,19 @@
  * Centralized API endpoints and configuration
  */
 
-export const API_BASE_URL = 'https://lumina-finance-api-dev.onrender.com';
+// Get API URL from environment variable or use default
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://lumina-finance-api-dev.onrender.com';
+
+// Debug mode
+export const DEBUG_MODE = process.env.REACT_APP_DEBUG === 'true';
+
+// Log API configuration in development
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔧 API Configuration:');
+  console.log('  - API_BASE_URL:', API_BASE_URL);
+  console.log('  - Environment:', process.env.REACT_APP_ENV || 'not set');
+  console.log('  - Debug Mode:', DEBUG_MODE);
+}
 
 export const API_ENDPOINTS = {
   // Authentication
