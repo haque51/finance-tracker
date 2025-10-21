@@ -19,47 +19,47 @@ if (process.env.NODE_ENV === 'development') {
 
 export const API_ENDPOINTS = {
   // Authentication
-  AUTH_REGISTER: '/auth/register',
-  AUTH_LOGIN: '/auth/login',
-  AUTH_LOGOUT: '/auth/logout',
-  AUTH_REFRESH: '/auth/refresh',
-  AUTH_ME: '/auth/me',
+  AUTH_REGISTER: '/api/auth/register',
+  AUTH_LOGIN: '/api/auth/login',
+  AUTH_LOGOUT: '/api/auth/logout',
+  AUTH_REFRESH: '/api/auth/refresh',
+  AUTH_ME: '/api/auth/me',
 
   // Accounts
-  ACCOUNTS: '/accounts',
-  ACCOUNT_SUMMARY: '/accounts/summary',
+  ACCOUNTS: '/api/accounts',
+  ACCOUNT_SUMMARY: '/api/accounts/summary',
 
   // Transactions
-  TRANSACTIONS: '/transactions',
-  TRANSACTIONS_BULK: '/transactions/bulk',
-  TRANSACTIONS_RECONCILE: '/transactions/:id/reconcile',
+  TRANSACTIONS: '/api/transactions',
+  TRANSACTIONS_BULK: '/api/transactions/bulk',
+  TRANSACTIONS_RECONCILE: '/api/transactions/:id/reconcile',
 
   // Categories
-  CATEGORIES: '/categories',
-  CATEGORIES_TREE: '/categories/tree',
+  CATEGORIES: '/api/categories',
+  CATEGORIES_TREE: '/api/categories/tree',
 
   // Budgets
-  BUDGETS: '/budgets',
-  BUDGETS_SUMMARY: '/budgets/summary',
+  BUDGETS: '/api/budgets',
+  BUDGETS_SUMMARY: '/api/budgets/summary',
 
   // Goals
-  GOALS: '/goals',
+  GOALS: '/api/goals',
 
   // Recurring Transactions
-  RECURRING: '/recurring',
-  RECURRING_PROCESS: '/recurring/process',
+  RECURRING: '/api/recurring',
+  RECURRING_PROCESS: '/api/recurring/process',
 
   // Analytics
-  ANALYTICS_OVERVIEW: '/analytics/overview',
-  ANALYTICS_DASHBOARD: '/analytics/dashboard',
-  ANALYTICS_TRENDS: '/analytics/trends',
-  ANALYTICS_CATEGORY_BREAKDOWN: '/analytics/category-breakdown',
-  ANALYTICS_SPENDING: '/analytics/spending',
-  ANALYTICS_NET_WORTH: '/analytics/net-worth',
+  ANALYTICS_OVERVIEW: '/api/analytics/overview',
+  ANALYTICS_DASHBOARD: '/api/analytics/dashboard',
+  ANALYTICS_TRENDS: '/api/analytics/trends',
+  ANALYTICS_CATEGORY_BREAKDOWN: '/api/analytics/category-breakdown',
+  ANALYTICS_SPENDING: '/api/analytics/spending',
+  ANALYTICS_NET_WORTH: '/api/analytics/net-worth',
 
   // Currency
-  CURRENCY_RATES: '/currency/rates',
-  CURRENCY_CONVERT: '/currency/convert',
+  CURRENCY_RATES: '/api/currency/rates',
+  CURRENCY_CONVERT: '/api/currency/convert',
 };
 
 export const API_CONFIG = {
