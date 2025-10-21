@@ -5,6 +5,9 @@
 
 import React, { createContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
+import accountService from '../services/accountService';
+import transactionService from '../services/transactionService';
+import categoryService from '../services/categoryService';
 import { getUser, getAccessToken } from '../utils/tokenManager';
 
 export const AppContext = createContext();
@@ -14,7 +17,7 @@ export function AppProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // State for app data (will be populated from API in Phase 3+)
+  // State for app data
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -48,6 +51,48 @@ export function AppProvider({ children }) {
 
     initAuth();
   }, []);
+
+  /**
+   * Load accounts from API
+   */
+  const loadAccounts = async (filters = {}) => {
+    try {
+      const data = await accountService.getAccounts(filters);
+      setAccounts(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load accounts:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load transactions from API
+   */
+  const loadTransactions = async (filters = {}, page = 1, limit = 50) => {
+    try {
+      const data = await transactionService.getTransactions(filters, page, limit);
+      setTransactions(data.transactions);
+      return data;
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Load categories from API
+   */
+  const loadCategories = async (filters = {}) => {
+    try {
+      const data = await categoryService.getCategoriesTree();
+      setCategories(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      throw error;
+    }
+  };
 
   /**
    * Login user
@@ -116,6 +161,23 @@ export function AppProvider({ children }) {
     // Backend profile update will be added in Settings integration
   };
 
+  /**
+   * Initialize app data (load accounts, categories after login)
+   */
+  const initializeAppData = async () => {
+    try {
+      setIsLoading(true);
+      await Promise.all([
+        loadAccounts(),
+        loadCategories(),
+      ]);
+    } catch (error) {
+      console.error('Failed to initialize app data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     // Auth state
     user,
@@ -126,7 +188,7 @@ export function AppProvider({ children }) {
     logout,
     updateUser,
 
-    // App data state (for Phase 3+)
+    // App data state
     accounts,
     setAccounts,
     transactions,
@@ -141,6 +203,12 @@ export function AppProvider({ children }) {
     setRecurringTransactions,
     exchangeRates,
     setExchangeRates,
+
+    // Data loading functions (Phase 3)
+    loadAccounts,
+    loadTransactions,
+    loadCategories,
+    initializeAppData,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
