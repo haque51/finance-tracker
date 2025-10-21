@@ -1,48 +1,97 @@
 /**
- * Extract error message from API error response
- * @param {Error} error - Error object from axios
+ * Error Handler Utility
+ * Centralized error handling and user-friendly error messages
+ */
+
+/**
+ * Extract user-friendly error message from API error response
+ * @param {Error} error - Error object from API
  * @returns {string} User-friendly error message
  */
 export const getErrorMessage = (error) => {
   // Network error
   if (!error.response) {
-    return 'Network error. Please check your connection.';
+    return 'Network error. Please check your internet connection.';
   }
 
-  // API error response
-  const { data, status } = error.response;
+  // HTTP error with response
+  const { status, data } = error.response;
 
-  // Backend sends: { status: "error", error: "message" }
+  // Extract message from response
+  if (data?.message) {
+    return data.message;
+  }
+
   if (data?.error) {
     return data.error;
   }
 
-  // Fallback based on status code
+  // Default messages based on status code
   switch (status) {
     case 400:
       return 'Invalid request. Please check your input.';
     case 401:
-      return 'Unauthorized. Please login again.';
+      return 'Authentication failed. Please login again.';
     case 403:
-      return 'Access denied.';
+      return 'You do not have permission to perform this action.';
     case 404:
       return 'Resource not found.';
     case 409:
-      return 'Conflict. Resource already exists.';
+      return 'This resource already exists.';
+    case 422:
+      return 'Validation error. Please check your input.';
+    case 429:
+      return 'Too many requests. Please try again later.';
     case 500:
       return 'Server error. Please try again later.';
+    case 503:
+      return 'Service temporarily unavailable. Please try again later.';
     default:
-      return `Error: ${status}`;
+      return 'An unexpected error occurred. Please try again.';
   }
 };
 
 /**
- * Handle API error and show user-friendly message
- * @param {Error} error - Error object from axios
- * @param {Function} showError - Function to display error (e.g., alert, toast)
+ * Log error to console (can be extended to send to logging service)
+ * @param {Error} error - Error object
+ * @param {string} context - Context where error occurred
  */
-export const handleApiError = (error, showError = alert) => {
-  const message = getErrorMessage(error);
-  showError(message);
-  console.error('API Error:', error);
+export const logError = (error, context = '') => {
+  console.error(`[${context}]`, error);
+
+  // In production, you might want to send errors to a logging service
+  // Example: Sentry, LogRocket, etc.
+  if (process.env.NODE_ENV === 'production') {
+    // sendToLoggingService(error, context);
+  }
+};
+
+/**
+ * Handle validation errors from backend
+ * @param {Object} error - Error object from API
+ * @returns {Object} Object with field-specific error messages
+ */
+export const getValidationErrors = (error) => {
+  if (error.response?.data?.errors) {
+    return error.response.data.errors;
+  }
+  return {};
+};
+
+/**
+ * Check if error is a network error
+ * @param {Error} error - Error object
+ * @returns {boolean} True if network error
+ */
+export const isNetworkError = (error) => {
+  return !error.response && error.message === 'Network Error';
+};
+
+/**
+ * Check if error is an authentication error
+ * @param {Error} error - Error object
+ * @returns {boolean} True if authentication error
+ */
+export const isAuthError = (error) => {
+  return error.response?.status === 401;
 };
