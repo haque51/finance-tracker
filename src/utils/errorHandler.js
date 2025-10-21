@@ -1,97 +1,95 @@
 /**
  * Error Handler Utility
- * Centralized error handling and user-friendly error messages
+ * Provides consistent error handling across the application
  */
 
 /**
- * Extract user-friendly error message from API error response
- * @param {Error} error - Error object from API
- * @returns {string} User-friendly error message
+ * Extract user-friendly error message from error object
+ * @param {Error|Object} error - Error object
+ * @returns {string} Error message
  */
 export const getErrorMessage = (error) => {
+  // API error response
+  if (error?.response?.data?.error) {
+    return error.response.data.error;
+  }
+
+  // API error message
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+
   // Network error
-  if (!error.response) {
-    return 'Network error. Please check your internet connection.';
+  if (error?.message === 'Network Error') {
+    return 'Network error. Please check your connection.';
   }
 
-  // HTTP error with response
-  const { status, data } = error.response;
-
-  // Extract message from response
-  if (data?.message) {
-    return data.message;
+  // Timeout error
+  if (error?.code === 'ECONNABORTED') {
+    return 'Request timeout. Please try again.';
   }
 
-  if (data?.error) {
-    return data.error;
+  // Generic error message
+  if (error?.message) {
+    return error.message;
   }
 
-  // Default messages based on status code
-  switch (status) {
-    case 400:
-      return 'Invalid request. Please check your input.';
-    case 401:
-      return 'Authentication failed. Please login again.';
-    case 403:
-      return 'You do not have permission to perform this action.';
-    case 404:
-      return 'Resource not found.';
-    case 409:
-      return 'This resource already exists.';
-    case 422:
-      return 'Validation error. Please check your input.';
-    case 429:
-      return 'Too many requests. Please try again later.';
-    case 500:
-      return 'Server error. Please try again later.';
-    case 503:
-      return 'Service temporarily unavailable. Please try again later.';
-    default:
-      return 'An unexpected error occurred. Please try again.';
-  }
+  return 'An unexpected error occurred. Please try again.';
 };
 
 /**
- * Log error to console (can be extended to send to logging service)
+ * Handle API errors and throw appropriate error
+ * @param {Error} error - Error object
+ * @throws {Error} Formatted error
+ */
+export const handleApiError = (error) => {
+  const message = getErrorMessage(error);
+  const formattedError = new Error(message);
+  formattedError.originalError = error;
+
+  // Add status code if available
+  if (error?.response?.status) {
+    formattedError.statusCode = error.response.status;
+  }
+
+  throw formattedError;
+};
+
+/**
+ * Check if error is authentication error (401)
+ * @param {Error} error - Error object
+ * @returns {boolean} True if auth error
+ */
+export const isAuthError = (error) => {
+  return error?.response?.status === 401 || error?.statusCode === 401;
+};
+
+/**
+ * Check if error is validation error (400)
+ * @param {Error} error - Error object
+ * @returns {boolean} True if validation error
+ */
+export const isValidationError = (error) => {
+  return error?.response?.status === 400 || error?.statusCode === 400;
+};
+
+/**
+ * Check if error is not found error (404)
+ * @param {Error} error - Error object
+ * @returns {boolean} True if not found error
+ */
+export const isNotFoundError = (error) => {
+  return error?.response?.status === 404 || error?.statusCode === 404;
+};
+
+/**
+ * Log error to console (can be extended to send to error tracking service)
  * @param {Error} error - Error object
  * @param {string} context - Context where error occurred
  */
 export const logError = (error, context = '') => {
-  console.error(`[${context}]`, error);
+  console.error(`[Error${context ? ` - ${context}` : ''}]:`, error);
 
-  // In production, you might want to send errors to a logging service
-  // Example: Sentry, LogRocket, etc.
-  if (process.env.NODE_ENV === 'production') {
-    // sendToLoggingService(error, context);
-  }
-};
-
-/**
- * Handle validation errors from backend
- * @param {Object} error - Error object from API
- * @returns {Object} Object with field-specific error messages
- */
-export const getValidationErrors = (error) => {
-  if (error.response?.data?.errors) {
-    return error.response.data.errors;
-  }
-  return {};
-};
-
-/**
- * Check if error is a network error
- * @param {Error} error - Error object
- * @returns {boolean} True if network error
- */
-export const isNetworkError = (error) => {
-  return !error.response && error.message === 'Network Error';
-};
-
-/**
- * Check if error is an authentication error
- * @param {Error} error - Error object
- * @returns {boolean} True if authentication error
- */
-export const isAuthError = (error) => {
-  return error.response?.status === 401;
+  // In production, you might want to send to error tracking service
+  // e.g., Sentry, LogRocket, etc.
 };

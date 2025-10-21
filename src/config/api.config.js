@@ -1,51 +1,51 @@
 /**
  * API Configuration
- * Centralized API endpoint definitions
+ * Centralized API endpoints and configuration
  */
 
-// Base API URL
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://lumina-finance-api-dev.onrender.com';
+export const API_BASE_URL = 'https://lumina-finance-api-dev.onrender.com';
 
-// API Endpoints
 export const API_ENDPOINTS = {
   // Authentication
-  REGISTER: '/api/auth/register',
-  LOGIN: '/api/auth/login',
-  LOGOUT: '/api/auth/logout',
-  REFRESH: '/api/auth/refresh',
-  CHANGE_PASSWORD: '/api/auth/change-password',
-  ME: '/api/auth/me',
+  AUTH_REGISTER: '/auth/register',
+  AUTH_LOGIN: '/auth/login',
+  AUTH_LOGOUT: '/auth/logout',
+  AUTH_REFRESH: '/auth/refresh',
+  AUTH_ME: '/auth/me',
 
   // Accounts
-  ACCOUNTS: '/api/accounts',
-  ACCOUNT: (id) => `/api/accounts/${id}`,
+  ACCOUNTS: '/accounts',
+  ACCOUNT_SUMMARY: '/accounts/summary',
 
   // Transactions
-  TRANSACTIONS: '/api/transactions',
-  TRANSACTION: (id) => `/api/transactions/${id}`,
+  TRANSACTIONS: '/transactions',
+  TRANSACTIONS_BULK: '/transactions/bulk',
+  TRANSACTIONS_RECONCILE: '/transactions/:id/reconcile',
 
   // Categories
-  CATEGORIES: '/api/categories',
-  CATEGORY: (id) => `/api/categories/${id}`,
+  CATEGORIES: '/categories',
+  CATEGORIES_TREE: '/categories/tree',
 
   // Budgets
-  BUDGETS: '/api/budgets',
-  BUDGET: (id) => `/api/budgets/${id}`,
+  BUDGETS: '/budgets',
+  BUDGETS_SUMMARY: '/budgets/summary',
 
   // Goals
-  GOALS: '/api/goals',
-  GOAL: (id) => `/api/goals/${id}`,
+  GOALS: '/goals',
 
   // Recurring Transactions
-  RECURRING_TRANSACTIONS: '/api/recurring-transactions',
-  RECURRING_TRANSACTION: (id) => `/api/recurring-transactions/${id}`,
+  RECURRING: '/recurring',
+  RECURRING_PROCESS: '/recurring/process',
 
-  // Exchange Rates
-  EXCHANGE_RATES: '/api/exchange-rates',
+  // Analytics
+  ANALYTICS_OVERVIEW: '/analytics/overview',
+  ANALYTICS_TRENDS: '/analytics/trends',
+  ANALYTICS_CATEGORY_BREAKDOWN: '/analytics/category-breakdown',
 };
 
-// Request timeout (in milliseconds)
-export const API_TIMEOUT = 30000;
-
-// Token expiry buffer (refresh 5 minutes before expiry)
-export const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000;
+export const API_CONFIG = {
+  timeout: 30000, // 30 seconds
+  headers: {
+    'Content-Type': 'application/json',
+  },
+};

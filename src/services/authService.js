@@ -1,38 +1,32 @@
-/**
- * Authentication Service
- * Handles user registration, login, logout, profile management
- */
-
 import api from './api';
 import { API_ENDPOINTS } from '../config/api.config';
-import { setTokens, clearTokens, setUser } from '../utils/tokenManager';
+import tokenManager from './tokenManager';
 
+/**
+ * Authentication service
+ * Handles user authentication operations
+ */
 class AuthService {
   /**
-   * Register a new user
+   * Register new user
    * @param {Object} userData - User registration data
-   * @param {string} userData.name - Full name
-   * @param {string} userData.email - Email address
-   * @param {string} userData.password - Password (min 8 chars, uppercase, lowercase, number)
-   * @param {string} userData.baseCurrency - Base currency code (EUR, USD, BDT)
-   * @returns {Promise<Object>} User object
+   * @param {string} userData.name - User's full name
+   * @param {string} userData.email - User's email
+   * @param {string} userData.password - User's password
+   * @returns {Promise<Object>} User data and tokens
    */
   async register(userData) {
     try {
-      const response = await api.post(API_ENDPOINTS.REGISTER, {
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        base_currency: userData.baseCurrency || userData.base_currency || 'EUR',
-      });
+      const response = await api.post(API_ENDPOINTS.AUTH_REGISTER, userData);
 
-      const { access_token, refresh_token, user } = response.data.data;
+      // Backend returns: { status: "success", data: { user: {...}, token: "...", refreshToken: "..." } }
+      const { user, token, refreshToken } = response.data.data;
 
-      // Store tokens and user
-      setTokens(access_token, refresh_token);
-      setUser(this._mapUserFromAPI(user));
+      // Store tokens
+      tokenManager.setTokens(token, refreshToken);
+      tokenManager.setUser(user);
 
-      return this._mapUserFromAPI(user);
+      return { user, token, refreshToken };
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -41,24 +35,23 @@ class AuthService {
 
   /**
    * Login user
-   * @param {string} email - User email
-   * @param {string} password - User password
-   * @returns {Promise<Object>} User object
+   * @param {Object} credentials - Login credentials
+   * @param {string} credentials.email - User's email
+   * @param {string} credentials.password - User's password
+   * @returns {Promise<Object>} User data and tokens
    */
-  async login(email, password) {
+  async login(credentials) {
     try {
-      const response = await api.post(API_ENDPOINTS.LOGIN, {
-        email,
-        password,
-      });
+      const response = await api.post(API_ENDPOINTS.AUTH_LOGIN, credentials);
 
-      const { access_token, refresh_token, user } = response.data.data;
+      // Backend returns: { status: "success", data: { user: {...}, token: "...", refreshToken: "..." } }
+      const { user, token, refreshToken } = response.data.data;
 
-      // Store tokens and user
-      setTokens(access_token, refresh_token);
-      setUser(this._mapUserFromAPI(user));
+      // Store tokens
+      tokenManager.setTokens(token, refreshToken);
+      tokenManager.setUser(user);
 
-      return this._mapUserFromAPI(user);
+      return { user, token, refreshToken };
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -67,29 +60,59 @@ class AuthService {
 
   /**
    * Logout user
-   * Clears tokens and calls backend logout endpoint
+   * @returns {Promise<void>}
    */
   async logout() {
     try {
-      // Call backend logout (optional, since we're clearing tokens anyway)
-      await api.post(API_ENDPOINTS.LOGOUT);
+      await api.post(API_ENDPOINTS.AUTH_LOGOUT);
     } catch (error) {
-      // Don't throw on logout errors, always clear tokens
       console.error('Logout error:', error);
     } finally {
-      clearTokens();
+      // Clear tokens regardless of API call success
+      tokenManager.clearTokens();
     }
   }
 
   /**
-   * Get current user profile
-   * @returns {Promise<Object>} User object
+   * Refresh access token
+   * @returns {Promise<string>} New access token
+   */
+  async refreshToken() {
+    try {
+      const refreshToken = tokenManager.getRefreshToken();
+
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await api.post(API_ENDPOINTS.AUTH_REFRESH, {
+        refreshToken,
+      });
+
+      const { token } = response.data.data;
+      tokenManager.setToken(token);
+
+      return token;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      // If refresh fails, clear tokens and force re-login
+      tokenManager.clearTokens();
+      throw error;
+    }
+  }
+
+  /**
+   * Get current user data from API
+   * @returns {Promise<Object>} User data
    */
   async getCurrentUser() {
     try {
-      const response = await api.get(API_ENDPOINTS.ME);
-      const user = this._mapUserFromAPI(response.data.data);
-      setUser(user);
+      const response = await api.get(API_ENDPOINTS.AUTH_ME);
+      const user = response.data.data;
+
+      // Update stored user data
+      tokenManager.setUser(user);
+
       return user;
     } catch (error) {
       console.error('Get current user error:', error);
@@ -98,65 +121,20 @@ class AuthService {
   }
 
   /**
-   * Change user password
-   * @param {string} currentPassword - Current password
-   * @param {string} newPassword - New password
-   * @returns {Promise<Object>} Response data
+   * Check if user is authenticated
+   * @returns {boolean} True if authenticated
    */
-  async changePassword(currentPassword, newPassword) {
-    try {
-      const response = await api.post(API_ENDPOINTS.CHANGE_PASSWORD, {
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('Change password error:', error);
-      throw error;
-    }
+  isAuthenticated() {
+    return tokenManager.isAuthenticated();
   }
 
   /**
-   * Map user object from API format to frontend format
-   * @private
-   * @param {Object} apiUser - User object from API (snake_case)
-   * @returns {Object} User object in frontend format (camelCase)
+   * Get stored user data
+   * @returns {Object|null} User data
    */
-  _mapUserFromAPI(apiUser) {
-    return {
-      id: apiUser.id,
-      name: apiUser.name,
-      email: apiUser.email,
-      theme: 'light', // Default, not stored in backend
-      baseCurrency: apiUser.base_currency,
-      secondaryCurrencies: apiUser.secondary_currencies?.enabled_currencies || [],
-      monthlyIncomeGoal: apiUser.monthly_income_goal || 0,
-      monthlySavingsGoal: apiUser.monthly_savings_goal || 0,
-      createdAt: apiUser.created_at,
-      updatedAt: apiUser.updated_at,
-    };
-  }
-
-  /**
-   * Map user object from frontend format to API format
-   * @private
-   * @param {Object} user - User object in frontend format (camelCase)
-   * @returns {Object} User object for API (snake_case)
-   */
-  _mapUserToAPI(user) {
-    return {
-      name: user.name,
-      email: user.email,
-      base_currency: user.baseCurrency,
-      secondary_currencies: {
-        enabled_currencies: user.secondaryCurrencies || [],
-      },
-      monthly_income_goal: user.monthlyIncomeGoal,
-      monthly_savings_goal: user.monthlySavingsGoal,
-    };
+  getUser() {
+    return tokenManager.getUser();
   }
 }
 
-const authService = new AuthService();
-export default authService;
+export default new AuthService();

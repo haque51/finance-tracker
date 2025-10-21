@@ -1,145 +1,214 @@
 /**
- * Axios API Instance
- * Centralized API client with interceptors for authentication and error handling
+ * API Service
+ * Centralized HTTP client for API requests
  */
 
-import axios from 'axios';
-import { API_BASE_URL, API_TIMEOUT, API_ENDPOINTS } from '../config/api.config';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../utils/tokenManager';
+import { API_BASE_URL, API_CONFIG } from '../config/api.config';
+import tokenManager from './tokenManager';
+import { handleApiError } from '../utils/errorHandler';
 
-// Create axios instance
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+class ApiService {
+  constructor() {
+    this.baseURL = API_BASE_URL;
+    this.timeout = API_CONFIG.timeout;
+  }
 
-// Flag to prevent multiple refresh attempts
-let isRefreshing = false;
-let failedQueue = [];
-
-/**
- * Process queued requests after token refresh
- * @param {Error|null} error - Error if refresh failed
- * @param {string|null} token - New access token if refresh succeeded
- */
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
-
-/**
- * Request Interceptor
- * Adds authentication token to requests
- */
-api.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
+  /**
+   * Get default headers with authorization
+   * @private
+   * @returns {Object} Headers object
+   */
+  _getHeaders() {
+    const headers = { ...API_CONFIG.headers };
+    const token = tokenManager.getToken();
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+    return headers;
   }
-);
 
-/**
- * Response Interceptor
- * Handles token refresh on 401 errors
- */
-api.interceptors.response.use(
-  (response) => {
-    // Return successful response
-    return response;
-  },
-  async (error) => {
-    const originalRequest = error.config;
-
-    // If error is not 401 or request already retried, reject
-    if (error.response?.status !== 401 || originalRequest._retry) {
-      return Promise.reject(error);
-    }
-
-    // If this is the refresh endpoint itself failing, clear tokens and reject
-    if (originalRequest.url === API_ENDPOINTS.REFRESH) {
-      clearTokens();
-      // Redirect to login (will be handled by the app)
-      window.location.href = '/login';
-      return Promise.reject(error);
-    }
-
-    // If already refreshing, queue this request
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      })
-        .then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
-        })
-        .catch((err) => {
-          return Promise.reject(err);
-        });
-    }
-
-    // Mark as retrying to prevent infinite loops
-    originalRequest._retry = true;
-    isRefreshing = true;
-
-    const refreshToken = getRefreshToken();
-
-    if (!refreshToken) {
-      clearTokens();
-      window.location.href = '/login';
-      return Promise.reject(error);
-    }
+  /**
+   * Make HTTP request with timeout
+   * @private
+   * @param {string} url - Request URL
+   * @param {Object} options - Fetch options
+   * @returns {Promise<Response>} Fetch response
+   */
+  async _fetchWithTimeout(url, options) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      // Attempt to refresh the token
-      const response = await axios.post(
-        `${API_BASE_URL}${API_ENDPOINTS.REFRESH}`,
-        { refresh_token: refreshToken },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const { access_token, refresh_token } = response.data.data;
-
-      // Store new tokens
-      setTokens(access_token, refresh_token);
-
-      // Process queued requests
-      processQueue(null, access_token);
-
-      // Retry original request with new token
-      originalRequest.headers.Authorization = `Bearer ${access_token}`;
-      return api(originalRequest);
-    } catch (refreshError) {
-      // Refresh failed, clear tokens and redirect to login
-      processQueue(refreshError, null);
-      clearTokens();
-      window.location.href = '/login';
-      return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        const timeoutError = new Error('Request timeout');
+        timeoutError.code = 'ECONNABORTED';
+        throw timeoutError;
+      }
+      throw error;
     }
   }
-);
 
-export default api;
+  /**
+   * Process API response
+   * @private
+   * @param {Response} response - Fetch response
+   * @returns {Promise<Object>} Parsed response data
+   */
+  async _handleResponse(response) {
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+
+    let data;
+    if (isJson) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    if (!response.ok) {
+      // Handle authentication errors
+      if (response.status === 401) {
+        tokenManager.clearTokens();
+        // Optionally redirect to login
+        window.location.href = '/login';
+      }
+
+      const error = new Error(data.error || data.message || 'Request failed');
+      error.response = {
+        status: response.status,
+        data: data,
+      };
+      throw error;
+    }
+
+    return { data, status: response.status };
+  }
+
+  /**
+   * Make GET request
+   * @param {string} endpoint - API endpoint
+   * @param {Object} config - Request configuration
+   * @returns {Promise<Object>} Response data
+   */
+  async get(endpoint, config = {}) {
+    try {
+      const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+      const headers = { ...this._getHeaders(), ...config.headers };
+
+      const response = await this._fetchWithTimeout(url, {
+        method: 'GET',
+        headers,
+      });
+
+      return await this._handleResponse(response);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+
+  /**
+   * Make POST request
+   * @param {string} endpoint - API endpoint
+   * @param {Object} data - Request body
+   * @param {Object} config - Request configuration
+   * @returns {Promise<Object>} Response data
+   */
+  async post(endpoint, data = {}, config = {}) {
+    try {
+      const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+      const headers = { ...this._getHeaders(), ...config.headers };
+
+      const response = await this._fetchWithTimeout(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      return await this._handleResponse(response);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+
+  /**
+   * Make PUT request
+   * @param {string} endpoint - API endpoint
+   * @param {Object} data - Request body
+   * @param {Object} config - Request configuration
+   * @returns {Promise<Object>} Response data
+   */
+  async put(endpoint, data = {}, config = {}) {
+    try {
+      const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+      const headers = { ...this._getHeaders(), ...config.headers };
+
+      const response = await this._fetchWithTimeout(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      return await this._handleResponse(response);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+
+  /**
+   * Make PATCH request
+   * @param {string} endpoint - API endpoint
+   * @param {Object} data - Request body
+   * @param {Object} config - Request configuration
+   * @returns {Promise<Object>} Response data
+   */
+  async patch(endpoint, data = {}, config = {}) {
+    try {
+      const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+      const headers = { ...this._getHeaders(), ...config.headers };
+
+      const response = await this._fetchWithTimeout(url, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(data),
+      });
+
+      return await this._handleResponse(response);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+
+  /**
+   * Make DELETE request
+   * @param {string} endpoint - API endpoint
+   * @param {Object} config - Request configuration
+   * @returns {Promise<Object>} Response data
+   */
+  async delete(endpoint, config = {}) {
+    try {
+      const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
+      const headers = { ...this._getHeaders(), ...config.headers };
+
+      const response = await this._fetchWithTimeout(url, {
+        method: 'DELETE',
+        headers,
+      });
+
+      return await this._handleResponse(response);
+    } catch (error) {
+      handleApiError(error);
+    }
+  }
+}
+
+export default new ApiService();
