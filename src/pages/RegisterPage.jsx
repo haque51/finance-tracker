@@ -86,7 +86,8 @@ export default function RegisterPage() {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        baseCurrency: formData.baseCurrency,
+        base_currency: formData.baseCurrency,
+        enabled_currencies: [formData.baseCurrency], // Backend requires array
       });
 
       // Show success message
