@@ -6,11 +6,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorHandler';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useApp();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -32,27 +34,37 @@ export default function RegisterPage() {
 
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      const error = 'Passwords do not match';
+      setError(error);
+      toast.error(error);
       return false;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      const error = 'Password must be at least 8 characters';
+      setError(error);
+      toast.error(error);
       return false;
     }
 
     if (!/[A-Z]/.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter');
+      const error = 'Password must contain at least one uppercase letter';
+      setError(error);
+      toast.error(error);
       return false;
     }
 
     if (!/[a-z]/.test(formData.password)) {
-      setError('Password must contain at least one lowercase letter');
+      const error = 'Password must contain at least one lowercase letter';
+      setError(error);
+      toast.error(error);
       return false;
     }
 
     if (!/[0-9]/.test(formData.password)) {
-      setError('Password must contain at least one number');
+      const error = 'Password must contain at least one number';
+      setError(error);
+      toast.error(error);
       return false;
     }
 
@@ -77,9 +89,14 @@ export default function RegisterPage() {
         baseCurrency: formData.baseCurrency,
       });
 
+      // Show success message
+      toast.success('Registration successful! Redirecting...');
+
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err));
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

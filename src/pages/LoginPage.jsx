@@ -6,12 +6,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../utils/errorHandler';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useApp();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -37,11 +39,16 @@ export default function LoginPage() {
     try {
       await login(formData.email, formData.password);
 
+      // Show success message
+      toast.success('Login successful! Redirecting...');
+
       // Redirect to the page they tried to visit or dashboard
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err));
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
