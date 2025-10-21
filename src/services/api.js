@@ -69,10 +69,20 @@ class ApiService {
     const isJson = contentType && contentType.includes('application/json');
 
     let data;
-    if (isJson) {
-      data = await response.json();
-    } else {
-      data = await response.text();
+    try {
+      if (isJson) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+    } catch (parseError) {
+      // If JSON parsing fails, try to get text
+      console.error('Failed to parse response:', parseError);
+      try {
+        data = await response.text();
+      } catch (textError) {
+        data = { error: 'Failed to parse server response' };
+      }
     }
 
     if (!response.ok) {
@@ -83,7 +93,17 @@ class ApiService {
         window.location.href = '/login';
       }
 
-      const error = new Error(data.error || data.message || 'Request failed');
+      // Handle different data types
+      let errorMessage = 'Request failed';
+      if (typeof data === 'string') {
+        errorMessage = data;
+      } else if (data.error) {
+        errorMessage = data.error;
+      } else if (data.message) {
+        errorMessage = data.message;
+      }
+
+      const error = new Error(errorMessage);
       error.response = {
         status: response.status,
         data: data,
