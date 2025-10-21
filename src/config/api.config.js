@@ -39,8 +39,15 @@ export const API_ENDPOINTS = {
 
   // Analytics
   ANALYTICS_OVERVIEW: '/analytics/overview',
+  ANALYTICS_DASHBOARD: '/analytics/dashboard',
   ANALYTICS_TRENDS: '/analytics/trends',
   ANALYTICS_CATEGORY_BREAKDOWN: '/analytics/category-breakdown',
+  ANALYTICS_SPENDING: '/analytics/spending',
+  ANALYTICS_NET_WORTH: '/analytics/net-worth',
+
+  // Currency
+  CURRENCY_RATES: '/currency/rates',
+  CURRENCY_CONVERT: '/currency/convert',
 };
 
 export const API_CONFIG = {
