@@ -325,13 +325,13 @@ export default function FinanceTrackerApp() {
                 </div>
               </div>
               <div className="hidden md:flex items-center space-x-3">
-                <div className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-button">
+                <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-button shadow-sm">
                   <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-sm">
                       {(currentUser?.name || 'Guest').charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
                 </div>
                 {isAuthenticated && (
                   <button
@@ -387,7 +387,7 @@ export default function FinanceTrackerApp() {
             )}
             <div className="max-w-7xl mx-auto">
               {isAuthenticated && currentView === 'dashboard' && (
-                <div className="mb-8 glass-card p-6 animate-slide-down">
+                <div className="mb-8 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-card p-6 shadow-card animate-slide-down">
                   <div className="flex items-center space-x-4">
                     <div className="bg-gradient-success p-3 rounded-xl">
                       <TrendingUp className="w-6 h-6 text-white" />
@@ -396,7 +396,7 @@ export default function FinanceTrackerApp() {
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                         Welcome back, {currentUser?.name || 'User'}! 👋
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">
                         Here's your financial overview for today
                       </p>
                     </div>
@@ -598,7 +598,7 @@ function DashboardView() {
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
           >
             {availableMonths.map(month => (
               <option key={month} value={month}>
@@ -740,7 +740,7 @@ function MetricCard({ title, value, icon, change, changePercent, isPositive }) {
       <div className="relative z-10">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{title}</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">{title}</p>
             <p className="text-3xl font-bold text-gradient mb-3">{value}</p>
             <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${
               isPositive
@@ -750,7 +750,7 @@ function MetricCard({ title, value, icon, change, changePercent, isPositive }) {
               {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               <span>{change} {changePercent && `(${changePercent})`}</span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">vs last month</p>
+            <p className="text-xs text-gray-600 dark:text-gray-500 mt-1">vs last month</p>
           </div>
           <div className="p-3 bg-gradient-primary rounded-xl shadow-glow">
             {icon}
@@ -785,7 +785,7 @@ function AccountsView() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-3xl font-bold text-gradient">Accounts</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage your financial accounts</p>
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Manage your financial accounts</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditingAccount(null); }} className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
@@ -1079,7 +1079,7 @@ function TransactionsView() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-3xl font-bold text-gradient">Transactions</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Track your income, expenses, and transfers</p>
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Track your income, expenses, and transfers</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditingTransaction(null); }} className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
