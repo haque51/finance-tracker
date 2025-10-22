@@ -13,7 +13,7 @@ import goalService from '../services/goalService';
 import recurringService from '../services/recurringService';
 import analyticsService from '../services/analyticsService';
 import currencyService from '../services/currencyService';
-import { getUser, getAccessToken } from '../utils/tokenManager';
+import tokenManager from '../services/tokenManager';
 
 export const AppContext = createContext();
 
@@ -34,8 +34,8 @@ export function AppProvider({ children }) {
   // Check if user is logged in on mount
   useEffect(() => {
     const initAuth = async () => {
-      const token = getAccessToken();
-      const savedUser = getUser();
+      const token = tokenManager.getToken();
+      const savedUser = tokenManager.getUser();
 
       if (token && savedUser) {
         try {
