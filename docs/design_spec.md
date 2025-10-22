@@ -1,4 +1,4 @@
-We’ll base this on the hybrid direction we discussed:
+<img width="1024" height="1536" alt="Image Oct 22, 2025, 10_19_05 PM" src="https://github.com/user-attachments/assets/54e8f6a6-4e7f-4fbd-b543-5957f2bc4765" />We’ll base this on the hybrid direction we discussed:
 Minimal + Gradient Accents + Card-Based + Subtle Glassmorphism + Micro-Animations
 inspired by Revolut + Stripe + Linear.
 
@@ -158,3 +158,6 @@ Color Accent	Blue–Violet gradient
 Layout	Card-based, airy spacing
 Animation	Micro, smooth, responsive
 Dark Mode	Glassy dark surfaces, neon gradient accents
+
+Here is an example:
+<img width="1024" height="1536" alt="Image Oct 22, 2025, 10_19_05 PM" src="https://github.com/user-attachments/assets/40e15678-f394-47b5-a8d4-e1b09f912743" />
