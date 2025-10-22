@@ -98,6 +98,19 @@ export function AppProvider({ children }) {
   };
 
   /**
+   * Create multiple categories in bulk (for new users)
+   */
+  const createCategoriesBulk = async (categoriesArray) => {
+    try {
+      const data = await categoryService.createCategoriesBulk(categoriesArray);
+      return data;
+    } catch (error) {
+      console.error('Failed to create categories in bulk:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Load budgets from API (Phase 4)
    */
   const loadBudgets = async (month, year) => {
@@ -315,6 +328,7 @@ export function AppProvider({ children }) {
     loadAccounts,
     loadTransactions,
     loadCategories,
+    createCategoriesBulk,
     initializeAppData,
 
     // Phase 4 loading functions
