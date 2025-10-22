@@ -631,7 +631,13 @@ function AccountsView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {state.accounts.map(account => {
-          const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+          // Convert account balance to base currency
+          // exchangeRates format: { USD: 1.08, BDT: 118.5 } means 1 EUR = 1.08 USD
+          // To convert USD to EUR: USD_amount / 1.08
+          const accountCurrency = account.currency || state.user.baseCurrency;
+          const balanceInBase = accountCurrency === state.user.baseCurrency
+            ? account.currentBalance
+            : account.currentBalance / (state.exchangeRates[accountCurrency] || 1);
 
           // Determine if account is a debt type (should be displayed as negative)
           const isDebtAccount = account.type === 'loan' || account.type === 'credit_card';
