@@ -2025,13 +2025,6 @@ function BudgetView() {
     return spent;
   };
 
-  const getBudget = (categoryId) => {
-    const budget = state.budgets.find(b =>
-      b.categoryId === categoryId && b.month === selectedMonth
-    );
-    return budget;
-  };
-
   const handleDeleteBudget = (budgetId) => {
     if (window.confirm('Are you sure you want to delete this budget?')) {
       updateState({
