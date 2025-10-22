@@ -1146,6 +1146,7 @@ function CategoriesView() {
   const { state, updateState } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
   
   const incomeCategories = state.categories.filter(c => c.type === 'income' && !c.parentId);
   const expenseCategories = state.categories.filter(c => c.type === 'expense' && !c.parentId);
@@ -1190,25 +1191,75 @@ function CategoriesView() {
               <div key={cat.id}>
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
-                  <div className="flex space-x-2">
-                    <button onClick={() => { setEditingCategory(cat); setShowForm(true); }} className="text-blue-600 hover:text-blue-800">
-                      <Edit2 className="w-4 h-4" />
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === cat.id ? null : cat.id)}
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                    >
+                      <MoreVertical className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     </button>
-                    <button onClick={() => handleDelete(cat.id)} className="text-red-600 hover:text-red-800">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {openMenuId === cat.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <button
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setShowForm(true);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDelete(cat.id);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {getSubcategories(cat.id).map(sub => (
                   <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-100 dark:bg-gray-600 rounded-lg mt-1">
                     <span className="text-gray-900 dark:text-white text-sm">{sub.icon} {sub.name}</span>
-                    <div className="flex space-x-2">
-                      <button onClick={() => { setEditingCategory(sub); setShowForm(true); }} className="text-blue-600 hover:text-blue-800">
-                        <Edit2 className="w-3 h-3" />
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === sub.id ? null : sub.id)}
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-500"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </button>
-                      <button onClick={() => handleDelete(sub.id)} className="text-red-600 hover:text-red-800">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      {openMenuId === sub.id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                          <button
+                            onClick={() => {
+                              setEditingCategory(sub);
+                              setShowForm(true);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDelete(sub.id);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1224,25 +1275,75 @@ function CategoriesView() {
               <div key={cat.id}>
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                   <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
-                  <div className="flex space-x-2">
-                    <button onClick={() => { setEditingCategory(cat); setShowForm(true); }} className="text-blue-600 hover:text-blue-800">
-                      <Edit2 className="w-4 h-4" />
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === cat.id ? null : cat.id)}
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                    >
+                      <MoreVertical className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     </button>
-                    <button onClick={() => handleDelete(cat.id)} className="text-red-600 hover:text-red-800">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {openMenuId === cat.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <button
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setShowForm(true);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDelete(cat.id);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {getSubcategories(cat.id).map(sub => (
                   <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-100 dark:bg-gray-600 rounded-lg mt-1">
                     <span className="text-gray-900 dark:text-white text-sm">{sub.icon} {sub.name}</span>
-                    <div className="flex space-x-2">
-                      <button onClick={() => { setEditingCategory(sub); setShowForm(true); }} className="text-blue-600 hover:text-blue-800">
-                        <Edit2 className="w-3 h-3" />
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === sub.id ? null : sub.id)}
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-500"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       </button>
-                      <button onClick={() => handleDelete(sub.id)} className="text-red-600 hover:text-red-800">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      {openMenuId === sub.id && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                          <button
+                            onClick={() => {
+                              setEditingCategory(sub);
+                              setShowForm(true);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDelete(sub.id);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center space-x-2 px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
