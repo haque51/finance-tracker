@@ -310,13 +310,13 @@ export default function FinanceTrackerApp() {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
-        {/* Modern Header with Glassmorphism */}
-        <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-soft">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors">
+        {/* Modern Header with Glassmorphism - Per Design Spec */}
+        <header className="sticky top-0 z-50 glass-card border-b border-gray-200/50 dark:border-gray-700/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               <div className="flex items-center space-x-3">
-                <div className="bg-gradient-primary p-2 rounded-xl shadow-glow">
+                <div className="bg-gradient-primary p-2 rounded-button shadow-card">
                   <Wallet className="w-7 h-7 text-white" />
                 </div>
                 <div>
@@ -325,7 +325,7 @@ export default function FinanceTrackerApp() {
                 </div>
               </div>
               <div className="hidden md:flex items-center space-x-3">
-                <div className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                <div className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-button">
                   <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-sm">
                       {(currentUser?.name || 'Guest').charAt(0).toUpperCase()}
@@ -336,7 +336,7 @@ export default function FinanceTrackerApp() {
                 {isAuthenticated && (
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-300 hover:shadow-soft"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-error hover:bg-error-50 dark:hover:bg-error-900/20 rounded-button transition-all duration-hover hover:shadow-card"
                     title="Logout"
                   >
                     <LogOut className="w-4 h-4" />
@@ -345,13 +345,13 @@ export default function FinanceTrackerApp() {
                 )}
                 <button
                   onClick={toggleTheme}
-                  className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 text-xl hover:scale-110"
+                  className="p-3 rounded-button hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-hover text-xl hover:scale-110"
                   title="Toggle Theme"
                 >
                   {currentUser?.theme === 'light' ? '🌙' : '☀️'}
                 </button>
               </div>
-              <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <button className="md:hidden p-2 rounded-button hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-hover" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                 <Menu className="w-6 h-6 text-gray-900 dark:text-white" />
               </button>
             </div>
@@ -360,7 +360,7 @@ export default function FinanceTrackerApp() {
 
         <div className="flex">
           {/* Modern Sidebar with Glassmorphism */}
-          <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-72 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 min-h-screen custom-scrollbar`}>
+          <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-72 glass-card border-r border-gray-200/50 dark:border-gray-700/50 min-h-screen custom-scrollbar`}>
             <nav className="p-6 space-y-2">
               <NavItem icon={<BarChart3 className="w-5 h-5" />} label="Dashboard" view="dashboard" />
               <NavItem icon={<Wallet className="w-5 h-5" />} label="Accounts" view="accounts" />
@@ -376,11 +376,11 @@ export default function FinanceTrackerApp() {
             </nav>
           </aside>
 
-          <main className="flex-1 p-8 relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+          <main className="flex-1 p-8 relative bg-background-light dark:bg-background-dark">
             {isLoadingData && (
-              <div className="absolute inset-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
+              <div className="absolute inset-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-glass flex items-center justify-center z-50 animate-fade-in">
                 <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 border-t-primary-600 dark:border-t-primary-400 shadow-glow"></div>
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 border-t-primary shadow-card"></div>
                   <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-300">Loading your financial data...</p>
                 </div>
               </div>
@@ -681,8 +681,8 @@ function DashboardView() {
               <Bar dataKey="currentBalance" fill="url(#colorGradient)" radius={[8, 8, 0, 0]} />
               <defs>
                 <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#667eea" stopOpacity={1}/>
-                  <stop offset="100%" stopColor="#764ba2" stopOpacity={0.8}/>
+                  <stop offset="0%" stopColor="#2563EB" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.9}/>
                 </linearGradient>
               </defs>
             </BarChart>
