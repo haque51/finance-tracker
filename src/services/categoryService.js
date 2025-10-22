@@ -78,6 +78,55 @@ class CategoryService {
   }
 
   /**
+   * Create multiple categories in bulk
+   * @param {Array<Object>} categoriesArray - Array of category data objects
+   * @returns {Promise<Array>} Array of created categories
+   */
+  async createCategoriesBulk(categoriesArray) {
+    try {
+      console.log(`📦 Creating ${categoriesArray.length} default categories...`);
+
+      // Create categories one by one (since backend doesn't have bulk endpoint)
+      // Create parent categories first, then children
+      const parentCategories = categoriesArray.filter(cat => !cat.parentId);
+      const childCategories = categoriesArray.filter(cat => cat.parentId);
+
+      const createdParents = [];
+      const createdChildren = [];
+
+      // Create parent categories first
+      for (const category of parentCategories) {
+        try {
+          const created = await this.createCategory(category);
+          createdParents.push(created);
+        } catch (err) {
+          console.warn(`Failed to create category ${category.name}:`, err);
+          // Continue with others even if one fails
+        }
+      }
+
+      // Create child categories
+      for (const category of childCategories) {
+        try {
+          const created = await this.createCategory(category);
+          createdChildren.push(created);
+        } catch (err) {
+          console.warn(`Failed to create subcategory ${category.name}:`, err);
+          // Continue with others even if one fails
+        }
+      }
+
+      const allCreated = [...createdParents, ...createdChildren];
+      console.log(`✅ Successfully created ${allCreated.length} categories`);
+
+      return allCreated;
+    } catch (error) {
+      console.error('Bulk create categories error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Update category
    * @param {string} id - Category ID
    * @param {Object} categoryData - Updated category data
@@ -113,12 +162,19 @@ class CategoryService {
    * @private
    */
   _mapCategoryFromAPI(apiCategory) {
+    // Determine icon - if backend stored an emoji icon, use it; otherwise map color to icon name
+    let icon = apiCategory.icon;
+    if (!icon) {
+      // Try to extract emoji from name or use color mapping
+      icon = this._mapColorToIcon(apiCategory.color);
+    }
+
     return {
       id: apiCategory.id,
       name: apiCategory.name,
       type: apiCategory.type,
       color: apiCategory.color,
-      icon: this._mapColorToIcon(apiCategory.color),
+      icon: icon,
       parentId: apiCategory.parent_id,
       isActive: apiCategory.is_active,
       createdAt: apiCategory.created_at,
@@ -135,13 +191,30 @@ class CategoryService {
    * @private
    */
   _mapCategoryToAPI(category) {
+    // If category has an emoji icon, use a default color
+    // Otherwise try to map icon name to color
+    let color = category.color;
+    if (!color) {
+      // Check if icon is an emoji (non-ASCII characters)
+      const isEmoji = category.icon && /[\u{1F000}-\u{1F9FF}]/u.test(category.icon);
+      color = isEmoji ? this._getColorForCategoryType(category.type) : this._mapIconToColor(category.icon);
+    }
+
     return {
       name: category.name,
       type: category.type,
-      color: category.color || this._mapIconToColor(category.icon),
+      color: color,
       parent_id: category.parentId || category.parent_id,
       is_active: category.isActive !== undefined ? category.isActive : category.is_active,
     };
+  }
+
+  /**
+   * Get default color for category type
+   * @private
+   */
+  _getColorForCategoryType(type) {
+    return type === 'income' ? '#10B981' : '#3B82F6';
   }
 
   /**
