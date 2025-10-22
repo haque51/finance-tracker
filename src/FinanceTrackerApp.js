@@ -1,3 +1,7 @@
+/**
+ * Lumina Finance - Main Application Component
+ * Light theme optimized for visibility and contrast
+ */
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
