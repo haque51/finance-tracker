@@ -939,7 +939,7 @@ function AccountForm({ account, onClose }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Name *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Account Name *</label>
             <input
               type="text"
               placeholder="e.g., Main Checking"
@@ -951,7 +951,7 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Type</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Account Type</label>
             <select
               value={formData.type}
               onChange={e => setFormData({ ...formData, type: e.target.value })}
@@ -967,7 +967,7 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Currency</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Currency</label>
             <select
               value={formData.currency}
               onChange={e => setFormData({ ...formData, currency: e.target.value })}
@@ -980,7 +980,7 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Institution</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Institution</label>
             <input
               type="text"
               placeholder="e.g., Bank A"
@@ -991,7 +991,7 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Opening Balance {!isEditing && '*'}
             </label>
             <input
@@ -1007,7 +1007,7 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Current Balance {isEditing && '*'}
             </label>
             <input
@@ -1024,7 +1024,7 @@ function AccountForm({ account, onClose }) {
 
           {(formData.type === 'loan' || formData.type === 'credit_card') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interest Rate (%)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Interest Rate (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -1262,11 +1262,11 @@ function TransactionForm({ transaction, onClose }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Date *</label>
             <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="input-modern" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Type *</label>
             <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value, categoryId: '', subcategoryId: '' })} className="input-modern">
               <option value="income">Income</option>
               <option value="expense">Expense</option>
@@ -1274,7 +1274,7 @@ function TransactionForm({ transaction, onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">From Account *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">From Account *</label>
             <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="input-modern" required>
               <option value="">Select Account</option>
               {state.accounts.map(acc => (
@@ -1284,7 +1284,7 @@ function TransactionForm({ transaction, onClose }) {
           </div>
           {formData.type === 'transfer' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To Account *</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">To Account *</label>
               <select value={formData.transferAccountId} onChange={e => setFormData({ ...formData, transferAccountId: e.target.value })} className="input-modern" required>
                 <option value="">To Account</option>
                 {state.accounts.filter(a => a.id !== formData.accountId).map(acc => (
@@ -1294,13 +1294,13 @@ function TransactionForm({ transaction, onClose }) {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payee</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Payee</label>
             <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="input-modern" />
           </div>
           {formData.type !== 'transfer' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Category *</label>
                 <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })} className="input-modern" required>
                   <option value="">Select Category</option>
                   {filteredCategories.map(cat => (
@@ -1310,7 +1310,7 @@ function TransactionForm({ transaction, onClose }) {
               </div>
               {subcategories.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subcategory</label>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Subcategory</label>
                   <select value={formData.subcategoryId} onChange={e => setFormData({ ...formData, subcategoryId: e.target.value })} className="input-modern">
                     <option value="">Select Subcategory (Optional)</option>
                     {subcategories.map(cat => (
@@ -1322,11 +1322,11 @@ function TransactionForm({ transaction, onClose }) {
             </>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Amount *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Amount *</label>
             <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="input-modern" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Memo</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Memo</label>
             <input type="text" placeholder="Memo" value={formData.memo} onChange={e => setFormData({ ...formData, memo: e.target.value })} className="input-modern" />
           </div>
         </div>
@@ -1373,7 +1373,7 @@ function CategoriesView() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-3xl font-bold text-gradient">Categories</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Organize your transactions</p>
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Organize your transactions</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditingCategory(null); }} className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
@@ -1391,7 +1391,7 @@ function CategoriesView() {
           <div className="space-y-2">
             {incomeCategories.map(cat => (
               <div key={cat.id}>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm">
                   <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
                   <div className="relative">
                     <button
@@ -1428,7 +1428,7 @@ function CategoriesView() {
                   </div>
                 </div>
                 {getSubcategories(cat.id).map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-100 dark:bg-gray-600 rounded-lg mt-1">
+                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-50 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg mt-1">
                     <span className="text-gray-900 dark:text-white text-sm">{sub.icon} {sub.name}</span>
                     <div className="relative">
                       <button
@@ -1477,7 +1477,7 @@ function CategoriesView() {
           <div className="space-y-2">
             {expenseCategories.map(cat => (
               <div key={cat.id}>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm">
                   <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
                   <div className="relative">
                     <button
@@ -1514,7 +1514,7 @@ function CategoriesView() {
                   </div>
                 </div>
                 {getSubcategories(cat.id).map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-100 dark:bg-gray-600 rounded-lg mt-1">
+                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-50 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg mt-1">
                     <span className="text-gray-900 dark:text-white text-sm">{sub.icon} {sub.name}</span>
                     <div className="relative">
                       <button
@@ -1612,7 +1612,7 @@ function CategoryForm({ category, onClose }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category Name *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Category Name *</label>
             <input
               type="text"
               placeholder="Category Name"
@@ -1623,7 +1623,7 @@ function CategoryForm({ category, onClose }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Type *</label>
             <select
               value={formData.type}
               onChange={e => setFormData({ ...formData, type: e.target.value, parentId: null, icon: getAutoIcon(formData.name, e.target.value) })}
@@ -1635,7 +1635,7 @@ function CategoryForm({ category, onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Parent Category</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Parent Category</label>
             <select
               value={formData.parentId || ''}
               onChange={e => setFormData({ ...formData, parentId: e.target.value || null })}
@@ -1648,7 +1648,7 @@ function CategoryForm({ category, onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icon (Emoji)</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Icon (Emoji)</label>
             <input
               type="text"
               placeholder="Icon (emoji) - auto-assigned"
@@ -1935,39 +1935,39 @@ function RecurringForm({ recurring, onClose }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
-            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="income">Income</option>
               <option value="expense">Expense</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account *</label>
-            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               {state.accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payee</label>
-            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               <option value="">Select Category</option>
               {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount *</label>
-            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency *</label>
-            <select value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -1976,7 +1976,7 @@ function RecurringForm({ recurring, onClose }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interval *</label>
-            <input type="number" placeholder="Interval" value={formData.interval} onChange={e => setFormData({ ...formData, interval: parseInt(e.target.value) })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="number" placeholder="Interval" value={formData.interval} onChange={e => setFormData({ ...formData, interval: parseInt(e.target.value) })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
         </div>
         <div className="flex space-x-2">
@@ -2046,35 +2046,35 @@ function TemplateForm({ template, onClose }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Template Name *</label>
-            <input type="text" placeholder="Template Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="text" placeholder="Template Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="income">Income</option>
               <option value="expense">Expense</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account *</label>
-            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               {state.accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payee</label>
-            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               <option value="">Select Category</option>
               {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount *</label>
-            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
         </div>
         <div className="flex space-x-2">
@@ -2434,7 +2434,7 @@ function BudgetForm({ budget, month, onClose }) {
             <select
               value={formData.categoryId}
               onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
               disabled={!!budget} // Disable changing category when editing
             >
@@ -2457,7 +2457,7 @@ function BudgetForm({ budget, month, onClose }) {
               value={formData.budgeted}
               onChange={e => setFormData({ ...formData, budgeted: e.target.value })}
               placeholder="1000"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -2768,13 +2768,13 @@ function GoalForm({ goal, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Emergency Fund, Vacation, New Car"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Target Amount (€)
             </label>
             <input
@@ -2783,19 +2783,19 @@ function GoalForm({ goal, onClose }) {
               value={formData.targetAmount}
               onChange={e => setFormData({ ...formData, targetAmount: e.target.value })}
               placeholder="10000"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Target Date
             </label>
             <input
               type="date"
               value={formData.targetDate}
               onChange={e => setFormData({ ...formData, targetDate: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -2807,7 +2807,7 @@ function GoalForm({ goal, onClose }) {
           <select
             value={formData.linkedAccountId || ''}
             onChange={e => setFormData({ ...formData, linkedAccountId: e.target.value })}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">No Account Link</option>
             {savingsAccounts.map(acc => (
@@ -2823,7 +2823,7 @@ function GoalForm({ goal, onClose }) {
 
         {!goal && !formData.linkedAccountId && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Initial Amount (€)
             </label>
             <input
@@ -2832,7 +2832,7 @@ function GoalForm({ goal, onClose }) {
               value={formData.currentAmount}
               onChange={e => setFormData({ ...formData, currentAmount: e.target.value })}
               placeholder="Enter initial amount"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         )}
@@ -3211,20 +3211,20 @@ function DebtPayoffPlanForm({ plan, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Credit Card Payoff 2025"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Payoff Strategy
             </label>
             <select
               value={formData.strategy}
               onChange={e => setFormData({ ...formData, strategy: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="avalanche">Avalanche (Highest Interest First)</option>
               <option value="snowball">Snowball (Smallest Balance First)</option>
@@ -3232,7 +3232,7 @@ function DebtPayoffPlanForm({ plan, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Extra Monthly Payment (€)
             </label>
             <input
@@ -3241,7 +3241,7 @@ function DebtPayoffPlanForm({ plan, onClose }) {
               value={formData.extraMonthlyPayment}
               onChange={e => setFormData({ ...formData, extraMonthlyPayment: e.target.value })}
               placeholder="200"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -3774,20 +3774,20 @@ function AlertForm({ alert, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Food Budget Alert"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Alert Type
             </label>
             <select
               value={formData.type}
               onChange={e => setFormData({ ...formData, type: e.target.value, categoryId: '', accountId: '' })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="budget">Budget Alert</option>
               <option value="balance">Balance Alert</option>
@@ -3796,13 +3796,13 @@ function AlertForm({ alert, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Condition
             </label>
             <select
               value={formData.condition}
               onChange={e => setFormData({ ...formData, condition: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="exceeds">Exceeds</option>
               <option value="below">Falls Below</option>
@@ -3821,20 +3821,20 @@ function AlertForm({ alert, onClose }) {
             value={formData.threshold}
             onChange={e => setFormData({ ...formData, threshold: e.target.value })}
             placeholder="500"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         {formData.type === 'budget' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Category
             </label>
             <select
               value={formData.categoryId}
               onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Select Category</option>
               {state.categories.filter(c => c.type === 'expense' && !c.parentId).map(cat => (
@@ -3846,13 +3846,13 @@ function AlertForm({ alert, onClose }) {
 
         {formData.type === 'balance' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Account
             </label>
             <select
               value={formData.accountId}
               onChange={e => setFormData({ ...formData, accountId: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Select Account</option>
               {state.accounts.map(acc => (
@@ -4205,20 +4205,20 @@ function AutoCatRule({ rule, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Supermarket Auto-Cat"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Match Field
             </label>
             <select
               value={formData.matchField}
               onChange={e => setFormData({ ...formData, matchField: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="payee">Payee</option>
               <option value="memo">Memo</option>
@@ -4227,7 +4227,7 @@ function AutoCatRule({ rule, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Match Value
             </label>
             <input
@@ -4235,7 +4235,7 @@ function AutoCatRule({ rule, onClose }) {
               value={formData.matchValue}
               onChange={e => setFormData({ ...formData, matchValue: e.target.value })}
               placeholder={formData.matchField === 'amount' ? '50.00' : 'Search text'}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -4243,13 +4243,13 @@ function AutoCatRule({ rule, onClose }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Category
             </label>
             <select
               value={formData.categoryId}
               onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
             >
               <option value="">Select Category</option>
@@ -4261,13 +4261,13 @@ function AutoCatRule({ rule, onClose }) {
 
           {subcategories.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                 Subcategory (Optional)
               </label>
               <select
                 value={formData.subcategoryId}
                 onChange={e => setFormData({ ...formData, subcategoryId: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None</option>
                 {subcategories.map(cat => (
@@ -4287,7 +4287,7 @@ function AutoCatRule({ rule, onClose }) {
             min="1"
             value={formData.priority}
             onChange={e => setFormData({ ...formData, priority: e.target.value })}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
@@ -4393,36 +4393,36 @@ function ReportsView() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Start Date
             </label>
             <input
               type="date"
               value={filters.startDate}
               onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               End Date
             </label>
             <input
               type="date"
               value={filters.endDate}
               onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Accounts ({filters.accountIds.length} selected)
             </label>
             <div className="relative">
               <select
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                 onChange={e => toggleAccountFilter(e.target.value)}
                 value=""
               >
@@ -4437,12 +4437,12 @@ function ReportsView() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Categories ({filters.categoryIds.length} selected)
             </label>
             <div className="relative">
               <select
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                 onChange={e => toggleCategoryFilter(e.target.value)}
                 value=""
               >
@@ -5137,33 +5137,33 @@ function SettingsView({ setTheme, currentUser }) {
             <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">User Profile</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={state.user.name}
                   onChange={e => updateState({ user: { ...state.user, name: e.target.value }})}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter your name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <input
                   type="email"
                   value={state.user.email}
                   onChange={e => updateState({ user: { ...state.user, email: e.target.value }})}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="your.email@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   User ID
                 </label>
                 <input
@@ -5183,7 +5183,7 @@ function SettingsView({ setTheme, currentUser }) {
             <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Appearance</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Theme
                 </label>
                 <div className="flex space-x-4">
@@ -5231,13 +5231,13 @@ function SettingsView({ setTheme, currentUser }) {
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Base Currency</h3>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                 Select your primary currency
               </label>
               <select
                 value={state.user.baseCurrency}
                 onChange={e => updateState({ user: { ...state.user, baseCurrency: e.target.value }})}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="EUR">EUR - Euro (€)</option>
                 <option value="USD">USD - US Dollar ($)</option>
@@ -5307,7 +5307,7 @@ function SettingsView({ setTheme, currentUser }) {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Monthly Income Goal (€)
                 </label>
                 <input
@@ -5317,7 +5317,7 @@ function SettingsView({ setTheme, currentUser }) {
                   onChange={e => updateState({ 
                     user: { ...state.user, monthlyIncomeGoal: parseFloat(e.target.value) || 0 }
                   })}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="5000"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -5326,7 +5326,7 @@ function SettingsView({ setTheme, currentUser }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Monthly Savings Goal (€)
                 </label>
                 <input
@@ -5336,7 +5336,7 @@ function SettingsView({ setTheme, currentUser }) {
                   onChange={e => updateState({ 
                     user: { ...state.user, monthlySavingsGoal: parseFloat(e.target.value) || 0 }
                   })}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="1000"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -5380,7 +5380,7 @@ function SettingsView({ setTheme, currentUser }) {
               Select which account should be pre-selected when adding new transactions
             </p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                 Default Account
               </label>
               <select
@@ -5388,7 +5388,7 @@ function SettingsView({ setTheme, currentUser }) {
                 onChange={e => updateState({ 
                   user: { ...state.user, defaultAccountId: e.target.value }
                 })}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None (Always ask)</option>
                 {state.accounts.map(acc => (
