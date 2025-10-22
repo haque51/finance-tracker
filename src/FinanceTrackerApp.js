@@ -1015,17 +1015,32 @@ function TransactionForm({ transaction, onClose }) {
     if (transaction) {
       const oldTxn = state.transactions.find(t => t.id === transaction.id);
       const updatedAccounts = state.accounts.map(acc => {
+        // Step 1: Reverse the old transaction's effect
         if (acc.id === oldTxn.accountId) {
-          acc = { ...acc, currentBalance: acc.currentBalance - oldTxn.amount };
+          // Reverse old transaction from source account
+          if (oldTxn.type === 'transfer') {
+            acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(oldTxn.amount) }; // Add back what was transferred
+          } else {
+            acc = { ...acc, currentBalance: acc.currentBalance - oldTxn.amount }; // Reverse income/expense
+          }
         }
         if (oldTxn.type === 'transfer' && acc.id === oldTxn.transferAccountId) {
-          acc = { ...acc, currentBalance: acc.currentBalance + oldTxn.amount };
+          // Reverse old transaction from destination account
+          acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(oldTxn.amount) }; // Remove what was received
         }
+
+        // Step 2: Apply the new transaction's effect
         if (acc.id === formData.accountId) {
-          acc = { ...acc, currentBalance: acc.currentBalance + (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
+          // Apply new transaction to source account
+          if (formData.type === 'transfer') {
+            acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(parseFloat(formData.amount)) }; // Subtract transfer
+          } else {
+            acc = { ...acc, currentBalance: acc.currentBalance + (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
+          }
         }
         if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
-          acc = { ...acc, currentBalance: acc.currentBalance - (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
+          // Apply new transaction to destination account
+          acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(parseFloat(formData.amount)) }; // Add transfer amount
         }
         return acc;
       });
@@ -1049,10 +1064,16 @@ function TransactionForm({ transaction, onClose }) {
       
       const updatedAccounts = state.accounts.map(acc => {
         if (acc.id === formData.accountId) {
+          // For transfers, subtract from source account (amount is positive)
+          // For income/expense, use the signed amount
+          if (formData.type === 'transfer') {
+            return { ...acc, currentBalance: acc.currentBalance - Math.abs(newTxn.amount) };
+          }
           return { ...acc, currentBalance: acc.currentBalance + newTxn.amount };
         }
         if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
-          return { ...acc, currentBalance: acc.currentBalance - newTxn.amount };
+          // Add to destination account
+          return { ...acc, currentBalance: acc.currentBalance + Math.abs(newTxn.amount) };
         }
         return acc;
       });
@@ -1090,7 +1111,7 @@ function TransactionForm({ transaction, onClose }) {
               ))}
             </select>
           )}
-          <input type="text" placeholder="Payee" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           {formData.type !== 'transfer' && (
             <>
               <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
@@ -1490,7 +1511,7 @@ function RecurringForm({ onClose }) {
           <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
             {state.accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
           </select>
-          <input type="text" placeholder="Payee" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
             <option value="">Select Category</option>
             {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
@@ -1553,7 +1574,7 @@ function TemplateForm({ onClose }) {
           <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
             {state.accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
           </select>
-          <input type="text" placeholder="Payee" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
           <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
             <option value="">Select Category</option>
             {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
