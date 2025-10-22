@@ -1,155 +1,202 @@
-# Lumina Finance - Demo Application
+# Lumina Finance Tracker
 
-A comprehensive personal finance management application built with React. This is a **single-file demo version** with no backend integration.
-
-## Overview
-
-This branch (`claude/review-session-instructions-011CUNPV8WKfoVSKbG3pFsVm`) contains a simplified, prototype version of Lumina Finance. All functionality is contained in a single React file (`src/App.js`) with hardcoded demo data.
-
-**Key Characteristics:**
-- Single-file React application (4,489 lines)
-- No authentication or user management
-- No backend API integration
-- Local state management only
-- Demo data that resets on page refresh
-- Full-featured UI with all finance management tools
+A modern, full-featured personal finance management application built with React.
 
 ## Features
 
-- **Dashboard** - Financial overview with charts and metrics
-- **Accounts** - Manage bank accounts, credit cards, loans
-- **Transactions** - Track income and expenses
-- **Categories** - Organize spending with categories and subcategories
-- **Recurring Transactions** - Set up automated recurring payments
-- **Budgets** - Monthly budget tracking by category
-- **Goals** - Financial goal setting and progress tracking
-- **Debt Payoff** - Debt management with payoff strategies (snowball/avalanche)
-- **Insights** - Smart alerts, AI insights, auto-categorization
-- **Reports** - Comprehensive financial reports and analytics
-- **Settings** - User preferences, data export/import, theme toggle
+### Complete Feature Set
+- **Authentication** - Secure user authentication
+- **Accounts** - Multi-currency account management
+- **Transactions** - Income, expenses, and transfers with filters
+- **Categories** - Hierarchical category organization
+- **Budgets** - Monthly budget tracking with progress
+- **Goals** - Savings goals with progress tracking
+- **Recurring** - Automatic recurring transactions
+- **Analytics** - Dashboard with charts and insights
+- **Multi-Currency** - Support for multiple currencies with exchange rates
 
-## Technology Stack
+## Tech Stack
 
-- **React** 18.2.0
-- **Recharts** 2.12.0 - Data visualization
-- **Lucide React** 0.263.1 - Icon library
+### Frontend
+- **React 18+** - UI framework
+- **Context API** - State management
 - **Tailwind CSS** - Styling
-- **Dark Mode** - Theme toggle support
+- **Recharts** - Data visualization
+- **Lucide React** - Icons
+
+### Features
+- **Error Boundary** - Graceful error handling
+- **Toast Notifications** - User feedback system
+- **Loading States** - Loading indicators throughout
+- **Empty States** - Helpful zero-data messages
+- **Offline Detection** - Network status monitoring
+- **Confirm Dialogs** - Safe destructive actions
+- **Dark Mode** - Full dark theme support
+- **Responsive Design** - Mobile, tablet, and desktop
 
 ## Getting Started
 
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+
 ### Installation
 
-```bash
-# Install dependencies
-npm install
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/haque51/finance-tracker.git
+   cd finance-tracker
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure API URL** (Important!):
+
+   Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and set your backend API URL:
+   ```env
+   REACT_APP_API_URL=https://your-backend-url.com
+   # Or for local development:
+   # REACT_APP_API_URL=http://localhost:5000
+   ```
+
+4. **Start development server:**
+   ```bash
+   npm start
+   ```
+
+5. **Open in browser:**
+   ```
+   http://localhost:3000
+   ```
+
+### ⚠️ Troubleshooting "Failed to Fetch" Errors
+
+If you get **"Failed to fetch"** or **"Unable to connect to server"** errors:
+
+1. **Use Demo Mode**: Try the app without backend → `http://localhost:3000/demo`
+2. **Check Backend Status**: Ensure the backend server is running and accessible
+3. **Verify API URL**: Make sure `.env` has the correct `REACT_APP_API_URL`
+4. **Check CORS**: Backend must allow requests from your frontend origin
+5. **See Full Guides**:
+   - `docs/DEMO_MODE.md` - Use app without backend
+   - `docs/API_TROUBLESHOOTING.md` - Fix connection issues
+
+**🎮 Quick Start with Demo Mode (No Backend Needed):**
+```
+http://localhost:3000/demo
 ```
 
-### Development
-
-```bash
-# Start development server
-npm start
+**Quick fix for local development:**
+```env
+# In .env file
+REACT_APP_API_URL=http://localhost:5000
 ```
 
-The app will open at [http://localhost:3000](http://localhost:3000)
-
-### Build
-
-```bash
-# Create production build
-npm run build
-```
-
-## Documentation
-
-For detailed information about the current state of this application, see:
-
-**[docs/CURRENT_STATE.md](docs/CURRENT_STATE.md)** - Comprehensive documentation including:
-- Complete feature list
-- Architecture overview
-- Component structure
-- Data models
-- Limitations and known issues
-- Comparison with dev branch
-- Use cases and best practices
-
-## Important Notes
-
-### Data Persistence
-
-⚠️ **Data is NOT persisted!** All data resets when you refresh the page. This is a demo application only.
-
-- Data is stored in React state only
-- Refreshing the page resets to demo data
-- Use "Export Data" in Settings to save your data as JSON
-- Use "Import Data" to restore from a previous export
-
-### Demo Data
-
-The application starts with pre-populated demo data:
-- Demo User profile
-- 4 sample accounts
-- 7 sample transactions
-- Categories, budgets, goals, and more
-
-### No Backend
-
-This version has NO backend integration:
-- No authentication
-- No API calls
-- No database
-- No multi-user support
-- No real-time sync
-
-## Use Cases
-
-This branch is ideal for:
-
-✅ **Demos and Prototypes** - Showcase the UI/UX to stakeholders
-✅ **Frontend Development** - Test UI changes without backend complexity
-✅ **Learning React** - Study component patterns and state management
-✅ **Static Deployment** - Deploy to Netlify, Vercel, or GitHub Pages
-
-This branch is NOT suitable for:
-
-❌ **Production use** - No data persistence or security
-❌ **Real financial data** - Data is not saved
-❌ **Multi-user scenarios** - Single demo user only
+Then restart the dev server: `npm start`
 
 ## Project Structure
 
 ```
-finance-tracker/
-├── public/              # Static assets
-├── src/
-│   ├── App.js           # Main application (4,489 lines)
-│   ├── index.js         # React entry point
-│   ├── index.css        # Tailwind styles
-│   └── tailwind.config.js
-├── docs/
-│   └── CURRENT_STATE.md # Detailed documentation
-├── package.json
-└── README.md
+src/
+├── components/        # Reusable UI components
+│   ├── ErrorBoundary.jsx
+│   ├── LoadingSpinner.jsx
+│   ├── LoadingOverlay.jsx
+│   ├── EmptyState.jsx
+│   ├── Toast.jsx
+│   ├── ConfirmDialog.jsx
+│   └── OfflineBanner.jsx
+├── hooks/            # Custom React hooks
+│   └── useNetworkStatus.js
+├── context/          # React Context
+│   └── ToastContext.jsx
+└── App.js            # Main app component
 ```
 
-## Comparison with Dev Branch
+## Available Scripts
 
-The `dev` branch has a completely different architecture with:
+- `npm start` - Start development server
+- `npm build` - Build for production
+- `npm test` - Run tests
+- `npm run eject` - Eject from Create React App
 
-- ✅ Authentication system (login/register)
-- ✅ Backend API integration (Railway)
-- ✅ Database (Supabase PostgreSQL)
-- ✅ Modular component structure
-- ✅ Data persistence
-- ✅ Multi-user support
+## Features in Detail
 
-This branch is a simplified version for demo purposes only.
+### Error Handling
+- **Error Boundary** - Catches and displays errors gracefully
+- **Network Detection** - Shows offline banner when disconnected
+- **User-Friendly Messages** - Clear, actionable error messages
+
+### User Experience
+- **Loading States** - Spinners and overlays during operations
+- **Empty States** - Helpful messages when no data exists
+- **Toast Notifications** - Success, error, warning, and info toasts
+- **Confirm Dialogs** - Prevents accidental deletions
+- **Dark Mode** - Full support for dark theme
+
+### Responsive Design
+- Mobile-first design
+- Works on all screen sizes
+- Touch-friendly interface
+
+## Testing
+
+See `docs/TESTING_CHECKLIST.md` for comprehensive testing checklist.
+
+### Manual Testing
+1. Test all CRUD operations
+2. Verify data persistence
+3. Check error handling
+4. Test responsive design
+
+## Known Limitations
+
+1. **No Data Export** - Currently no CSV/PDF export (planned)
+2. **Single User** - No multi-user collaboration
+3. **No Mobile App** - Web-only (mobile-responsive)
 
 ## Contributing
 
-This is a demo branch. For production development, work on the `dev` branch instead.
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
 ## License
 
-Private project - All rights reserved
+This project is licensed under the MIT License.
+
+## Roadmap
+
+### Future Enhancements
+- [ ] Receipt scanning and management
+- [ ] Bank account integration
+- [ ] Bill reminders and automation
+- [ ] Investment tracking
+- [ ] Tax preparation tools
+- [ ] Mobile app (React Native)
+- [ ] Real-time notifications
+- [ ] Advanced analytics with AI insights
+- [ ] Multi-user collaboration
+- [ ] Data export (CSV, PDF)
+
+## Acknowledgments
+
+- UI inspired by modern fintech applications
+- Icons by Lucide
+- Charts by Recharts
+
+---
+
+**Version:** 1.0.0
+**Last Updated:** October 2025
+**Status:** Production Ready
