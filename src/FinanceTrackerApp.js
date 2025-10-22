@@ -305,7 +305,7 @@ function NavItem({ icon, label, view }) {
 }
 
 function DashboardView() {
-  const { state, refreshExchangeRates, isRefreshingRates } = useApp();
+  const { state, refreshExchangeRates, isRefreshingRates, currentUser } = useApp();
 
   // Get current date
   const now = new Date();
