@@ -101,25 +101,30 @@ export default function FinanceTrackerApp() {
         try {
           setIsLoadingData(true);
 
-          // Load all data in parallel
-          const [accountsData, transactionsData, categoriesData, budgetsData, goalsData, recurringData] = await Promise.all([
+          // Load all data in parallel including exchange rates
+          const [accountsData, transactionsData, categoriesData, budgetsData, goalsData, recurringData, exchangeRatesData] = await Promise.all([
             globalContext.loadAccounts().catch(err => { console.error('Failed to load accounts:', err); return []; }),
             globalContext.loadTransactions().catch(err => { console.error('Failed to load transactions:', err); return { transactions: [] }; }),
             globalContext.loadCategories().catch(err => { console.error('Failed to load categories:', err); return []; }),
             globalContext.loadBudgets().catch(err => { console.error('Failed to load budgets:', err); return []; }),
             globalContext.loadGoals().catch(err => { console.error('Failed to load goals:', err); return []; }),
-            globalContext.loadRecurringTransactions().catch(err => { console.error('Failed to load recurring:', err); return []; })
+            globalContext.loadRecurringTransactions().catch(err => { console.error('Failed to load recurring:', err); return []; }),
+            globalContext.loadExchangeRates().catch(err => { console.error('Failed to load exchange rates:', err); return {}; })
           ]);
 
           // Update local state with backend data
+          // Use backend exchange rates if available, otherwise keep demo rates
           updateState({
             accounts: accountsData || [],
             transactions: transactionsData?.transactions || transactionsData || [],
             categories: categoriesData || [],
             budgets: budgetsData || [],
             goals: goalsData || [],
-            recurringTransactions: recurringData || []
+            recurringTransactions: recurringData || [],
+            exchangeRates: exchangeRatesData && Object.keys(exchangeRatesData).length > 0 ? exchangeRatesData : state.exchangeRates
           });
+
+          console.log('📈 Exchange rates loaded from backend:', exchangeRatesData);
         } catch (error) {
           console.error('Failed to load user data:', error);
         } finally {
