@@ -13,7 +13,7 @@ import goalService from '../services/goalService';
 import recurringService from '../services/recurringService';
 import analyticsService from '../services/analyticsService';
 import currencyService from '../services/currencyService';
-import { getUser, getAccessToken } from '../utils/tokenManager';
+import tokenManager from '../services/tokenManager';
 
 export const AppContext = createContext();
 
@@ -34,21 +34,19 @@ export function AppProvider({ children }) {
   // Check if user is logged in on mount
   useEffect(() => {
     const initAuth = async () => {
-      const token = getAccessToken();
-      const savedUser = getUser();
+      const token = tokenManager.getToken();
+      const savedUser = tokenManager.getUser();
+
+      console.log('🔐 Auth Init - Token exists:', !!token, 'User exists:', !!savedUser);
 
       if (token && savedUser) {
-        try {
-          // Verify token is still valid by fetching current user
-          const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
-          setIsAuthenticated(true);
-        } catch (error) {
-          // Token expired or invalid
-          console.error('Auth initialization failed:', error);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
+        // Trust the stored token and user
+        // Don't verify with backend on every page load to avoid delays
+        setUser(savedUser);
+        setIsAuthenticated(true);
+        console.log('✅ Auth restored from localStorage:', savedUser.email);
+      } else {
+        console.log('❌ No auth found in localStorage');
       }
 
       setIsLoading(false);
@@ -181,11 +179,38 @@ export function AppProvider({ children }) {
    */
   const login = async (email, password) => {
     try {
-      const user = await authService.login({ email, password });
-      setUser(user);
+      console.log('🔑 Attempting login for:', email);
+      const response = await authService.login({ email, password });
+      console.log('📦 Login response structure:', {
+        hasUser: !!response.user,
+        hasToken: !!response.token,
+        hasRefreshToken: !!response.refreshToken,
+        userName: response.user?.name,
+        userEmail: response.user?.email
+      });
+
+      // authService.login returns { user, token, refreshToken }
+      // We only need to set the user object in state (tokens are already stored by authService)
+      setUser(response.user);
       setIsAuthenticated(true);
-      return user;
+
+      // Verify tokens were stored
+      const storedToken = tokenManager.getToken();
+      const storedUser = tokenManager.getUser();
+
+      console.log('✅ Login successful - User set:', response.user?.email);
+      console.log('✅ isAuthenticated set to: true');
+      console.log('💾 Verification - Token stored:', !!storedToken);
+      console.log('💾 Verification - User stored:', !!storedUser);
+      console.log('👤 Stored user data:', storedUser);
+
+      if (!storedToken || !storedUser) {
+        console.error('⚠️ WARNING: Tokens or user not stored in localStorage!');
+      }
+
+      return response.user;
     } catch (error) {
+      console.error('❌ Login failed:', error);
       throw error;
     }
   };
@@ -196,10 +221,12 @@ export function AppProvider({ children }) {
    */
   const register = async (userData) => {
     try {
-      const user = await authService.register(userData);
-      setUser(user);
+      const response = await authService.register(userData);
+      // authService.register returns { user, token, refreshToken }
+      // We only need to set the user object in state (tokens are already stored by authService)
+      setUser(response.user);
       setIsAuthenticated(true);
-      return user;
+      return response.user;
     } catch (error) {
       throw error;
     }
