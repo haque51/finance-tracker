@@ -328,10 +328,19 @@ function DashboardView() {
   const calculateNetWorthForMonth = (monthString) => {
     if (monthString === currentMonthString) {
       // Current month - use actual account balances
-      return state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
+      // Loans and credit cards should be negative in net worth calculation
+      return state.accounts.reduce((sum, acc) => {
+        const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
+        const balance = isDebtAccount && acc.currentBalance > 0 ? -acc.currentBalance : acc.currentBalance;
+        return sum + balance;
+      }, 0);
     } else {
       // Historical month - calculate from opening balance + transactions
-      let netWorth = state.accounts.reduce((sum, acc) => sum + acc.openingBalance, 0);
+      let netWorth = state.accounts.reduce((sum, acc) => {
+        const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
+        const balance = isDebtAccount && acc.openingBalance > 0 ? -acc.openingBalance : acc.openingBalance;
+        return sum + balance;
+      }, 0);
 
       // Add all transactions up to and including the selected month
       state.transactions.forEach(t => {
@@ -547,16 +556,25 @@ function AccountsView() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {state.accounts.map(account => {
           const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+
+          // Determine if account is a debt type (should be displayed as negative)
+          const isDebtAccount = account.type === 'loan' || account.type === 'credit_card';
+          const displayBalance = isDebtAccount && account.currentBalance > 0 ? -account.currentBalance : account.currentBalance;
+          const isNegative = displayBalance < 0;
+
+          // Capitalize account type
+          const capitalizedType = account.type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
           return (
             <div key={account.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{account.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{account.type}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{capitalizedType}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 text-xs rounded ${account.currentBalance >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
-                    {account.currentBalance >= 0 ? 'Asset' : 'Debt'}
+                  <span className={`px-2 py-1 text-xs rounded ${!isNegative ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    {!isNegative ? 'Asset' : 'Debt'}
                   </span>
                   <div className="relative">
                     <button
@@ -590,12 +608,12 @@ function AccountsView() {
                   </div>
                 </div>
               </div>
-              <p className={`text-2xl font-bold mb-2 ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {account.currency} {account.currentBalance.toLocaleString()}
+              <p className={`text-2xl font-bold mb-2 ${!isNegative ? 'text-green-600' : 'text-red-600'}`}>
+                {account.currency} {displayBalance.toLocaleString()}
               </p>
               {account.currency !== state.user.baseCurrency && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  ≈ {state.user.baseCurrency} {balanceInBase.toFixed(2)}
+                  ≈ {state.user.baseCurrency} {balanceInBase.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               )}
               <p className="text-sm text-gray-500 dark:text-gray-400">Institution: {account.institution}</p>
@@ -878,7 +896,18 @@ function TransactionsView() {
 
 function TransactionForm({ transaction, onClose }) {
   const { state, updateState } = useApp();
-  const [formData, setFormData] = useState(transaction || {
+  const [formData, setFormData] = useState(transaction ? {
+    date: transaction.date,
+    type: transaction.type,
+    accountId: transaction.accountId,
+    transferAccountId: transaction.transferAccountId || '',
+    payee: transaction.payee,
+    categoryId: transaction.categoryId,
+    subcategoryId: transaction.subcategoryId || '',
+    amount: Math.abs(transaction.amount),
+    currency: transaction.currency,
+    memo: transaction.memo || ''
+  } : {
     date: new Date().toISOString().split('T')[0],
     type: 'expense',
     accountId: state.accounts[0]?.id || '',
@@ -886,7 +915,7 @@ function TransactionForm({ transaction, onClose }) {
     payee: '',
     categoryId: '',
     subcategoryId: '',
-    amount: 0,
+    amount: '',
     currency: 'EUR',
     memo: ''
   });
