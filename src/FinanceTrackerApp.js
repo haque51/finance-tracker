@@ -326,29 +326,43 @@ function DashboardView() {
   // For current month, use account currentBalance
   // For historical months, calculate from opening balance + transactions up to that month
   const calculateNetWorthForMonth = (monthString) => {
+    const baseCurrency = state.user.baseCurrency;
+
     if (monthString === currentMonthString) {
       // Current month - use actual account balances
       // Loans and credit cards should be negative in net worth calculation
+      // IMPORTANT: Convert all balances to base currency before summing
       return state.accounts.reduce((sum, acc) => {
         const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
         const balance = isDebtAccount && acc.currentBalance > 0 ? -acc.currentBalance : acc.currentBalance;
-        return sum + balance;
+
+        // Convert to base currency
+        const balanceInBase = balance * (state.exchangeRates[acc.currency] || 1) / (state.exchangeRates[baseCurrency] || 1);
+
+        return sum + balanceInBase;
       }, 0);
     } else {
       // Historical month - calculate from opening balance + transactions
       let netWorth = state.accounts.reduce((sum, acc) => {
         const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
         const balance = isDebtAccount && acc.openingBalance > 0 ? -acc.openingBalance : acc.openingBalance;
-        return sum + balance;
+
+        // Convert to base currency
+        const balanceInBase = balance * (state.exchangeRates[acc.currency] || 1) / (state.exchangeRates[baseCurrency] || 1);
+
+        return sum + balanceInBase;
       }, 0);
 
       // Add all transactions up to and including the selected month
+      // Note: Transactions should also be converted to base currency
       state.transactions.forEach(t => {
         if (t.date <= `${monthString}-31`) {
+          const amountInBase = t.amount * (state.exchangeRates[t.currency] || 1) / (state.exchangeRates[baseCurrency] || 1);
+
           if (t.type === 'income') {
-            netWorth += t.amount;
+            netWorth += amountInBase;
           } else if (t.type === 'expense') {
-            netWorth += t.amount; // amount is already negative for expenses
+            netWorth += amountInBase; // amount is already negative for expenses
           }
         }
       });
