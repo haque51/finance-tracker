@@ -1,8 +1,9 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload, LogOut, MoreVertical } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload, LogOut, MoreVertical, RefreshCw } from 'lucide-react';
 import { useApp as useGlobalApp } from './context/AppContext';
+import { fetchExchangeRates } from './utils/exchangeRateApi';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -86,9 +87,36 @@ export default function FinanceTrackerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isRefreshingRates, setIsRefreshingRates] = useState(false);
 
   const updateState = (updates) => {
     setState(prev => ({ ...prev, ...updates }));
+  };
+
+  // Fetch real-time exchange rates
+  const refreshExchangeRates = async () => {
+    try {
+      setIsRefreshingRates(true);
+      const baseCurrency = currentUser?.baseCurrency || 'EUR';
+
+      // Get unique currencies from all accounts
+      const accountCurrencies = [...new Set(state.accounts.map(acc => acc.currency))];
+      const targetCurrencies = accountCurrencies.filter(c => c !== baseCurrency);
+
+      if (targetCurrencies.length === 0) {
+        // No foreign currencies, no need to fetch rates
+        return;
+      }
+
+      const rates = await fetchExchangeRates(baseCurrency, targetCurrencies);
+
+      updateState({ exchangeRates: rates });
+      console.log('Exchange rates updated:', rates);
+    } catch (error) {
+      console.error('Failed to fetch exchange rates:', error);
+    } finally {
+      setIsRefreshingRates(false);
+    }
   };
 
   // Use global user when authenticated, local state user when in demo mode
@@ -139,6 +167,18 @@ export default function FinanceTrackerApp() {
     }
   }, [state.user.theme]);
 
+  // Fetch exchange rates on mount and when accounts change
+  useEffect(() => {
+    refreshExchangeRates();
+
+    // Refresh rates every 1 hour
+    const interval = setInterval(() => {
+      refreshExchangeRates();
+    }, 60 * 60 * 1000); // 1 hour
+
+    return () => clearInterval(interval);
+  }, [state.accounts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const toggleTheme = () => {
     const newTheme = state.user.theme === 'light' ? 'dark' : 'light';
     updateState({ user: { ...state.user, theme: newTheme } });
@@ -153,7 +193,7 @@ export default function FinanceTrackerApp() {
     }
   };
 
-  const contextValue = { state, updateState, currentView, setCurrentView, isDemoMode, isAuthenticated, currentUser, handleLogout, isLoadingData };
+  const contextValue = { state, updateState, currentView, setCurrentView, isDemoMode, isAuthenticated, currentUser, handleLogout, isLoadingData, refreshExchangeRates, isRefreshingRates };
 
   return (
     <AppContext.Provider value={contextValue}>
@@ -265,7 +305,7 @@ function NavItem({ icon, label, view }) {
 }
 
 function DashboardView() {
-  const { state } = useApp();
+  const { state, refreshExchangeRates, isRefreshingRates, currentUser } = useApp();
 
   // Get current date
   const now = new Date();
@@ -326,19 +366,41 @@ function DashboardView() {
   // For current month, use account currentBalance
   // For historical months, calculate from opening balance + transactions up to that month
   const calculateNetWorthForMonth = (monthString) => {
+    const baseCurrency = currentUser.baseCurrency || 'EUR';
+
     if (monthString === currentMonthString) {
       // Current month - use actual account balances
       // Loans and credit cards should be negative in net worth calculation
       return state.accounts.reduce((sum, acc) => {
         const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
-        const balance = isDebtAccount && acc.currentBalance > 0 ? -acc.currentBalance : acc.currentBalance;
+        let balance = isDebtAccount && acc.currentBalance > 0 ? -acc.currentBalance : acc.currentBalance;
+
+        // Convert to base currency
+        // exchangeRates format: { BDT: 118.5 } means 1 EUR = 118.5 BDT
+        // To convert BDT to EUR: BDT_amount / rate
+        const accountCurrency = acc.currency || baseCurrency;
+        if (accountCurrency !== baseCurrency) {
+          const rate = state.exchangeRates[accountCurrency] || 1;
+          balance = balance / rate;
+        }
+
         return sum + balance;
       }, 0);
     } else {
       // Historical month - calculate from opening balance + transactions
       let netWorth = state.accounts.reduce((sum, acc) => {
         const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
-        const balance = isDebtAccount && acc.openingBalance > 0 ? -acc.openingBalance : acc.openingBalance;
+        let balance = isDebtAccount && acc.openingBalance > 0 ? -acc.openingBalance : acc.openingBalance;
+
+        // Convert to base currency
+        // exchangeRates format: { BDT: 118.5 } means 1 EUR = 118.5 BDT
+        // To convert BDT to EUR: BDT_amount / rate
+        const accountCurrency = acc.currency || baseCurrency;
+        if (accountCurrency !== baseCurrency) {
+          const rate = state.exchangeRates[accountCurrency] || 1;
+          balance = balance / rate;
+        }
+
         return sum + balance;
       }, 0);
 
@@ -392,6 +454,14 @@ function DashboardView() {
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={refreshExchangeRates}
+            disabled={isRefreshingRates}
+            className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Refresh exchange rates"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshingRates ? 'animate-spin' : ''}`} />
+          </button>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -479,7 +549,13 @@ function DashboardView() {
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Account Balances</h3>
         <div className="space-y-3">
           {state.accounts.map(account => {
-            const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+            // Convert account balance to base currency
+            // exchangeRates format: { BDT: 118.5 } means 1 EUR = 118.5 BDT
+            // To convert BDT to EUR: BDT_amount / rate
+            const accountCurrency = account.currency || state.user.baseCurrency;
+            const balanceInBase = accountCurrency === state.user.baseCurrency
+              ? account.currentBalance
+              : account.currentBalance / (state.exchangeRates[accountCurrency] || 1);
             return (
               <div key={account.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div>
