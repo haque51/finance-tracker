@@ -132,10 +132,11 @@ export default function FinanceTrackerApp() {
           ]);
 
           // Update local state with backend data
+          // For new users with empty backend data, use defaults
           updateState({
             accounts: accountsData || [],
             transactions: transactionsData?.transactions || transactionsData || [],
-            categories: categoriesData || [],
+            categories: (categoriesData && categoriesData.length > 0) ? categoriesData : DEFAULT_CATEGORIES,
             budgets: budgetsData || [],
             goals: goalsData || [],
             recurringTransactions: recurringData || []
