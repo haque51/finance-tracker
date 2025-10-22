@@ -131,11 +131,26 @@ export default function FinanceTrackerApp() {
             globalContext.loadRecurringTransactions().catch(err => { console.error('Failed to load recurring:', err); return []; })
           ]);
 
+          // If backend has no categories, this is a new user - save defaults to backend
+          let finalCategories = categoriesData;
+          if (!categoriesData || categoriesData.length === 0) {
+            console.log('🆕 New user detected - initializing default categories in backend...');
+            try {
+              // Save default categories to backend
+              const savedCategories = await globalContext.createCategoriesBulk(DEFAULT_CATEGORIES);
+              finalCategories = savedCategories && savedCategories.length > 0 ? savedCategories : DEFAULT_CATEGORIES;
+              console.log(`✅ Default categories saved to backend: ${finalCategories.length} categories`);
+            } catch (err) {
+              console.warn('⚠️ Failed to save default categories to backend, using local defaults:', err);
+              finalCategories = DEFAULT_CATEGORIES;
+            }
+          }
+
           // Update local state with backend data
           updateState({
             accounts: accountsData || [],
             transactions: transactionsData?.transactions || transactionsData || [],
-            categories: categoriesData || [],
+            categories: finalCategories,
             budgets: budgetsData || [],
             goals: goalsData || [],
             recurringTransactions: recurringData || []
