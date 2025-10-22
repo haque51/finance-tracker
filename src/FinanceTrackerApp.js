@@ -310,20 +310,33 @@ export default function FinanceTrackerApp() {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+        {/* Modern Header with Glassmorphism */}
+        <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-soft">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <Wallet className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                <h1 className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Lumina Finances</h1>
+            <div className="flex justify-between items-center h-20">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gradient-primary p-2 rounded-xl shadow-glow">
+                  <Wallet className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gradient">Lumina Finance</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Personal Finance Tracker</p>
+                </div>
               </div>
-              <div className="hidden md:flex items-center space-x-4">
-                <span className="text-sm text-gray-600 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
+              <div className="hidden md:flex items-center space-x-3">
+                <div className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                  <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium text-sm">
+                      {(currentUser?.name || 'Guest').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
+                </div>
                 {isAuthenticated && (
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-300 hover:shadow-soft"
                     title="Logout"
                   >
                     <LogOut className="w-4 h-4" />
@@ -332,12 +345,13 @@ export default function FinanceTrackerApp() {
                 )}
                 <button
                   onClick={toggleTheme}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 text-xl hover:scale-110"
+                  title="Toggle Theme"
                 >
-                  {state.user.theme === 'light' ? '🌙' : '☀️'}
+                  {currentUser?.theme === 'light' ? '🌙' : '☀️'}
                 </button>
               </div>
-              <button className="md:hidden p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                 <Menu className="w-6 h-6 text-gray-900 dark:text-white" />
               </button>
             </div>
@@ -345,8 +359,9 @@ export default function FinanceTrackerApp() {
         </header>
 
         <div className="flex">
-          <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen`}>
-            <nav className="p-4 space-y-1">
+          {/* Modern Sidebar with Glassmorphism */}
+          <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-72 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 min-h-screen custom-scrollbar`}>
+            <nav className="p-6 space-y-2">
               <NavItem icon={<BarChart3 className="w-5 h-5" />} label="Dashboard" view="dashboard" />
               <NavItem icon={<Wallet className="w-5 h-5" />} label="Accounts" view="accounts" />
               <NavItem icon={<Receipt className="w-5 h-5" />} label="Transactions" view="transactions" />
@@ -355,30 +370,37 @@ export default function FinanceTrackerApp() {
               <NavItem icon={<DollarSign className="w-5 h-5" />} label="Budget" view="budget" />
               <NavItem icon={<Target className="w-5 h-5" />} label="Goals" view="goals" />
               <NavItem icon={<CreditCard className="w-5 h-5" />} label="Debt Payoff" view="debt" />
-<NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
-<NavItem icon={<BarChart3 className="w-5 h-5" />} label="Reports" view="reports" />
-<NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
+              <NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
+              <NavItem icon={<BarChart3 className="w-5 h-5" />} label="Reports" view="reports" />
+              <NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
             </nav>
           </aside>
 
-          <main className="flex-1 p-6 relative">
+          <main className="flex-1 p-8 relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
             {isLoadingData && (
-              <div className="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="absolute inset-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
                 <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-                  <p className="mt-4 text-gray-700 dark:text-gray-300">Loading your data...</p>
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 border-t-primary-600 dark:border-t-primary-400 shadow-glow"></div>
+                  <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-300">Loading your financial data...</p>
                 </div>
               </div>
             )}
             <div className="max-w-7xl mx-auto">
               {isAuthenticated && currentView === 'dashboard' && (
-                <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    Welcome back, {currentUser?.name || 'User'}! 👋
-                  </h3>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                    Here's your financial overview
-                  </p>
+                <div className="mb-8 glass-card p-6 animate-slide-down">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-gradient-success p-3 rounded-xl">
+                      <TrendingUp className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        Welcome back, {currentUser?.name || 'User'}! 👋
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Here's your financial overview for today
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
               {currentView === 'dashboard' && <DashboardView />}
@@ -407,9 +429,7 @@ function NavItem({ icon, label, view }) {
   return (
     <button
       onClick={() => setCurrentView(view)}
-      className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors ${
-        isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-      }`}
+      className={`nav-item w-full ${isActive ? 'active' : ''}`}
     >
       {icon}
       <span className="font-medium">{label}</span>
@@ -590,26 +610,26 @@ function DashboardView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard 
-          title="Monthly Income" 
-          value={`€${monthlyIncome.toLocaleString()}`} 
-          icon={<TrendingUp className="w-6 h-6 text-green-600" />} 
+        <MetricCard
+          title="Monthly Income"
+          value={`€${monthlyIncome.toLocaleString()}`}
+          icon={<TrendingUp className="w-6 h-6 text-white" />}
           change={`€${incomeAbsChange.toLocaleString()}`}
           changePercent={`${incomeChange >= 0 ? '+' : ''}${incomeChange}%`}
           isPositive={incomeChange >= 0}
         />
-        <MetricCard 
-          title="Monthly Expenses" 
-          value={`€${monthlyExpenses.toLocaleString()}`} 
-          icon={<TrendingDown className="w-6 h-6 text-red-600" />} 
+        <MetricCard
+          title="Monthly Expenses"
+          value={`€${monthlyExpenses.toLocaleString()}`}
+          icon={<TrendingDown className="w-6 h-6 text-white" />}
           change={`€${expenseAbsChange.toLocaleString()}`}
           changePercent={`${expenseChange >= 0 ? '+' : ''}${expenseChange}%`}
           isPositive={expenseChange <= 0}
         />
-        <MetricCard 
-          title="Net Worth" 
-          value={`€${netWorth.toLocaleString()}`} 
-          icon={<Wallet className="w-6 h-6 text-blue-600" />} 
+        <MetricCard
+          title="Net Worth"
+          value={`€${netWorth.toLocaleString()}`}
+          icon={<Wallet className="w-6 h-6 text-white" />}
           change={`€${netWorthAbsChange.toLocaleString()}`}
           changePercent={`${netWorthChange >= 0 ? '+' : ''}${netWorthChange}%`}
           isPositive={netWorthChange >= 0}
@@ -617,7 +637,7 @@ function DashboardView() {
         <MetricCard
           title="Savings Rate"
           value={`${savingsRate}%`}
-          icon={<Target className="w-6 h-6 text-purple-600" />}
+          icon={<Target className="w-6 h-6 text-white" />}
           change={`€${savingsAmountChange.toLocaleString()}`}
           changePercent={`${savingsRateChange >= 0 ? '+' : ''}${savingsRateChange}% pts`}
           isPositive={savingsAmountChange >= 0}
@@ -625,8 +645,11 @@ function DashboardView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Spending by Category</h3>
+        <div className="chart-container">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+            <div className="w-1 h-6 bg-gradient-primary rounded-full"></div>
+            <span>Spending by Category</span>
+          </h3>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -644,22 +667,34 @@ function DashboardView() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Net Worth by Account</h3>
+        <div className="chart-container">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+            <div className="w-1 h-6 bg-gradient-accent rounded-full"></div>
+            <span>Net Worth by Account</span>
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={state.accounts}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="currentBalance" fill="#3B82F6" />
+              <Bar dataKey="currentBalance" fill="url(#colorGradient)" radius={[8, 8, 0, 0]} />
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#667eea" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#764ba2" stopOpacity={0.8}/>
+                </linearGradient>
+              </defs>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Account Balances</h3>
+      <div className="glass-card p-6 animate-fade-in">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+          <div className="w-1 h-6 bg-gradient-success rounded-full"></div>
+          <span>Account Balances</span>
+        </h3>
         <div className="space-y-3">
           {state.accounts.map(account => {
             // Convert account balance to base currency
@@ -670,13 +705,18 @@ function DashboardView() {
               ? account.currentBalance
               : account.currentBalance / (state.exchangeRates[accountCurrency] || 1);
             return (
-              <div key={account.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{account.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{account.type} • {account.institution}</p>
+              <div key={account.id} className="group glass-card p-4 flex justify-between items-center hover:shadow-glow transition-all duration-300">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-gradient-primary rounded-xl">
+                    <Wallet className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-white">{account.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{account.type} • {account.institution}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-lg font-semibold ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-xl font-bold ${account.currentBalance >= 0 ? 'text-success-600 dark:text-success-400' : 'text-red-600 dark:text-red-400'}`}>
                     {account.currency} {account.currentBalance.toLocaleString()}
                   </p>
                   {account.currency !== state.user.baseCurrency && (
@@ -696,16 +736,26 @@ function DashboardView() {
 
 function MetricCard({ title, value, icon, change, changePercent, isPositive }) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-          <p className={`text-sm mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {change} {changePercent && `(${changePercent})`} vs last month
-          </p>
+    <div className="stat-card animate-scale-in group hover:scale-105 transition-transform duration-300">
+      <div className="relative z-10">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{title}</p>
+            <p className="text-3xl font-bold text-gradient mb-3">{value}</p>
+            <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${
+              isPositive
+                ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
+                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+            }`}>
+              {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              <span>{change} {changePercent && `(${changePercent})`}</span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">vs last month</p>
+          </div>
+          <div className="p-3 bg-gradient-primary rounded-xl shadow-glow">
+            {icon}
+          </div>
         </div>
-        {icon}
       </div>
     </div>
   );
