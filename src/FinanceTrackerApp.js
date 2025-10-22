@@ -57,13 +57,8 @@ const initialState = {
   debtPayoffPlans: [
     { id: 'dpp1', name: 'Credit Card Payoff', strategy: 'avalanche', extraMonthlyPayment: 200, accountIds: ['acc3'], createdDate: '2025-10-01', isActive: true }
   ],
-  alerts: [
-    { id: 'alert1', type: 'budget', name: 'Food Budget Alert', condition: 'exceeds', categoryId: 'cat_exp_food', threshold: 400, isActive: true },
-    { id: 'alert2', type: 'balance', name: 'Low Balance Alert', condition: 'below', accountId: 'acc1', threshold: 500, isActive: true }
-  ],
-  autoCategorization: [
-    { id: 'auto1', name: 'Grocery Auto-Cat', matchField: 'payee', matchValue: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', priority: 1, isActive: true }
-  ]
+  alerts: [],
+  autoCategorization: []
 };
 
 export default function FinanceTrackerApp() {
@@ -3637,7 +3632,7 @@ function AlertForm({ alert, onClose }) {
     name: '',
     type: 'budget',
     condition: 'exceeds',
-    threshold: 0,
+    threshold: '',
     categoryId: '',
     accountId: '',
     isActive: true
