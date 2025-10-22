@@ -60,7 +60,7 @@ const initialState = {
   templates: [
     { id: 'tpl1', name: 'Grocery Shopping', accountId: 'acc1', type: 'expense', payee: 'Supermarket', categoryId: 'cat5', subcategoryId: 'cat7', amount: -100, currency: 'EUR', memo: 'Weekly groceries' }
   ],
-  exchangeRates: { USD: 1.1, BDT: 0.0091, EUR: 1 },
+  exchangeRates: { USD: 1.1, BDT: 110, EUR: 1 },
   debtPayoffPlans: [
     { id: 'dpp1', name: 'Credit Card Payoff', strategy: 'avalanche', extraMonthlyPayment: 200, accountIds: ['acc3'], createdDate: '2025-10-01', isActive: true }
   ],
@@ -336,8 +336,9 @@ function DashboardView() {
         const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
         const balance = isDebtAccount && acc.currentBalance > 0 ? -acc.currentBalance : acc.currentBalance;
 
-        // Convert to base currency
-        const balanceInBase = balance * (state.exchangeRates[acc.currency] || 1) / (state.exchangeRates[baseCurrency] || 1);
+        // Convert to base currency: divide by exchange rate
+        // If 1 EUR = 1.1 USD, then 10 USD = 10 / 1.1 EUR
+        const balanceInBase = balance / (state.exchangeRates[acc.currency] || 1);
 
         return sum + balanceInBase;
       }, 0);
@@ -347,8 +348,9 @@ function DashboardView() {
         const isDebtAccount = acc.type === 'loan' || acc.type === 'credit_card';
         const balance = isDebtAccount && acc.openingBalance > 0 ? -acc.openingBalance : acc.openingBalance;
 
-        // Convert to base currency
-        const balanceInBase = balance * (state.exchangeRates[acc.currency] || 1) / (state.exchangeRates[baseCurrency] || 1);
+        // Convert to base currency: divide by exchange rate
+        // If 1 EUR = 1.1 USD, then 10 USD = 10 / 1.1 EUR
+        const balanceInBase = balance / (state.exchangeRates[acc.currency] || 1);
 
         return sum + balanceInBase;
       }, 0);
@@ -357,7 +359,8 @@ function DashboardView() {
       // Note: Transactions should also be converted to base currency
       state.transactions.forEach(t => {
         if (t.date <= `${monthString}-31`) {
-          const amountInBase = t.amount * (state.exchangeRates[t.currency] || 1) / (state.exchangeRates[baseCurrency] || 1);
+          // Convert transaction amount to base currency
+          const amountInBase = t.amount / (state.exchangeRates[t.currency] || 1);
 
           if (t.type === 'income') {
             netWorth += amountInBase;
@@ -493,7 +496,8 @@ function DashboardView() {
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Account Balances</h3>
         <div className="space-y-3">
           {state.accounts.map(account => {
-            const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+            // Convert to base currency: divide by exchange rate
+            const balanceInBase = account.currentBalance / (state.exchangeRates[account.currency] || 1);
             return (
               <div key={account.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div>
@@ -569,7 +573,9 @@ function AccountsView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {state.accounts.map(account => {
-          const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+          // Convert to base currency: divide by the exchange rate
+          // If 1 EUR = 1.1 USD, then 10 USD = 10 / 1.1 = 9.09 EUR
+          const balanceInBase = account.currentBalance / (state.exchangeRates[account.currency] || 1);
 
           // Determine if account is a debt type (should be displayed as negative)
           const isDebtAccount = account.type === 'loan' || account.type === 'credit_card';
