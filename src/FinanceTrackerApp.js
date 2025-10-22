@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload, LogOut } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload, LogOut, MoreVertical } from 'lucide-react';
 import { useApp as useGlobalApp } from './context/AppContext';
 const AppContext = createContext();
 
@@ -520,6 +520,7 @@ function AccountsView() {
   const { state, updateState } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure? This will delete all associated transactions.')) {
@@ -528,6 +529,7 @@ function AccountsView() {
         transactions: state.transactions.filter(t => t.accountId !== id && t.transferAccountId !== id)
       });
     }
+    setOpenMenuId(null);
   };
 
   return (
@@ -546,15 +548,47 @@ function AccountsView() {
         {state.accounts.map(account => {
           const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
           return (
-            <div key={account.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div key={account.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{account.name}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{account.type}</p>
                 </div>
-                <span className={`px-2 py-1 text-xs rounded ${account.currentBalance >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
-                  {account.currentBalance >= 0 ? 'Asset' : 'Debt'}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2 py-1 text-xs rounded ${account.currentBalance >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    {account.currentBalance >= 0 ? 'Asset' : 'Debt'}
+                  </span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === account.id ? null : account.id)}
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <MoreVertical className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    </button>
+                    {openMenuId === account.id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <button
+                          onClick={() => {
+                            setEditingAccount(account);
+                            setShowForm(true);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(account.id)}
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <p className={`text-2xl font-bold mb-2 ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {account.currency} {account.currentBalance.toLocaleString()}
@@ -564,17 +598,7 @@ function AccountsView() {
                   ≈ {state.user.baseCurrency} {balanceInBase.toFixed(2)}
                 </p>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Institution: {account.institution}</p>
-              <div className="flex space-x-2">
-                <button onClick={() => { setEditingAccount(account); setShowForm(true); }} className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded hover:bg-gray-200 dark:hover:bg-gray-600">
-                  <Edit2 className="w-4 h-4" />
-                  <span>Edit</span>
-                </button>
-                <button onClick={() => handleDelete(account.id)} className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 rounded hover:bg-red-100 dark:hover:bg-red-900/50">
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete</span>
-                </button>
-              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Institution: {account.institution}</p>
             </div>
           );
         })}
@@ -585,22 +609,54 @@ function AccountsView() {
 
 function AccountForm({ account, onClose }) {
   const { state, updateState } = useApp();
-  const [formData, setFormData] = useState(account || {
+  const isEditing = !!account;
+
+  const [formData, setFormData] = useState(account ? {
+    name: account.name,
+    type: account.type,
+    currency: account.currency,
+    institution: account.institution,
+    openingBalance: account.openingBalance,
+    currentBalance: account.currentBalance,
+    interestRate: account.interestRate || ''
+  } : {
     name: '',
     type: 'checking',
     currency: 'EUR',
     institution: '',
-    openingBalance: 0,
-    currentBalance: 0,
-    interestRate: 0
+    openingBalance: '',
+    currentBalance: '',
+    interestRate: ''
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (account) {
-      updateState({ accounts: state.accounts.map(a => a.id === account.id ? { ...a, ...formData, openingBalance: a.openingBalance } : a) });
+    if (isEditing) {
+      // When editing, keep the original opening balance, only update current balance and other fields
+      updateState({
+        accounts: state.accounts.map(a =>
+          a.id === account.id ? {
+            ...a,
+            name: formData.name,
+            type: formData.type,
+            currency: formData.currency,
+            institution: formData.institution,
+            currentBalance: parseFloat(formData.currentBalance) || 0,
+            interestRate: parseFloat(formData.interestRate) || 0
+          } : a
+        )
+      });
     } else {
-      const newAccount = { ...formData, id: 'acc' + Date.now(), isActive: true };
+      // When creating, set both opening and current balance to the same value
+      const openingBalance = parseFloat(formData.openingBalance) || 0;
+      const newAccount = {
+        ...formData,
+        id: 'acc' + Date.now(),
+        isActive: true,
+        openingBalance: openingBalance,
+        currentBalance: openingBalance,
+        interestRate: parseFloat(formData.interestRate) || 0
+      };
       updateState({ accounts: [...state.accounts, newAccount] });
     }
     onClose();
@@ -611,32 +667,112 @@ function AccountForm({ account, onClose }) {
       <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{account ? 'Edit Account' : 'Add New Account'}</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="text" placeholder="Account Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
-          <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            <option value="checking">Checking</option>
-            <option value="savings">Savings</option>
-            <option value="credit_card">Credit Card</option>
-            <option value="loan">Loan</option>
-            <option value="investment">Investment</option>
-            <option value="cash">Cash</option>
-          </select>
-          <select value={formData.currency} onChange={e => setFormData({ ...formData, currency: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-            <option value="BDT">BDT</option>
-          </select>
-          <input type="text" placeholder="Institution" value={formData.institution} onChange={e => setFormData({ ...formData, institution: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-          {!account && (
-            <input type="number" step="0.01" placeholder="Opening Balance" value={formData.openingBalance} onChange={e => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) || 0, currentBalance: parseFloat(e.target.value) || 0 })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-          )}
-          <input type="number" step="0.01" placeholder="Current Balance" value={formData.currentBalance} onChange={e => setFormData({ ...formData, currentBalance: parseFloat(e.target.value) || 0 })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Name *</label>
+            <input
+              type="text"
+              placeholder="e.g., Main Checking"
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Type</label>
+            <select
+              value={formData.type}
+              onChange={e => setFormData({ ...formData, type: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="checking">Checking</option>
+              <option value="savings">Savings</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="loan">Loan</option>
+              <option value="investment">Investment</option>
+              <option value="cash">Cash</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
+            <select
+              value={formData.currency}
+              onChange={e => setFormData({ ...formData, currency: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="BDT">BDT</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Institution</label>
+            <input
+              type="text"
+              placeholder="e.g., Bank A"
+              value={formData.institution}
+              onChange={e => setFormData({ ...formData, institution: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Opening Balance {!isEditing && '*'}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder={isEditing ? "Cannot be modified" : "Enter opening balance"}
+              value={formData.openingBalance}
+              onChange={e => setFormData({ ...formData, openingBalance: e.target.value })}
+              disabled={isEditing}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+              required={!isEditing}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Current Balance {isEditing && '*'}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder={isEditing ? "Enter current balance" : "Auto-set from opening balance"}
+              value={formData.currentBalance}
+              onChange={e => setFormData({ ...formData, currentBalance: e.target.value })}
+              disabled={!isEditing}
+              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+              required={isEditing}
+            />
+          </div>
+
           {(formData.type === 'loan' || formData.type === 'credit_card') && (
-            <input type="number" step="0.01" placeholder="Interest Rate %" value={formData.interestRate || 0} onChange={e => setFormData({ ...formData, interestRate: parseFloat(e.target.value) || 0 })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interest Rate (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="e.g., 4.5"
+                value={formData.interestRate}
+                onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
           )}
         </div>
+
         <div className="flex space-x-2">
-          <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{account ? 'Update' : 'Create'}</button>
-          <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+          <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            {isEditing ? 'Update Account' : 'Create Account'}
+          </button>
+          <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+            Cancel
+          </button>
         </div>
       </form>
     </div>
