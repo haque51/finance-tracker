@@ -42,6 +42,9 @@ export default function LoginPage() {
       // Show success message
       toast.success('Login successful! Redirecting...');
 
+      // Small delay to ensure state has propagated before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Redirect to the page they tried to visit or dashboard
       const from = location.state?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });

@@ -44,8 +44,25 @@ class AuthService {
     try {
       const response = await api.post(API_ENDPOINTS.AUTH_LOGIN, credentials);
 
-      // Backend returns: { status: "success", data: { user: {...}, token: "...", refreshToken: "..." } }
-      const { user, token, refreshToken } = response.data.data;
+      console.log('🔍 Raw backend response:', response.data);
+
+      // Backend may return either 'token' or 'accessToken'
+      const responseData = response.data.data;
+      const user = responseData.user;
+      const token = responseData.token || responseData.accessToken;
+      const refreshToken = responseData.refreshToken;
+
+      console.log('🔍 Extracted fields:', {
+        hasUser: !!user,
+        hasToken: !!token,
+        tokenValue: token ? token.substring(0, 20) + '...' : 'undefined',
+        hasRefreshToken: !!refreshToken
+      });
+
+      if (!token) {
+        console.error('❌ No access token in response! Response data keys:', Object.keys(responseData));
+        throw new Error('No access token received from server');
+      }
 
       // Store tokens
       tokenManager.setTokens(token, refreshToken);

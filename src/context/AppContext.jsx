@@ -181,16 +181,32 @@ export function AppProvider({ children }) {
     try {
       console.log('🔑 Attempting login for:', email);
       const response = await authService.login({ email, password });
-      console.log('📦 Login response:', response);
+      console.log('📦 Login response structure:', {
+        hasUser: !!response.user,
+        hasToken: !!response.token,
+        hasRefreshToken: !!response.refreshToken,
+        userName: response.user?.name,
+        userEmail: response.user?.email
+      });
 
       // authService.login returns { user, token, refreshToken }
       // We only need to set the user object in state (tokens are already stored by authService)
       setUser(response.user);
       setIsAuthenticated(true);
 
-      console.log('✅ Login successful - User set:', response.user.email);
+      // Verify tokens were stored
+      const storedToken = tokenManager.getToken();
+      const storedUser = tokenManager.getUser();
+
+      console.log('✅ Login successful - User set:', response.user?.email);
       console.log('✅ isAuthenticated set to: true');
-      console.log('💾 Token in localStorage:', !!tokenManager.getToken());
+      console.log('💾 Verification - Token stored:', !!storedToken);
+      console.log('💾 Verification - User stored:', !!storedUser);
+      console.log('👤 Stored user data:', storedUser);
+
+      if (!storedToken || !storedUser) {
+        console.error('⚠️ WARNING: Tokens or user not stored in localStorage!');
+      }
 
       return response.user;
     } catch (error) {
