@@ -3,6 +3,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
+  // Force class-based dark mode (not media query)
   darkMode: 'class',
   theme: {
     extend: {
