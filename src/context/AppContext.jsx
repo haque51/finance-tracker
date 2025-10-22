@@ -181,10 +181,12 @@ export function AppProvider({ children }) {
    */
   const login = async (email, password) => {
     try {
-      const user = await authService.login({ email, password });
-      setUser(user);
+      const response = await authService.login({ email, password });
+      // authService.login returns { user, token, refreshToken }
+      // We only need to set the user object in state (tokens are already stored by authService)
+      setUser(response.user);
       setIsAuthenticated(true);
-      return user;
+      return response.user;
     } catch (error) {
       throw error;
     }
@@ -196,10 +198,12 @@ export function AppProvider({ children }) {
    */
   const register = async (userData) => {
     try {
-      const user = await authService.register(userData);
-      setUser(user);
+      const response = await authService.register(userData);
+      // authService.register returns { user, token, refreshToken }
+      // We only need to set the user object in state (tokens are already stored by authService)
+      setUser(response.user);
       setIsAuthenticated(true);
-      return user;
+      return response.user;
     } catch (error) {
       throw error;
     }
