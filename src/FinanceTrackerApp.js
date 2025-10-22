@@ -1,6 +1,8 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload, LogOut } from 'lucide-react';
+import { useApp as useGlobalApp } from './context/AppContext';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -72,13 +74,62 @@ const initialState = {
 };
 
 export default function FinanceTrackerApp() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const globalContext = useGlobalApp();
+
+  // Detect if we're in demo mode or authenticated mode
+  const isDemoMode = location.pathname === '/demo';
+  const isAuthenticated = !isDemoMode && globalContext.isAuthenticated;
+
   const [state, setState] = useState(initialState);
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const updateState = (updates) => {
     setState(prev => ({ ...prev, ...updates }));
   };
+
+  // Use global user when authenticated, local state user when in demo mode
+  const currentUser = isAuthenticated ? globalContext.user : state.user;
+
+  // Load data from backend when authenticated
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (isAuthenticated && !isDemoMode) {
+        try {
+          setIsLoadingData(true);
+
+          // Load all data in parallel
+          const [accountsData, transactionsData, categoriesData, budgetsData, goalsData, recurringData] = await Promise.all([
+            globalContext.loadAccounts().catch(err => { console.error('Failed to load accounts:', err); return []; }),
+            globalContext.loadTransactions().catch(err => { console.error('Failed to load transactions:', err); return { transactions: [] }; }),
+            globalContext.loadCategories().catch(err => { console.error('Failed to load categories:', err); return []; }),
+            globalContext.loadBudgets().catch(err => { console.error('Failed to load budgets:', err); return []; }),
+            globalContext.loadGoals().catch(err => { console.error('Failed to load goals:', err); return []; }),
+            globalContext.loadRecurringTransactions().catch(err => { console.error('Failed to load recurring:', err); return []; })
+          ]);
+
+          // Update local state with backend data
+          updateState({
+            accounts: accountsData || [],
+            transactions: transactionsData?.transactions || transactionsData || [],
+            categories: categoriesData || [],
+            budgets: budgetsData || [],
+            goals: goalsData || [],
+            recurringTransactions: recurringData || []
+          });
+        } catch (error) {
+          console.error('Failed to load user data:', error);
+        } finally {
+          setIsLoadingData(false);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [isAuthenticated, isDemoMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (state.user.theme === 'dark') {
@@ -93,7 +144,16 @@ export default function FinanceTrackerApp() {
     updateState({ user: { ...state.user, theme: newTheme } });
   };
 
-  const contextValue = { state, updateState, currentView, setCurrentView };
+  const handleLogout = async () => {
+    try {
+      await globalContext.logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const contextValue = { state, updateState, currentView, setCurrentView, isDemoMode, isAuthenticated, currentUser, handleLogout, isLoadingData };
 
   return (
     <AppContext.Provider value={contextValue}>
@@ -106,7 +166,17 @@ export default function FinanceTrackerApp() {
                 <h1 className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Lumina Finances</h1>
               </div>
               <div className="hidden md:flex items-center space-x-4">
-                <span className="text-sm text-gray-600 dark:text-gray-300">{state.user.name}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
+                {isAuthenticated && (
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                )}
                 <button
                   onClick={toggleTheme}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -138,8 +208,26 @@ export default function FinanceTrackerApp() {
             </nav>
           </aside>
 
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 relative">
+            {isLoadingData && (
+              <div className="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                  <p className="mt-4 text-gray-700 dark:text-gray-300">Loading your data...</p>
+                </div>
+              </div>
+            )}
             <div className="max-w-7xl mx-auto">
+              {isAuthenticated && currentView === 'dashboard' && (
+                <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                    Welcome back, {currentUser?.name || 'User'}! 👋
+                  </h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Here's your financial overview
+                  </p>
+                </div>
+              )}
               {currentView === 'dashboard' && <DashboardView />}
               {currentView === 'accounts' && <AccountsView />}
               {currentView === 'transactions' && <TransactionsView />}
@@ -149,8 +237,8 @@ export default function FinanceTrackerApp() {
               {currentView === 'goals' && <GoalsView />}
               {currentView === 'debt' && <DebtPayoffView />}
               {currentView === 'insights' && <InsightsView />}
-{currentView === 'reports' && <ReportsView />}
-{currentView === 'settings' && <SettingsView />}
+              {currentView === 'reports' && <ReportsView />}
+              {currentView === 'settings' && <SettingsView />}
             </div>
           </main>
         </div>
@@ -178,10 +266,50 @@ function NavItem({ icon, label, view }) {
 
 function DashboardView() {
   const { state } = useApp();
-  const currentMonth = '2025-10';
-  const previousMonth = '2025-09';
 
-  const currentMonthTxns = state.transactions.filter(t => t.date.startsWith(currentMonth));
+  // Get current date
+  const now = new Date();
+  const currentMonthString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  // State for selected month
+  const [selectedMonth, setSelectedMonth] = React.useState(currentMonthString);
+
+  // Get all available months from transactions
+  const getAvailableMonths = () => {
+    if (!state.transactions || state.transactions.length === 0) {
+      return [currentMonthString];
+    }
+
+    // Find earliest transaction date
+    const dates = state.transactions.map(t => new Date(t.date));
+    const earliestDate = new Date(Math.min(...dates));
+
+    // Generate list of months from earliest to now
+    const months = [];
+    let current = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    while (current <= end) {
+      months.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`);
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    return months.reverse(); // Most recent first
+  };
+
+  const availableMonths = getAvailableMonths();
+
+  // Calculate previous month
+  const getPreviousMonth = (monthString) => {
+    const [year, month] = monthString.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    date.setMonth(date.getMonth() - 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const previousMonth = getPreviousMonth(selectedMonth);
+
+  const currentMonthTxns = state.transactions.filter(t => t.date.startsWith(selectedMonth));
   const previousMonthTxns = state.transactions.filter(t => t.date.startsWith(previousMonth));
 
   const monthlyIncome = currentMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -194,10 +322,40 @@ function DashboardView() {
   const expenseChange = previousExpenses > 0 ? ((monthlyExpenses - previousExpenses) / previousExpenses * 100).toFixed(1) : 0;
   const expenseAbsChange = monthlyExpenses - previousExpenses;
 
-  const netWorth = state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
-  const previousNetWorth = netWorth - (monthlyIncome - monthlyExpenses);
-  const netWorthChange = previousNetWorth !== 0 ? ((netWorth - previousNetWorth) / Math.abs(previousNetWorth) * 100).toFixed(1) : 0;
+  // Calculate net worth based on selected month
+  // For current month, use account currentBalance
+  // For historical months, calculate from opening balance + transactions up to that month
+  const calculateNetWorthForMonth = (monthString) => {
+    if (monthString === currentMonthString) {
+      // Current month - use actual account balances
+      return state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
+    } else {
+      // Historical month - calculate from opening balance + transactions
+      let netWorth = state.accounts.reduce((sum, acc) => sum + acc.openingBalance, 0);
+
+      // Add all transactions up to and including the selected month
+      state.transactions.forEach(t => {
+        if (t.date <= `${monthString}-31`) {
+          if (t.type === 'income') {
+            netWorth += t.amount;
+          } else if (t.type === 'expense') {
+            netWorth += t.amount; // amount is already negative for expenses
+          }
+        }
+      });
+
+      return netWorth;
+    }
+  };
+
+  const netWorth = calculateNetWorthForMonth(selectedMonth);
+  const previousNetWorth = calculateNetWorthForMonth(previousMonth);
   const netWorthAbsChange = netWorth - previousNetWorth;
+  const netWorthChange = previousNetWorth !== 0 ? ((netWorth - previousNetWorth) / Math.abs(previousNetWorth) * 100).toFixed(1) : 0;
+
+  const currentSavings = monthlyIncome - monthlyExpenses;
+  const previousSavings = previousIncome - previousExpenses;
+  const savingsAmountChange = currentSavings - previousSavings;
 
   const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome * 100).toFixed(1) : 0;
   const previousSavingsRate = previousIncome > 0 ? ((previousIncome - previousExpenses) / previousIncome * 100).toFixed(1) : 0;
@@ -213,11 +371,30 @@ function DashboardView() {
   const categoryData = Object.entries(spendingByCategory).map(([name, value]) => ({ name, value }));
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
+  // Format month for display
+  const formatMonthDisplay = (monthString) => {
+    const [year, month] = monthString.split('-');
+    const date = new Date(year, month - 1);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
-        <span className="text-sm text-gray-500 dark:text-gray-400">October 2025</span>
+        <div className="flex items-center space-x-2">
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {availableMonths.map(month => (
+              <option key={month} value={month}>
+                {formatMonthDisplay(month)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -245,13 +422,13 @@ function DashboardView() {
           changePercent={`${netWorthChange >= 0 ? '+' : ''}${netWorthChange}%`}
           isPositive={netWorthChange >= 0}
         />
-        <MetricCard 
-          title="Savings Rate" 
-          value={`${savingsRate}%`} 
-          icon={<Target className="w-6 h-6 text-purple-600" />} 
-          change={`${savingsRateChange}% pts`}
-          changePercent=""
-          isPositive={savingsRateChange >= 0}
+        <MetricCard
+          title="Savings Rate"
+          value={`${savingsRate}%`}
+          icon={<Target className="w-6 h-6 text-purple-600" />}
+          change={`€${savingsAmountChange.toLocaleString()}`}
+          changePercent={`${savingsRateChange >= 0 ? '+' : ''}${savingsRateChange}% pts`}
+          isPositive={savingsAmountChange >= 0}
         />
       </div>
 
