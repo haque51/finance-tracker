@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, 
 import { useApp as useGlobalApp } from './context/AppContext';
 import { fetchExchangeRates } from './utils/exchangeRateApi';
 import { DEFAULT_CATEGORIES, getAutoIcon } from './data/defaultCategories';
+import tokenManager from './services/tokenManager';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -107,7 +108,10 @@ export default function FinanceTrackerApp() {
   };
 
   // Use global user when authenticated, local state user when in demo mode
-  const currentUser = isAuthenticated ? globalContext.user : state.user;
+  // Initialize theme to 'light' if not present in user object
+  const currentUser = isAuthenticated
+    ? { ...globalContext.user, theme: globalContext.user?.theme || 'light' }
+    : state.user;
 
   // Load data from backend when authenticated
   useEffect(() => {
@@ -162,12 +166,12 @@ export default function FinanceTrackerApp() {
   }, [isAuthenticated, isDemoMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (state.user.theme === 'dark') {
+    if (currentUser?.theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [state.user.theme]);
+  }, [currentUser?.theme]);
 
   // Fetch exchange rates on mount and when accounts change
   useEffect(() => {
@@ -278,9 +282,20 @@ export default function FinanceTrackerApp() {
     return () => clearInterval(interval);
   }, [state.recurringTransactions, state.accounts, state.transactions]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const setTheme = (newTheme) => {
+    if (isAuthenticated) {
+      // For authenticated users, update global context and persist to localStorage
+      const updatedUser = { ...globalContext.user, theme: newTheme };
+      globalContext.updateUser(updatedUser);
+    } else {
+      // For demo mode, update local state
+      updateState({ user: { ...state.user, theme: newTheme } });
+    }
+  };
+
   const toggleTheme = () => {
-    const newTheme = state.user.theme === 'light' ? 'dark' : 'light';
-    updateState({ user: { ...state.user, theme: newTheme } });
+    const newTheme = currentUser?.theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
   };
 
   const handleLogout = async () => {
@@ -377,7 +392,7 @@ export default function FinanceTrackerApp() {
               {currentView === 'debt' && <DebtPayoffView />}
               {currentView === 'insights' && <InsightsView />}
               {currentView === 'reports' && <ReportsView />}
-              {currentView === 'settings' && <SettingsView />}
+              {currentView === 'settings' && <SettingsView setTheme={setTheme} currentUser={currentUser} />}
             </div>
           </main>
         </div>
@@ -4928,7 +4943,7 @@ function CustomReportBuilder({ transactions, filters }) {
     </div>
   );
 }
-function SettingsView() {
+function SettingsView({ setTheme, currentUser }) {
   const { state, updateState } = useApp();
   const [activeTab, setActiveTab] = useState('profile');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -5094,9 +5109,9 @@ function SettingsView() {
                 </label>
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => updateState({ user: { ...state.user, theme: 'light' }})}
+                    onClick={() => setTheme('light')}
                     className={`flex-1 p-4 border-2 rounded-lg transition-all ${
-                      state.user.theme === 'light'
+                      currentUser?.theme === 'light'
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-blue-400'
                     }`}
@@ -5107,9 +5122,9 @@ function SettingsView() {
                     </div>
                   </button>
                   <button
-                    onClick={() => updateState({ user: { ...state.user, theme: 'dark' }})}
+                    onClick={() => setTheme('dark')}
                     className={`flex-1 p-4 border-2 rounded-lg transition-all ${
-                      state.user.theme === 'dark'
+                      currentUser?.theme === 'dark'
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-blue-400'
                     }`}
@@ -5121,7 +5136,7 @@ function SettingsView() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Current theme: <span className="font-semibold capitalize">{state.user.theme}</span>
+                  Current theme: <span className="font-semibold capitalize">{currentUser?.theme}</span>
                 </p>
               </div>
             </div>
