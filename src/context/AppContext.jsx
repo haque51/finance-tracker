@@ -277,8 +277,9 @@ export function AppProvider({ children }) {
   const updateUser = (updates) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
-    // Note: This only updates local state
-    // Backend profile update will be added in Settings integration
+    // Persist to localStorage so theme and other preferences are saved
+    tokenManager.setUser(updatedUser);
+    // Note: Backend profile update for other fields will be added in Settings integration
   };
 
   /**
