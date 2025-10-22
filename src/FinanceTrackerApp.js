@@ -4,6 +4,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Cart
 import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, DollarSign, Plus, Edit2, Trash2, Search, Menu, BarChart3, ArrowRightLeft, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, CreditCard, Brain, Bell, Zap, Download, Upload, LogOut, MoreVertical, RefreshCw } from 'lucide-react';
 import { useApp as useGlobalApp } from './context/AppContext';
 import { fetchExchangeRates } from './utils/exchangeRateApi';
+import { DEFAULT_CATEGORIES, getAutoIcon } from './data/defaultCategories';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -29,48 +30,39 @@ const initialState = {
     { id: 'acc4', name: 'Car Loan', type: 'loan', currency: 'EUR', institution: 'Bank C', openingBalance: -15000, currentBalance: -12000, isActive: true, interestRate: 4.5 }
   ],
   transactions: [
-    { id: 'txn1', date: '2025-10-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat1', subcategoryId: null, amount: 4500, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn2', date: '2025-10-02', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat5', subcategoryId: 'cat7', amount: -120, currency: 'EUR', memo: 'Groceries', isReconciled: false },
-    { id: 'txn3', date: '2025-10-03', type: 'expense', accountId: 'acc3', payee: 'Restaurant', categoryId: 'cat5', subcategoryId: 'cat6', amount: -85, currency: 'EUR', memo: 'Dinner', isReconciled: false },
-    { id: 'txn4', date: '2025-09-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn5', date: '2025-09-15', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat5', subcategoryId: 'cat7', amount: -150, currency: 'EUR', memo: 'Groceries', isReconciled: false },
-    { id: 'txn6', date: '2025-08-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn7', date: '2025-08-10', type: 'expense', accountId: 'acc1', payee: 'Shopping Mall', categoryId: 'cat5', subcategoryId: 'cat7', amount: -200, currency: 'EUR', memo: 'Shopping', isReconciled: false }
+    { id: 'txn1', date: '2025-10-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4500, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
+    { id: 'txn2', date: '2025-10-02', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -120, currency: 'EUR', memo: 'Groceries', isReconciled: false },
+    { id: 'txn3', date: '2025-10-03', type: 'expense', accountId: 'acc3', payee: 'Restaurant', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_2', amount: -85, currency: 'EUR', memo: 'Dinner', isReconciled: false },
+    { id: 'txn4', date: '2025-09-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
+    { id: 'txn5', date: '2025-09-15', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -150, currency: 'EUR', memo: 'Groceries', isReconciled: false },
+    { id: 'txn6', date: '2025-08-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
+    { id: 'txn7', date: '2025-08-10', type: 'expense', accountId: 'acc1', payee: 'Shopping Mall', categoryId: 'cat_exp_shopping', subcategoryId: 'cat_exp_shopping_1', amount: -200, currency: 'EUR', memo: 'Shopping', isReconciled: false }
   ],
-  categories: [
-    { id: 'cat1', name: 'Salary', type: 'income', parentId: null, icon: '💰' },
-    { id: 'cat2', name: 'Freelance', type: 'income', parentId: null, icon: '💼' },
-    { id: 'cat4', name: 'Housing', type: 'expense', parentId: null, icon: '🏠' },
-    { id: 'cat5', name: 'Food & Dining', type: 'expense', parentId: null, icon: '🍽️' },
-    { id: 'cat6', name: 'Restaurants', type: 'expense', parentId: 'cat5', icon: '🍽️' },
-    { id: 'cat7', name: 'Groceries', type: 'expense', parentId: 'cat5', icon: '🛒' },
-    { id: 'cat8', name: 'Transportation', type: 'expense', parentId: null, icon: '🚗' },
-    { id: 'cat9', name: 'Entertainment', type: 'expense', parentId: null, icon: '🎬' }
-  ],
+  categories: DEFAULT_CATEGORIES,
   budgets: [
-    { id: 'bud1', month: '2025-10', categoryId: 'cat5', budgeted: 400 },
-    { id: 'bud2', month: '2025-10', categoryId: 'cat8', budgeted: 300 }
+    { id: 'bud1', month: '2025-10', categoryId: 'cat_exp_food', budgeted: 400 },
+    { id: 'bud2', month: '2025-10', categoryId: 'cat_exp_transport', budgeted: 300 }
   ],
   goals: [
     { id: 'goal1', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 10000, targetDate: '2025-12-31' },
     { id: 'goal2', name: 'Vacation', targetAmount: 3000, currentAmount: 500, targetDate: '2025-08-01' }
   ],
   recurringTransactions: [
-    { id: 'rec1', name: 'Monthly Rent', accountId: 'acc1', type: 'expense', payee: 'Landlord', categoryId: 'cat4', subcategoryId: null, amount: -1200, currency: 'EUR', frequency: 'monthly', interval: 1, startDate: '2025-01-01', endDate: null, isActive: true, lastProcessed: '2025-09-01' }
+    { id: 'rec1', name: 'Monthly Rent', accountId: 'acc1', type: 'expense', payee: 'Landlord', categoryId: 'cat_exp_housing', subcategoryId: 'cat_exp_housing_1', amount: -1200, currency: 'EUR', frequency: 'monthly', interval: 1, startDate: '2025-01-01', endDate: null, isActive: true, lastProcessed: '2025-09-01' }
   ],
   templates: [
-    { id: 'tpl1', name: 'Grocery Shopping', accountId: 'acc1', type: 'expense', payee: 'Supermarket', categoryId: 'cat5', subcategoryId: 'cat7', amount: -100, currency: 'EUR', memo: 'Weekly groceries' }
+    { id: 'tpl1', name: 'Grocery Shopping', accountId: 'acc1', type: 'expense', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -100, currency: 'EUR', memo: 'Weekly groceries' }
   ],
   exchangeRates: { USD: 1.1, BDT: 0.0091, EUR: 1 },
   debtPayoffPlans: [
     { id: 'dpp1', name: 'Credit Card Payoff', strategy: 'avalanche', extraMonthlyPayment: 200, accountIds: ['acc3'], createdDate: '2025-10-01', isActive: true }
   ],
   alerts: [
-    { id: 'alert1', type: 'budget', name: 'Food Budget Alert', condition: 'exceeds', categoryId: 'cat5', threshold: 400, isActive: true },
+    { id: 'alert1', type: 'budget', name: 'Food Budget Alert', condition: 'exceeds', categoryId: 'cat_exp_food', threshold: 400, isActive: true },
     { id: 'alert2', type: 'balance', name: 'Low Balance Alert', condition: 'below', accountId: 'acc1', threshold: 500, isActive: true }
   ],
   autoCategorization: [
-    { id: 'auto1', name: 'Grocery Auto-Cat', matchField: 'payee', matchValue: 'Supermarket', categoryId: 'cat5', subcategoryId: 'cat7', priority: 1, isActive: true }
+    { id: 'auto1', name: 'Grocery Auto-Cat', matchField: 'payee', matchValue: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', priority: 1, isActive: true }
   ]
 };
 
@@ -1235,13 +1227,37 @@ function CategoryForm({ category, onClose }) {
     parentId: null,
     icon: '📝'
   });
+  const [manualIconEdit, setManualIconEdit] = useState(!!category);
+
+  // Auto-assign icon when name changes (unless user manually edited icon)
+  const handleNameChange = (newName) => {
+    const updates = { name: newName };
+
+    // Only auto-assign icon if user hasn't manually edited it
+    if (!manualIconEdit) {
+      updates.icon = getAutoIcon(newName, formData.type);
+    }
+
+    setFormData({ ...formData, ...updates });
+  };
+
+  // Handle icon manual edit
+  const handleIconChange = (newIcon) => {
+    setManualIconEdit(true);
+    setFormData({ ...formData, icon: newIcon });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (category) {
       updateState({ categories: state.categories.map(c => c.id === category.id ? { ...c, ...formData } : c) });
     } else {
-      const newCategory = { ...formData, id: 'cat' + Date.now() };
+      const newCategory = {
+        ...formData,
+        id: 'cat_custom_' + Date.now(),
+        // Ensure icon is set, fallback to auto-assignment if empty
+        icon: formData.icon || getAutoIcon(formData.name, formData.type)
+      };
       updateState({ categories: [...state.categories, newCategory] });
     }
     onClose();
@@ -1254,19 +1270,45 @@ function CategoryForm({ category, onClose }) {
       <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{category ? 'Edit Category' : 'Add Category'}</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="text" placeholder="Category Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
-          <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value, parentId: null })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" disabled={!!category}>
+          <input
+            type="text"
+            placeholder="Category Name"
+            value={formData.name}
+            onChange={e => handleNameChange(e.target.value)}
+            className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            required
+          />
+          <select
+            value={formData.type}
+            onChange={e => setFormData({ ...formData, type: e.target.value, parentId: null, icon: getAutoIcon(formData.name, e.target.value) })}
+            className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            disabled={!!category}
+          >
             <option value="income">Income</option>
             <option value="expense">Expense</option>
           </select>
-          <select value={formData.parentId || ''} onChange={e => setFormData({ ...formData, parentId: e.target.value || null })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          <select
+            value={formData.parentId || ''}
+            onChange={e => setFormData({ ...formData, parentId: e.target.value || null })}
+            className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
             <option value="">No Parent (Main Category)</option>
             {parentCategories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
             ))}
           </select>
-          <input type="text" placeholder="Icon (emoji)" value={formData.icon} onChange={e => setFormData({ ...formData, icon: e.target.value })} className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" maxLength="2" />
+          <input
+            type="text"
+            placeholder="Icon (emoji) - auto-assigned"
+            value={formData.icon}
+            onChange={e => handleIconChange(e.target.value)}
+            className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            maxLength="2"
+          />
         </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          💡 Tip: Icon is automatically assigned based on category name. You can override it by typing your own emoji.
+        </p>
         <div className="flex space-x-2">
           <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{category ? 'Update' : 'Add'} Category</button>
           <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
