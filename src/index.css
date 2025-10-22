@@ -45,9 +45,9 @@
 @layer components {
   /* Glassmorphic Card - Exact Spec Values */
   .glass-card {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(229, 231, 235, 0.8);
     @apply rounded-card shadow-card;
     padding: 20px;
     @apply transition-all duration-card;
