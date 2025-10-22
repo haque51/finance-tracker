@@ -1108,46 +1108,47 @@ function TransactionsView() {
               </tr>
             </thead>
             <tbody>
-            {filteredTransactions.map(txn => {
-              const category = state.categories.find(c => c.id === txn.categoryId);
-              const subcategory = txn.subcategoryId ? state.categories.find(c => c.id === txn.subcategoryId) : null;
-              return (
-                <tr key={txn.id}>
-                  <td>{txn.date}</td>
-                  <td>
-                    <span className={`badge-modern ${
-                      txn.type === 'income' ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300' :
-                      txn.type === 'expense' ? 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300' :
-                      'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    }`}>
-                      {txn.type === 'transfer' ? <ArrowRightLeft className="w-3 h-3 inline mr-1" /> : null}
-                      {txn.type}
-                    </span>
-                  </td>
-                  <td className="font-medium">{txn.payee}</td>
-                  <td>
-                    {category ? `${category.icon} ${category.name}` : 'Uncategorized'}
-                    {subcategory && ` > ${subcategory.name}`}
-                  </td>
-                  <td className={`text-right font-semibold ${txn.amount >= 0 ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
-                    {txn.currency} {txn.amount.toLocaleString()}
-                  </td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => { setEditingTransaction(txn); setShowForm(true); }} className="p-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-button transition-all duration-hover">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(txn.id)} className="p-2 text-error-600 hover:text-error-800 dark:text-error-400 dark:hover:text-error-300 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-button transition-all duration-hover">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+              {filteredTransactions.map(txn => {
+                const category = state.categories.find(c => c.id === txn.categoryId);
+                const subcategory = txn.subcategoryId ? state.categories.find(c => c.id === txn.subcategoryId) : null;
+                return (
+                  <tr key={txn.id}>
+                    <td>{txn.date}</td>
+                    <td>
+                      <span className={`badge-modern ${
+                        txn.type === 'income' ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300' :
+                        txn.type === 'expense' ? 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300' :
+                        'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                      }`}>
+                        {txn.type === 'transfer' ? <ArrowRightLeft className="w-3 h-3 inline mr-1" /> : null}
+                        {txn.type}
+                      </span>
+                    </td>
+                    <td className="font-medium">{txn.payee}</td>
+                    <td>
+                      {category ? `${category.icon} ${category.name}` : 'Uncategorized'}
+                      {subcategory && ` > ${subcategory.name}`}
+                    </td>
+                    <td className={`text-right font-semibold ${txn.amount >= 0 ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
+                      {txn.currency} {txn.amount.toLocaleString()}
+                    </td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => { setEditingTransaction(txn); setShowForm(true); }} className="p-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-button transition-all duration-hover">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(txn.id)} className="p-2 text-error-600 hover:text-error-800 dark:text-error-400 dark:hover:text-error-300 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-button transition-all duration-hover">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }
