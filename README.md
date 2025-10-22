@@ -140,7 +140,7 @@ src/
 - **Empty States** - Helpful messages when no data exists
 - **Toast Notifications** - Success, error, warning, and info toasts
 - **Confirm Dialogs** - Prevents accidental deletions
-- **Dark Mode** - Full support for dark theme
+- **Dark Mode** - Full support for dark theme with persistent preferences
 
 ### Responsive Design
 - Mobile-first design

@@ -5,7 +5,6 @@ import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, 
 import { useApp as useGlobalApp } from './context/AppContext';
 import { fetchExchangeRates } from './utils/exchangeRateApi';
 import { DEFAULT_CATEGORIES, getAutoIcon } from './data/defaultCategories';
-import tokenManager from './services/tokenManager';
 const AppContext = createContext();
 
 const useApp = () => {
