@@ -2817,8 +2817,8 @@ function DebtPayoffView() {
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
 
-  const debtAccounts = state.accounts.filter(a => 
-    (a.type === 'loan' || a.type === 'credit_card') && a.currentBalance < 0
+  const debtAccounts = state.accounts.filter(a =>
+    (a.type === 'loan' || a.type === 'credit_card') && a.currentBalance > 0
   );
 
   const totalDebt = debtAccounts.reduce((sum, acc) => sum + Math.abs(acc.currentBalance), 0);
@@ -3061,14 +3061,14 @@ function DebtPayoffView() {
 
 function DebtPayoffPlanForm({ plan, onClose }) {
   const { state, updateState } = useApp();
-  const debtAccounts = state.accounts.filter(a => 
-    (a.type === 'loan' || a.type === 'credit_card') && a.currentBalance < 0
+  const debtAccounts = state.accounts.filter(a =>
+    (a.type === 'loan' || a.type === 'credit_card') && a.currentBalance > 0
   );
 
   const [formData, setFormData] = useState(plan || {
     name: '',
     strategy: 'avalanche',
-    extraMonthlyPayment: 0,
+    extraMonthlyPayment: '',
     accountIds: [],
     isActive: true
   });
