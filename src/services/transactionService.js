@@ -64,8 +64,9 @@ class TransactionService {
    * @returns {Promise<Object>} Created transaction
    */
   async createTransaction(transactionData) {
+    let apiData;
     try {
-      const apiData = this._mapTransactionToAPI(transactionData);
+      apiData = this._mapTransactionToAPI(transactionData);
 
       // Detailed logging to debug validation issues
       console.log('=== TRANSACTION CREATE DEBUG ===');
