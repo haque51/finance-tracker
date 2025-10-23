@@ -69,10 +69,17 @@ class CategoryService {
   async createCategory(categoryData) {
     try {
       const apiData = this._mapCategoryToAPI(categoryData);
+
+      // Debug logging
+      console.log('Creating category:', categoryData.name);
+      console.log('Mapped API data:', JSON.stringify(apiData, null, 2));
+
       const response = await api.post(API_ENDPOINTS.CATEGORIES, apiData);
       return this._mapCategoryFromAPI(response.data.data);
     } catch (error) {
       console.error('Create category error:', error);
+      console.error('Failed category data:', categoryData);
+      console.error('Failed API payload:', apiData);
       throw error;
     }
   }
