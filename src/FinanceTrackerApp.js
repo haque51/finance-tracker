@@ -11,6 +11,8 @@ import { fetchExchangeRates } from './utils/exchangeRateApi';
 import { DEFAULT_CATEGORIES, getAutoIcon } from './data/defaultCategories';
 import { demoData, getEmptyState } from './data/demoData';
 import LoadingOverlay from './components/LoadingOverlay';
+import accountService from './services/accountService';
+import transactionService from './services/transactionService';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -730,17 +732,28 @@ function MetricCard({ title, value, icon, change, changePercent, isPositive }) {
 // I'll include them but keep them unchanged from the original
 
 function AccountsView() {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure? This will delete all associated transactions.')) {
-      updateState({
-        accounts: state.accounts.filter(a => a.id !== id),
-        transactions: state.transactions.filter(t => t.accountId !== id && t.transferAccountId !== id)
-      });
+      try {
+        // Call backend API if authenticated
+        if (isAuthenticated && !isDemoMode) {
+          await accountService.deleteAccount(id);
+        }
+
+        // Update local state
+        updateState({
+          accounts: state.accounts.filter(a => a.id !== id),
+          transactions: state.transactions.filter(t => t.accountId !== id && t.transferAccountId !== id)
+        });
+      } catch (error) {
+        console.error('Failed to delete account:', error);
+        alert('Failed to delete account. Please try again.');
+      }
     }
     setOpenMenuId(null);
   };
@@ -844,7 +857,7 @@ function AccountsView() {
 }
 
 function AccountForm({ account, onClose }) {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
   const isEditing = !!account;
 
   const [formData, setFormData] = useState(account ? {
@@ -865,37 +878,67 @@ function AccountForm({ account, onClose }) {
     interestRate: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isEditing) {
-      // When editing, keep the original opening balance, only update current balance and other fields
-      updateState({
-        accounts: state.accounts.map(a =>
-          a.id === account.id ? {
-            ...a,
-            name: formData.name,
-            type: formData.type,
-            currency: formData.currency,
-            institution: formData.institution,
-            currentBalance: parseFloat(formData.currentBalance) || 0,
-            interestRate: parseFloat(formData.interestRate) || 0
-          } : a
-        )
-      });
-    } else {
-      // When creating, set both opening and current balance to the same value
-      const openingBalance = parseFloat(formData.openingBalance) || 0;
-      const newAccount = {
-        ...formData,
-        id: 'acc' + Date.now(),
-        isActive: true,
-        openingBalance: openingBalance,
-        currentBalance: openingBalance,
-        interestRate: parseFloat(formData.interestRate) || 0
-      };
-      updateState({ accounts: [...state.accounts, newAccount] });
+
+    try {
+      if (isEditing) {
+        // When editing, keep the original opening balance, only update current balance and other fields
+        const updatedAccount = {
+          ...account,
+          name: formData.name,
+          type: formData.type,
+          currency: formData.currency,
+          institution: formData.institution,
+          currentBalance: parseFloat(formData.currentBalance) || 0,
+          interestRate: parseFloat(formData.interestRate) || 0
+        };
+
+        // Call backend API if authenticated
+        if (isAuthenticated && !isDemoMode) {
+          await accountService.updateAccount(account.id, updatedAccount);
+        }
+
+        // Update local state
+        updateState({
+          accounts: state.accounts.map(a =>
+            a.id === account.id ? updatedAccount : a
+          )
+        });
+      } else {
+        // When creating, set both opening and current balance to the same value
+        const openingBalance = parseFloat(formData.openingBalance) || 0;
+        const newAccountData = {
+          name: formData.name,
+          type: formData.type,
+          currency: formData.currency,
+          institution: formData.institution,
+          openingBalance: openingBalance,
+          currentBalance: openingBalance,
+          isActive: true,
+          interestRate: parseFloat(formData.interestRate) || 0
+        };
+
+        let newAccount;
+        // Call backend API if authenticated
+        if (isAuthenticated && !isDemoMode) {
+          newAccount = await accountService.createAccount(newAccountData);
+        } else {
+          // Demo mode: use temporary ID
+          newAccount = {
+            ...newAccountData,
+            id: 'acc' + Date.now()
+          };
+        }
+
+        // Update local state
+        updateState({ accounts: [...state.accounts, newAccount] });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save account:', error);
+      alert('Failed to save account. Please try again.');
     }
-    onClose();
   };
 
   return (
@@ -1016,26 +1059,46 @@ function AccountForm({ account, onClose }) {
 }
 
 function TransactionsView() {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
+  const globalContext = useGlobalApp();
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTransactions = state.transactions.filter(t => t.payee.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const txn = state.transactions.find(t => t.id === id);
     if (window.confirm('Delete this transaction?')) {
-      const updatedAccounts = state.accounts.map(acc => {
-        if (acc.id === txn.accountId) {
-          return { ...acc, currentBalance: acc.currentBalance - txn.amount };
+      try {
+        if (isAuthenticated && !isDemoMode) {
+          await transactionService.deleteTransaction(id);
+          // Reload data from backend to get updated balances
+          const [accountsData, transactionsData] = await Promise.all([
+            globalContext.loadAccounts(),
+            globalContext.loadTransactions()
+          ]);
+          updateState({
+            accounts: accountsData,
+            transactions: transactionsData?.transactions || transactionsData
+          });
+        } else {
+          // Demo mode: Update local state with balance calculations
+          const updatedAccounts = state.accounts.map(acc => {
+            if (acc.id === txn.accountId) {
+              return { ...acc, currentBalance: acc.currentBalance - txn.amount };
+            }
+            if (txn.type === 'transfer' && acc.id === txn.transferAccountId) {
+              return { ...acc, currentBalance: acc.currentBalance + txn.amount };
+            }
+            return acc;
+          });
+          updateState({ transactions: state.transactions.filter(t => t.id !== id), accounts: updatedAccounts });
         }
-        if (txn.type === 'transfer' && acc.id === txn.transferAccountId) {
-          return { ...acc, currentBalance: acc.currentBalance + txn.amount };
-        }
-        return acc;
-      });
-      updateState({ transactions: state.transactions.filter(t => t.id !== id), accounts: updatedAccounts });
+      } catch (error) {
+        console.error('Failed to delete transaction:', error);
+        alert('Failed to delete transaction. Please try again.');
+      }
     }
   };
 
@@ -1119,7 +1182,8 @@ function TransactionsView() {
 }
 
 function TransactionForm({ transaction, onClose }) {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
+  const globalContext = useGlobalApp();
   const [formData, setFormData] = useState(transaction ? {
     date: transaction.date,
     type: transaction.type,
@@ -1144,78 +1208,110 @@ function TransactionForm({ transaction, onClose }) {
     memo: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (transaction) {
-      const oldTxn = state.transactions.find(t => t.id === transaction.id);
-      const updatedAccounts = state.accounts.map(acc => {
-        // Step 1: Reverse the old transaction's effect
-        if (acc.id === oldTxn.accountId) {
-          // Reverse old transaction from source account
-          if (oldTxn.type === 'transfer') {
-            acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(oldTxn.amount) }; // Add back what was transferred
-          } else {
-            acc = { ...acc, currentBalance: acc.currentBalance - oldTxn.amount }; // Reverse income/expense
-          }
-        }
-        if (oldTxn.type === 'transfer' && acc.id === oldTxn.transferAccountId) {
-          // Reverse old transaction from destination account
-          acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(oldTxn.amount) }; // Remove what was received
-        }
 
-        // Step 2: Apply the new transaction's effect
-        if (acc.id === formData.accountId) {
-          // Apply new transaction to source account
-          if (formData.type === 'transfer') {
-            acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(parseFloat(formData.amount)) }; // Subtract transfer
-          } else {
-            acc = { ...acc, currentBalance: acc.currentBalance + (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
-          }
-        }
-        if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
-          // Apply new transaction to destination account
-          acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(parseFloat(formData.amount)) }; // Add transfer amount
-        }
-        return acc;
-      });
-      
-      updateState({
-        transactions: state.transactions.map(t => t.id === transaction.id ? {
-          ...formData,
-          id: transaction.id,
-          amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
-          isReconciled: t.isReconciled
-        } : t),
-        accounts: updatedAccounts
-      });
-    } else {
-      const newTxn = {
+    try {
+      const txnData = {
         ...formData,
-        id: 'txn' + Date.now(),
-        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
-        isReconciled: false
+        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))
       };
-      
-      const updatedAccounts = state.accounts.map(acc => {
-        if (acc.id === formData.accountId) {
-          // For transfers, subtract from source account (amount is positive)
-          // For income/expense, use the signed amount
-          if (formData.type === 'transfer') {
-            return { ...acc, currentBalance: acc.currentBalance - Math.abs(newTxn.amount) };
-          }
-          return { ...acc, currentBalance: acc.currentBalance + newTxn.amount };
+
+      if (transaction) {
+        // Update existing transaction
+        if (isAuthenticated && !isDemoMode) {
+          await transactionService.updateTransaction(transaction.id, txnData);
+          // Reload data from backend to get updated balances
+          const [accountsData, transactionsData] = await Promise.all([
+            globalContext.loadAccounts(),
+            globalContext.loadTransactions()
+          ]);
+          updateState({
+            accounts: accountsData,
+            transactions: transactionsData?.transactions || transactionsData
+          });
+        } else {
+          // Demo mode: Update local state with balance calculations
+          const oldTxn = state.transactions.find(t => t.id === transaction.id);
+          const updatedAccounts = state.accounts.map(acc => {
+            // Reverse old transaction
+            if (acc.id === oldTxn.accountId) {
+              if (oldTxn.type === 'transfer') {
+                acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(oldTxn.amount) };
+              } else {
+                acc = { ...acc, currentBalance: acc.currentBalance - oldTxn.amount };
+              }
+            }
+            if (oldTxn.type === 'transfer' && acc.id === oldTxn.transferAccountId) {
+              acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(oldTxn.amount) };
+            }
+
+            // Apply new transaction
+            if (acc.id === formData.accountId) {
+              if (formData.type === 'transfer') {
+                acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(parseFloat(formData.amount)) };
+              } else {
+                acc = { ...acc, currentBalance: acc.currentBalance + (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
+              }
+            }
+            if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
+              acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(parseFloat(formData.amount)) };
+            }
+            return acc;
+          });
+
+          updateState({
+            transactions: state.transactions.map(t => t.id === transaction.id ? {
+              ...txnData,
+              id: transaction.id,
+              isReconciled: t.isReconciled
+            } : t),
+            accounts: updatedAccounts
+          });
         }
-        if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
-          // Add to destination account
-          return { ...acc, currentBalance: acc.currentBalance + Math.abs(newTxn.amount) };
+      } else {
+        // Create new transaction
+        let newTxn;
+        if (isAuthenticated && !isDemoMode) {
+          newTxn = await transactionService.createTransaction(txnData);
+          // Reload data from backend to get updated balances
+          const [accountsData, transactionsData] = await Promise.all([
+            globalContext.loadAccounts(),
+            globalContext.loadTransactions()
+          ]);
+          updateState({
+            accounts: accountsData,
+            transactions: transactionsData?.transactions || transactionsData
+          });
+        } else {
+          // Demo mode: Update local state with balance calculations
+          newTxn = {
+            ...txnData,
+            id: 'txn' + Date.now(),
+            isReconciled: false
+          };
+
+          const updatedAccounts = state.accounts.map(acc => {
+            if (acc.id === formData.accountId) {
+              if (formData.type === 'transfer') {
+                return { ...acc, currentBalance: acc.currentBalance - Math.abs(newTxn.amount) };
+              }
+              return { ...acc, currentBalance: acc.currentBalance + newTxn.amount };
+            }
+            if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
+              return { ...acc, currentBalance: acc.currentBalance + Math.abs(newTxn.amount) };
+            }
+            return acc;
+          });
+
+          updateState({ transactions: [...state.transactions, newTxn], accounts: updatedAccounts });
         }
-        return acc;
-      });
-      
-      updateState({ transactions: [...state.transactions, newTxn], accounts: updatedAccounts });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save transaction:', error);
+      alert('Failed to save transaction. Please try again.');
     }
-    onClose();
   };
 
   const filteredCategories = state.categories.filter(c => c.type === formData.type && !c.parentId);
