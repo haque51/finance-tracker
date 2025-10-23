@@ -5160,9 +5160,13 @@ function CustomReportBuilder({ transactions, filters }) {
 }
 function SettingsView({ setTheme, currentUser }) {
   const { state, updateState, isDemoMode } = useApp();
+  const globalContext = useGlobalApp();
   const [activeTab, setActiveTab] = useState('profile');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetInput, setResetInput] = useState('');
+  const [showResetCategoriesConfirm, setShowResetCategoriesConfirm] = useState(false);
+  const [isResettingCategories, setIsResettingCategories] = useState(false);
+  const [resetCategoriesResult, setResetCategoriesResult] = useState(null);
 
   const refreshExchangeRates = () => {
     // Simulating exchange rate refresh - in production, this would call an API
@@ -5196,6 +5200,37 @@ function SettingsView({ setTheme, currentUser }) {
       alert(isDemoMode ? 'All data has been reset to demo defaults!' : 'All data has been cleared!');
     } else {
       alert('Please type "DELETE ALL DATA" exactly to confirm.');
+    }
+  };
+
+  const handleResetCategories = async () => {
+    try {
+      setIsResettingCategories(true);
+      setResetCategoriesResult(null);
+
+      console.log('🔄 Starting category reset...');
+      const newCategories = await globalContext.resetCategories();
+
+      // Update local state with new categories
+      updateState({ categories: newCategories });
+
+      setResetCategoriesResult({
+        success: true,
+        message: `Successfully reset ${newCategories.length} categories!`,
+        count: newCategories.length
+      });
+
+      console.log('✅ Category reset complete!');
+    } catch (error) {
+      console.error('❌ Category reset failed:', error);
+      setResetCategoriesResult({
+        success: false,
+        message: error.message || 'Failed to reset categories. Please try again.',
+        error: error
+      });
+    } finally {
+      setIsResettingCategories(false);
+      setShowResetCategoriesConfirm(false);
     }
   };
 
@@ -5670,6 +5705,105 @@ function SettingsView({ setTheme, currentUser }) {
                 <p className="text-2xl font-bold text-orange-600">{state.goals.length}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Goals</p>
               </div>
+            </div>
+          </div>
+
+          {/* Reset Categories Section */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Category Management
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Reset your categories to default settings. This will delete all custom categories and restore the original category structure.
+            </p>
+
+            {/* Show result message if exists */}
+            {resetCategoriesResult && (
+              <div className={`mb-4 p-4 rounded-lg ${
+                resetCategoriesResult.success
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  {resetCategoriesResult.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                  )}
+                  <p className={`text-sm font-medium ${
+                    resetCategoriesResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
+                  }`}>
+                    {resetCategoriesResult.message}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowResetCategoriesConfirm(true)}
+              disabled={isResettingCategories}
+              className="w-full flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-200 dark:border-orange-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-center space-x-3">
+                <RefreshCw className={`w-5 h-5 text-orange-600 ${isResettingCategories ? 'animate-spin' : ''}`} />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {isResettingCategories ? 'Resetting Categories...' : 'Reset Categories to Defaults'}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Delete all categories and restore default category structure
+                  </p>
+                </div>
+              </div>
+              <span className="text-gray-400">→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Categories Confirmation Dialog */}
+      {showResetCategoriesConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-start space-x-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Reset Categories?
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This will delete all your current categories and restore the default category structure.
+                  This action cannot be undone.
+                </p>
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                    ⚠️ <strong>Warning:</strong> Any transactions using custom categories may lose their category associations.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowResetCategoriesConfirm(false)}
+                disabled={isResettingCategories}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetCategories}
+                disabled={isResettingCategories}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isResettingCategories ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <span>Reset Categories</span>
+                )}
+              </button>
             </div>
           </div>
         </div>
