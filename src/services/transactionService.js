@@ -149,13 +149,17 @@ class TransactionService {
       type: apiTxn.type,
       accountId: apiTxn.account_id,
       toAccountId: apiTxn.to_account_id,
+      transferAccountId: apiTxn.to_account_id, // Alias for frontend compatibility
       categoryId: apiTxn.category_id,
+      subcategoryId: apiTxn.subcategory_id,
       amount: apiTxn.amount,
-      currency: apiTxn.currency,
+      currency: apiTxn.currency || 'EUR',
       description: apiTxn.description,
+      payee: apiTxn.description, // Alias for frontend compatibility
       date: apiTxn.transaction_date,
       reconciled: apiTxn.is_reconciled,
       notes: apiTxn.notes,
+      memo: apiTxn.notes, // Alias for frontend compatibility
       createdAt: apiTxn.created_at,
       updatedAt: apiTxn.updated_at,
       // Joined data from backend
@@ -174,13 +178,15 @@ class TransactionService {
     return {
       type: txn.type,
       account_id: txn.accountId || txn.account_id,
-      to_account_id: txn.toAccountId || txn.to_account_id,
-      category_id: txn.categoryId || txn.category_id,
+      to_account_id: txn.toAccountId || txn.to_account_id || null,
+      category_id: txn.categoryId || txn.category_id || null,
+      subcategory_id: txn.subcategoryId || txn.subcategory_id || null,
       amount: txn.amount,
-      description: txn.description,
+      currency: txn.currency || 'EUR',
+      description: txn.description || null,
       transaction_date: txn.date || txn.transaction_date,
-      is_reconciled: txn.reconciled !== undefined ? txn.reconciled : txn.is_reconciled,
-      notes: txn.notes,
+      is_reconciled: txn.reconciled !== undefined ? txn.reconciled : (txn.is_reconciled || false),
+      notes: txn.notes || null,
     };
   }
 }
