@@ -97,6 +97,9 @@ class CategoryService {
     try {
       console.log(`📦 Creating ${categoriesArray.length} default categories...`);
 
+      // Helper to add delay between requests (avoid rate limiting)
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
       // Create categories one by one (since backend doesn't have bulk endpoint)
       // Create parent categories first, then children
       const parentCategories = categoriesArray.filter(cat => !cat.parentId);
@@ -108,7 +111,7 @@ class CategoryService {
       // Map old demo IDs to new backend UUIDs
       const idMap = new Map();
 
-      // Create parent categories first
+      // Create parent categories first with delay to avoid rate limiting
       for (const category of parentCategories) {
         try {
           const created = await this.createCategory(category);
@@ -116,6 +119,9 @@ class CategoryService {
           // Map old demo ID to new backend UUID
           idMap.set(category.id, created.id);
           console.log(`✅ Created parent: ${category.name} (${category.id} → ${created.id})`);
+
+          // Add 150ms delay between requests to avoid rate limiting
+          await delay(150);
         } catch (err) {
           console.warn(`❌ Failed to create category ${category.name}:`, err.message);
           // Continue with others even if one fails
@@ -142,6 +148,9 @@ class CategoryService {
           const created = await this.createCategory(categoryWithRealParent);
           createdChildren.push(created);
           console.log(`✅ Created child: ${category.name} (parent: ${realParentId})`);
+
+          // Add 150ms delay between requests to avoid rate limiting
+          await delay(150);
         } catch (err) {
           console.warn(`❌ Failed to create subcategory ${category.name}:`, err.message);
           // Continue with others even if one fails
