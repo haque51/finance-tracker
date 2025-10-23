@@ -1450,7 +1450,9 @@ function TransactionForm({ transaction, onClose }) {
             >
               <option value="">Select Account</option>
               {state.accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
+                <option key={acc.id} value={acc.id}>
+                  {acc.name}{acc.currency ? ` (${acc.currency})` : ''}
+                </option>
               ))}
             </select>
           </div>
