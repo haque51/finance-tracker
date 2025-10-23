@@ -225,28 +225,10 @@ class CategoryService {
    * @private
    */
   _mapCategoryToAPI(category) {
-    // If category has an emoji icon, use a default color
-    // Otherwise try to map icon name to color
-    let color = category.color;
-    if (!color) {
-      // Check if icon is an emoji (non-ASCII characters)
-      const isEmoji = category.icon && /[\u{1F000}-\u{1F9FF}]/u.test(category.icon);
-      color = isEmoji ? this._getColorForCategoryType(category.type) : this._mapIconToColor(category.icon);
-    }
-
-    // Ensure color is always set
-    if (!color) {
-      color = this._getColorForCategoryType(category.type);
-    }
-
-    // Ensure is_active is always set (default to true)
-    const isActive = category.isActive !== undefined ? category.isActive : (category.is_active !== undefined ? category.is_active : true);
-
-    // Build payload - only include fields with actual values
+    // Build payload - only include fields backend accepts
     const payload = {
       name: category.name,
       type: category.type,
-      color: color,
     };
 
     // Only include parent_id if it has a value (don't send null)
@@ -255,10 +237,8 @@ class CategoryService {
       payload.parent_id = parentId;
     }
 
-    // Only include is_active if explicitly set (don't send default true)
-    if (category.isActive !== undefined || category.is_active !== undefined) {
-      payload.is_active = isActive;
-    }
+    // Note: Backend does NOT accept 'color', 'icon', or 'is_active' fields on create/update
+    // These are auto-generated or returned by the backend
 
     return payload;
   }
