@@ -81,6 +81,9 @@ class CategoryService {
       console.error('Create category error:', error);
       console.error('Failed category data:', categoryData);
       console.error('Failed API payload:', apiData);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+      console.error('Backend validation details:', error.originalError?.response?.data);
       throw error;
     }
   }
