@@ -67,8 +67,9 @@ class CategoryService {
    * @returns {Promise<Object>} Created category
    */
   async createCategory(categoryData) {
+    let apiData;
     try {
-      const apiData = this._mapCategoryToAPI(categoryData);
+      apiData = this._mapCategoryToAPI(categoryData);
 
       // Debug logging
       console.log('Creating category:', categoryData.name);
