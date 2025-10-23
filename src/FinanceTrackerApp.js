@@ -13,10 +13,6 @@ import { demoData, getEmptyState } from './data/demoData';
 import LoadingOverlay from './components/LoadingOverlay';
 import accountService from './services/accountService';
 import transactionService from './services/transactionService';
-import categoryService from './services/categoryService';
-import budgetService from './services/budgetService';
-import goalService from './services/goalService';
-import recurringService from './services/recurringService';
 const AppContext = createContext();
 
 const useApp = () => {
@@ -863,7 +859,6 @@ function AccountsView() {
 function AccountForm({ account, onClose }) {
   const { state, updateState, isDemoMode, isAuthenticated } = useApp();
   const isEditing = !!account;
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState(account ? {
     name: account.name,
@@ -885,7 +880,6 @@ function AccountForm({ account, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
       if (isEditing) {
@@ -944,8 +938,6 @@ function AccountForm({ account, onClose }) {
     } catch (error) {
       console.error('Failed to save account:', error);
       alert('Failed to save account. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -1192,7 +1184,6 @@ function TransactionsView() {
 function TransactionForm({ transaction, onClose }) {
   const { state, updateState, isDemoMode, isAuthenticated } = useApp();
   const globalContext = useGlobalApp();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState(transaction ? {
     date: transaction.date,
     type: transaction.type,
@@ -1219,7 +1210,6 @@ function TransactionForm({ transaction, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
     try {
       const txnData = {
@@ -1321,8 +1311,6 @@ function TransactionForm({ transaction, onClose }) {
     } catch (error) {
       console.error('Failed to save transaction:', error);
       alert('Failed to save transaction. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
