@@ -14,6 +14,7 @@ import recurringService from '../services/recurringService';
 import analyticsService from '../services/analyticsService';
 import currencyService from '../services/currencyService';
 import tokenManager from '../services/tokenManager';
+import { DEFAULT_CATEGORIES } from '../data/defaultCategories';
 
 export const AppContext = createContext();
 
@@ -106,6 +107,44 @@ export function AppProvider({ children }) {
       return data;
     } catch (error) {
       console.error('Failed to create categories in bulk:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Reset categories - Delete all existing categories and recreate defaults
+   * Useful for fixing broken category data with wrong parent IDs
+   */
+  const resetCategories = async () => {
+    try {
+      console.log('🔄 Resetting categories...');
+
+      // Load all existing categories
+      const existingCategories = await categoryService.getCategories();
+      console.log(`📋 Found ${existingCategories.length} existing categories`);
+
+      // Delete all existing categories
+      console.log('🗑️ Deleting existing categories...');
+      for (const category of existingCategories) {
+        try {
+          await categoryService.deleteCategory(category.id);
+          console.log(`✅ Deleted: ${category.name}`);
+        } catch (err) {
+          console.warn(`Failed to delete category ${category.name}:`, err);
+        }
+      }
+
+      // Create fresh default categories with proper ID mapping
+      console.log('📦 Creating fresh default categories...');
+      const newCategories = await categoryService.createCategoriesBulk(DEFAULT_CATEGORIES);
+
+      // Update local state
+      setCategories(newCategories);
+
+      console.log(`✅ Categories reset complete! Created ${newCategories.length} categories`);
+      return newCategories;
+    } catch (error) {
+      console.error('Failed to reset categories:', error);
       throw error;
     }
   };
@@ -330,6 +369,7 @@ export function AppProvider({ children }) {
     loadTransactions,
     loadCategories,
     createCategoriesBulk,
+    resetCategories,
     initializeAppData,
 
     // Phase 4 loading functions
