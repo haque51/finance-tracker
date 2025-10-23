@@ -66,10 +66,19 @@ class TransactionService {
   async createTransaction(transactionData) {
     try {
       const apiData = this._mapTransactionToAPI(transactionData);
+
+      // Detailed logging to debug validation issues
+      console.log('=== TRANSACTION CREATE DEBUG ===');
+      console.log('Frontend data:', transactionData);
+      console.log('Mapped API payload:', apiData);
+      console.log('Payload JSON:', JSON.stringify(apiData, null, 2));
+      console.log('================================');
+
       const response = await api.post(API_ENDPOINTS.TRANSACTIONS, apiData);
       return this._mapTransactionFromAPI(response.data.data);
     } catch (error) {
       console.error('Create transaction error:', error);
+      console.error('Failed payload was:', apiData);
       throw error;
     }
   }
