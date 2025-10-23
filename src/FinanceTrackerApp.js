@@ -9,60 +9,14 @@ import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, 
 import { useApp as useGlobalApp } from './context/AppContext';
 import { fetchExchangeRates } from './utils/exchangeRateApi';
 import { DEFAULT_CATEGORIES, getAutoIcon } from './data/defaultCategories';
+import { demoData, getEmptyState } from './data/demoData';
+import LoadingOverlay from './components/LoadingOverlay';
 const AppContext = createContext();
 
 const useApp = () => {
   const context = useContext(AppContext);
   if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
-};
-
-const initialState = {
-  user: {
-    id: 'user1',
-    name: 'Demo User',
-    email: 'demo@financetracker.com',
-    theme: 'light',
-    baseCurrency: 'EUR',
-    monthlyIncomeGoal: 5000,
-    monthlySavingsGoal: 1000
-  },
-  accounts: [
-    { id: 'acc1', name: 'Main Checking', type: 'checking', currency: 'EUR', institution: 'Bank A', openingBalance: 5000, currentBalance: 5000, isActive: true },
-    { id: 'acc2', name: 'Savings', type: 'savings', currency: 'EUR', institution: 'Bank A', openingBalance: 10000, currentBalance: 10000, isActive: true },
-    { id: 'acc3', name: 'Credit Card', type: 'credit_card', currency: 'EUR', institution: 'Bank B', openingBalance: 0, currentBalance: -1500, isActive: true },
-    { id: 'acc4', name: 'Car Loan', type: 'loan', currency: 'EUR', institution: 'Bank C', openingBalance: -15000, currentBalance: -12000, isActive: true, interestRate: 4.5 }
-  ],
-  transactions: [
-    { id: 'txn1', date: '2025-10-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4500, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn2', date: '2025-10-02', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -120, currency: 'EUR', memo: 'Groceries', isReconciled: false },
-    { id: 'txn3', date: '2025-10-03', type: 'expense', accountId: 'acc3', payee: 'Restaurant', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_2', amount: -85, currency: 'EUR', memo: 'Dinner', isReconciled: false },
-    { id: 'txn4', date: '2025-09-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn5', date: '2025-09-15', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -150, currency: 'EUR', memo: 'Groceries', isReconciled: false },
-    { id: 'txn6', date: '2025-08-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn7', date: '2025-08-10', type: 'expense', accountId: 'acc1', payee: 'Shopping Mall', categoryId: 'cat_exp_shopping', subcategoryId: 'cat_exp_shopping_1', amount: -200, currency: 'EUR', memo: 'Shopping', isReconciled: false }
-  ],
-  categories: DEFAULT_CATEGORIES,
-  budgets: [
-    { id: 'bud1', month: '2025-10', categoryId: 'cat_exp_food', budgeted: 400 },
-    { id: 'bud2', month: '2025-10', categoryId: 'cat_exp_transport', budgeted: 300 }
-  ],
-  goals: [
-    { id: 'goal1', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 10000, targetDate: '2025-12-31' },
-    { id: 'goal2', name: 'Vacation', targetAmount: 3000, currentAmount: 500, targetDate: '2025-08-01' }
-  ],
-  recurringTransactions: [
-    { id: 'rec1', name: 'Monthly Rent', accountId: 'acc1', type: 'expense', payee: 'Landlord', categoryId: 'cat_exp_housing', subcategoryId: 'cat_exp_housing_1', amount: -1200, currency: 'EUR', frequency: 'monthly', interval: 1, startDate: '2025-01-01', endDate: null, isActive: true, lastProcessed: '2025-09-01' }
-  ],
-  templates: [
-    { id: 'tpl1', name: 'Grocery Shopping', accountId: 'acc1', type: 'expense', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -100, currency: 'EUR', memo: 'Weekly groceries' }
-  ],
-  exchangeRates: { USD: 1.1, BDT: 0.0091, EUR: 1 },
-  debtPayoffPlans: [
-    { id: 'dpp1', name: 'Credit Card Payoff', strategy: 'avalanche', extraMonthlyPayment: 200, accountIds: ['acc3'], createdDate: '2025-10-01', isActive: true }
-  ],
-  alerts: [],
-  autoCategorization: []
 };
 
 export default function FinanceTrackerApp() {
@@ -74,10 +28,14 @@ export default function FinanceTrackerApp() {
   const isDemoMode = location.pathname === '/demo';
   const isAuthenticated = !isDemoMode && globalContext.isAuthenticated;
 
-  const [state, setState] = useState(initialState);
+  // Initialize state conditionally: demo data for demo mode, empty state for authenticated users
+  const [state, setState] = useState(() => {
+    return isDemoMode ? demoData : getEmptyState();
+  });
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  // Show loading only when authenticated and not in demo mode
+  const [isLoadingData, setIsLoadingData] = useState(isAuthenticated && !isDemoMode);
   const [isRefreshingRates, setIsRefreshingRates] = useState(false);
 
   const updateState = (updates) => {
@@ -314,6 +272,9 @@ export default function FinanceTrackerApp() {
 
   return (
     <AppContext.Provider value={contextValue}>
+      {/* Show loading overlay when fetching data for authenticated users */}
+      {isLoadingData && !isDemoMode && <LoadingOverlay text="Loading your financial data..." />}
+
       <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors">
         {/* Modern Header with Glassmorphism - Per Design Spec */}
         <header className="sticky top-0 z-50 glass-card border-b border-gray-200/50 dark:border-gray-700/50">
@@ -5024,7 +4985,7 @@ function CustomReportBuilder({ transactions, filters }) {
   );
 }
 function SettingsView({ setTheme, currentUser }) {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode } = useApp();
   const [activeTab, setActiveTab] = useState('profile');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetInput, setResetInput] = useState('');
@@ -5042,22 +5003,23 @@ function SettingsView({ setTheme, currentUser }) {
 
   const handleStartOver = () => {
     if (resetInput === 'DELETE ALL DATA') {
-      // Reset to initial state
+      // Reset to demo data in demo mode, or empty state in authenticated mode
+      const resetData = isDemoMode ? demoData : getEmptyState();
       updateState({
-        accounts: initialState.accounts,
-        transactions: initialState.transactions,
-        categories: initialState.categories,
-        budgets: initialState.budgets,
-        goals: initialState.goals,
-        recurringTransactions: initialState.recurringTransactions,
-        templates: initialState.templates,
-        debtPayoffPlans: initialState.debtPayoffPlans,
-        alerts: initialState.alerts,
-        autoCategorization: initialState.autoCategorization
+        accounts: resetData.accounts,
+        transactions: resetData.transactions,
+        categories: resetData.categories,
+        budgets: resetData.budgets,
+        goals: resetData.goals,
+        recurringTransactions: resetData.recurringTransactions,
+        templates: resetData.templates,
+        debtPayoffPlans: resetData.debtPayoffPlans,
+        alerts: resetData.alerts,
+        autoCategorization: resetData.autoCategorization
       });
       setShowResetConfirm(false);
       setResetInput('');
-      alert('All data has been reset to defaults!');
+      alert(isDemoMode ? 'All data has been reset to demo defaults!' : 'All data has been cleared!');
     } else {
       alert('Please type "DELETE ALL DATA" exactly to confirm.');
     }
