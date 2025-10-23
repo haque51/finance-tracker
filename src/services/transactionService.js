@@ -185,19 +185,35 @@ class TransactionService {
    * @private
    */
   _mapTransactionToAPI(txn) {
-    return {
+    // Build payload - only include fields backend accepts
+    const payload = {
       type: txn.type,
       account_id: txn.accountId || txn.account_id,
-      to_account_id: txn.toAccountId || txn.to_account_id || null,
-      category_id: txn.categoryId || txn.category_id || null,
-      subcategory_id: txn.subcategoryId || txn.subcategory_id || null,
       amount: txn.amount,
       currency: txn.currency || 'EUR',
-      description: txn.description || null,
-      transaction_date: txn.date || txn.transaction_date,
-      is_reconciled: txn.reconciled !== undefined ? txn.reconciled : (txn.is_reconciled || false),
-      notes: txn.notes || null,
+      date: txn.date || txn.transaction_date, // Backend expects "date" not "transaction_date"
     };
+
+    // Only include to_account_id for transfers (omit null)
+    const toAccountId = txn.toAccountId || txn.to_account_id;
+    if (toAccountId && txn.type === 'transfer') {
+      payload.to_account_id = toAccountId;
+    }
+
+    // Only include category_id for income/expense (not for transfers, omit null)
+    const categoryId = txn.categoryId || txn.category_id;
+    if (categoryId && txn.type !== 'transfer') {
+      payload.category_id = categoryId;
+    }
+
+    // Note: Backend does NOT accept these fields:
+    // - subcategory_id (not supported)
+    // - description (not supported)
+    // - notes (not supported)
+    // - is_reconciled (not supported on create/update)
+    // - transaction_date (use "date" instead)
+
+    return payload;
   }
 }
 
