@@ -95,11 +95,22 @@ export default function FinanceTrackerApp() {
 
           // If backend has no categories, this is a new user - save defaults to backend
           let finalCategories = categoriesData;
+
+          console.log('=== CATEGORY LOADING DEBUG ===');
+          console.log('Categories from backend:', categoriesData?.length || 0);
+          if (categoriesData && categoriesData.length > 0) {
+            console.log('Sample backend category:', categoriesData[0]);
+          }
+
           if (!categoriesData || categoriesData.length === 0) {
             console.log('🆕 New user detected - initializing default categories in backend...');
             try {
               // Save default categories to backend
               const savedCategories = await globalContext.createCategoriesBulk(DEFAULT_CATEGORIES);
+              console.log('Saved categories from backend:', savedCategories?.length || 0);
+              if (savedCategories && savedCategories.length > 0) {
+                console.log('Sample saved category:', savedCategories[0]);
+              }
               finalCategories = savedCategories && savedCategories.length > 0 ? savedCategories : DEFAULT_CATEGORIES;
               console.log(`✅ Default categories saved to backend: ${finalCategories.length} categories`);
             } catch (err) {
@@ -107,6 +118,12 @@ export default function FinanceTrackerApp() {
               finalCategories = DEFAULT_CATEGORIES;
             }
           }
+
+          console.log('Final categories being used:', finalCategories?.length || 0);
+          if (finalCategories && finalCategories.length > 0) {
+            console.log('Sample final category:', finalCategories[0]);
+          }
+          console.log('==============================');
 
           // Update local state with backend data
           updateState({
