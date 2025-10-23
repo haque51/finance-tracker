@@ -1370,6 +1370,14 @@ function TransactionForm({ transaction, onClose }) {
   const filteredCategories = state.categories.filter(c => c.type === formData.type && !c.parentId);
   const subcategories = formData.categoryId ? state.categories.filter(c => c.parentId === formData.categoryId) : [];
 
+  // Debug: Log available categories
+  console.log('=== TRANSACTION FORM CATEGORIES DEBUG ===');
+  console.log('Total categories in state:', state.categories.length);
+  console.log('All categories:', state.categories);
+  console.log('Filtered categories for', formData.type, ':', filteredCategories);
+  console.log('Selected category ID:', formData.categoryId);
+  console.log('======================================');
+
   return (
     <div className="glass-card animate-fade-in">
       <h3 className="text-2xl font-bold text-gradient mb-6">{transaction ? 'Edit Transaction' : 'Add Transaction'}</h3>
