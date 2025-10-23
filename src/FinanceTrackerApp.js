@@ -1237,7 +1237,7 @@ function TransactionForm({ transaction, onClose }) {
   } : {
     date: new Date().toISOString().split('T')[0],
     type: 'expense',
-    accountId: state.accounts[0]?.id || '',
+    accountId: '',
     transferAccountId: '',
     payee: '',
     categoryId: '',
@@ -1249,6 +1249,27 @@ function TransactionForm({ transaction, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!formData.accountId) {
+      alert('Please select an account');
+      return;
+    }
+
+    if (formData.type !== 'transfer' && !formData.categoryId) {
+      alert('Please select a category');
+      return;
+    }
+
+    if (formData.type === 'transfer' && !formData.transferAccountId) {
+      alert('Please select a transfer destination account');
+      return;
+    }
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      alert('Please enter a valid amount greater than 0');
+      return;
+    }
 
     try {
       // Map form fields to backend format
