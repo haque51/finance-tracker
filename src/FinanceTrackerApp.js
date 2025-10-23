@@ -937,7 +937,15 @@ function AccountForm({ account, onClose }) {
       onClose();
     } catch (error) {
       console.error('Failed to save account:', error);
-      alert('Failed to save account. Please try again.');
+      console.error('Error details:', error.response?.data);
+
+      // Show detailed error message
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || error.message
+        || 'Unknown error occurred';
+
+      alert(`Failed to save account: ${errorMessage}\n\nCheck browser console for details.`);
     }
   };
 
@@ -1310,7 +1318,15 @@ function TransactionForm({ transaction, onClose }) {
       onClose();
     } catch (error) {
       console.error('Failed to save transaction:', error);
-      alert('Failed to save transaction. Please try again.');
+      console.error('Error details:', error.response?.data);
+
+      // Show detailed error message
+      const errorMessage = error.response?.data?.message
+        || error.response?.data?.error
+        || error.message
+        || 'Unknown error occurred';
+
+      alert(`Failed to save transaction: ${errorMessage}\n\nCheck browser console for details.`);
     }
   };
 
