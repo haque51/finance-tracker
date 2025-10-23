@@ -243,7 +243,7 @@ class CategoryService {
       name: category.name,
       type: category.type,
       color: color,
-      icon: category.icon || null, // Include icon field
+      // Note: Backend doesn't accept 'icon' field on create/update - it only returns it
       parent_id: category.parentId || category.parent_id || null,
       is_active: isActive,
     };
