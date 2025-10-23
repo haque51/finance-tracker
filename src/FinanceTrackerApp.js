@@ -938,14 +938,27 @@ function AccountForm({ account, onClose }) {
     } catch (error) {
       console.error('Failed to save account:', error);
       console.error('Error details:', error.response?.data);
+      console.error('Original error:', error.originalError);
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
-      // Show detailed error message
-      const errorMessage = error.response?.data?.message
-        || error.response?.data?.error
+      // Try to extract the most detailed error message
+      const errorData = error.originalError?.response?.data
+        || error.response?.data
+        || {};
+
+      const errorMessage = errorData.message
+        || errorData.error
+        || errorData.details
         || error.message
         || 'Unknown error occurred';
 
-      alert(`Failed to save account: ${errorMessage}\n\nCheck browser console for details.`);
+      // If there are validation details, show them
+      let detailsText = '';
+      if (errorData.details && typeof errorData.details === 'object') {
+        detailsText = '\n\nDetails:\n' + JSON.stringify(errorData.details, null, 2);
+      }
+
+      alert(`Failed to save account: ${errorMessage}${detailsText}\n\nCheck browser console for full details.`);
     }
   };
 
@@ -1319,14 +1332,27 @@ function TransactionForm({ transaction, onClose }) {
     } catch (error) {
       console.error('Failed to save transaction:', error);
       console.error('Error details:', error.response?.data);
+      console.error('Original error:', error.originalError);
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
-      // Show detailed error message
-      const errorMessage = error.response?.data?.message
-        || error.response?.data?.error
+      // Try to extract the most detailed error message
+      const errorData = error.originalError?.response?.data
+        || error.response?.data
+        || {};
+
+      const errorMessage = errorData.message
+        || errorData.error
+        || errorData.details
         || error.message
         || 'Unknown error occurred';
 
-      alert(`Failed to save transaction: ${errorMessage}\n\nCheck browser console for details.`);
+      // If there are validation details, show them
+      let detailsText = '';
+      if (errorData.details && typeof errorData.details === 'object') {
+        detailsText = '\n\nDetails:\n' + JSON.stringify(errorData.details, null, 2);
+      }
+
+      alert(`Failed to save transaction: ${errorMessage}${detailsText}\n\nCheck browser console for full details.`);
     }
   };
 
