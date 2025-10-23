@@ -1009,13 +1009,14 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Institution</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Institution *</label>
             <input
               type="text"
               placeholder="e.g., Bank A"
               value={formData.institution}
               onChange={e => setFormData({ ...formData, institution: e.target.value })}
               className="input-modern"
+              required
             />
           </div>
 
@@ -1233,9 +1234,19 @@ function TransactionForm({ transaction, onClose }) {
     e.preventDefault();
 
     try {
+      // Map form fields to backend format
       const txnData = {
-        ...formData,
-        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))
+        type: formData.type,
+        accountId: formData.accountId,
+        toAccountId: formData.transferAccountId || null, // Map transferAccountId to toAccountId
+        categoryId: formData.categoryId || null,
+        subcategoryId: formData.subcategoryId || null,
+        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
+        currency: formData.currency,
+        description: formData.payee || '', // Map payee to description (optional)
+        date: formData.date,
+        notes: formData.memo || null, // Map memo to notes
+        reconciled: false
       };
 
       if (transaction) {
@@ -1398,7 +1409,7 @@ function TransactionForm({ transaction, onClose }) {
           )}
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Payee</label>
-            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="input-modern" />
+            <input type="text" placeholder="e.g., Supermarket (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="input-modern" />
           </div>
           {formData.type !== 'transfer' && (
             <>
