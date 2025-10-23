@@ -94,21 +94,39 @@ class CategoryService {
       const createdParents = [];
       const createdChildren = [];
 
-      // Create parent categories first
+      // Build mapping from old IDs to new backend-generated IDs
+      const idMapping = {};
+
+      // Create parent categories first and build ID mapping
+      console.log(`📦 Creating ${parentCategories.length} parent categories...`);
       for (const category of parentCategories) {
         try {
           const created = await this.createCategory(category);
           createdParents.push(created);
+
+          // Map old ID to new backend-generated ID
+          if (category.id) {
+            idMapping[category.id] = created.id;
+            console.log(`✅ Mapped: ${category.id} → ${created.id} (${category.name})`);
+          }
         } catch (err) {
           console.warn(`Failed to create category ${category.name}:`, err);
           // Continue with others even if one fails
         }
       }
 
-      // Create child categories
+      // Create child categories with updated parent IDs
+      console.log(`📦 Creating ${childCategories.length} child categories...`);
       for (const category of childCategories) {
         try {
-          const created = await this.createCategory(category);
+          // Update parentId to use the new backend-generated ID
+          const updatedCategory = { ...category };
+          if (category.parentId && idMapping[category.parentId]) {
+            updatedCategory.parentId = idMapping[category.parentId];
+            console.log(`🔗 Child "${category.name}": ${category.parentId} → ${updatedCategory.parentId}`);
+          }
+
+          const created = await this.createCategory(updatedCategory);
           createdChildren.push(created);
         } catch (err) {
           console.warn(`Failed to create subcategory ${category.name}:`, err);
@@ -204,6 +222,7 @@ class CategoryService {
       name: category.name,
       type: category.type,
       color: color,
+      icon: category.icon || null,
       parent_id: category.parentId || category.parent_id,
       is_active: category.isActive !== undefined ? category.isActive : category.is_active,
     };
