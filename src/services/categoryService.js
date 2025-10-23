@@ -67,12 +67,20 @@ class CategoryService {
    * @returns {Promise<Object>} Created category
    */
   async createCategory(categoryData) {
+    let apiData;
     try {
-      const apiData = this._mapCategoryToAPI(categoryData);
+      apiData = this._mapCategoryToAPI(categoryData);
+
+      // Debug logging
+      console.log('Creating category:', categoryData.name);
+      console.log('Mapped API data:', JSON.stringify(apiData, null, 2));
+
       const response = await api.post(API_ENDPOINTS.CATEGORIES, apiData);
       return this._mapCategoryFromAPI(response.data.data);
     } catch (error) {
       console.error('Create category error:', error);
+      console.error('Failed category data:', categoryData);
+      console.error('Failed API payload:', apiData);
       throw error;
     }
   }
@@ -94,30 +102,53 @@ class CategoryService {
       const createdParents = [];
       const createdChildren = [];
 
+      // Map old demo IDs to new backend UUIDs
+      const idMap = new Map();
+
       // Create parent categories first
       for (const category of parentCategories) {
         try {
           const created = await this.createCategory(category);
           createdParents.push(created);
+          // Map old demo ID to new backend UUID
+          idMap.set(category.id, created.id);
+          console.log(`✅ Created parent: ${category.name} (${category.id} → ${created.id})`);
         } catch (err) {
-          console.warn(`Failed to create category ${category.name}:`, err);
+          console.warn(`❌ Failed to create category ${category.name}:`, err.message);
           // Continue with others even if one fails
         }
       }
 
-      // Create child categories
+      console.log(`Created ${createdParents.length}/${parentCategories.length} parent categories`);
+
+      // Create child categories with corrected parent IDs
       for (const category of childCategories) {
         try {
-          const created = await this.createCategory(category);
+          // Replace demo parent ID with real backend UUID
+          const realParentId = idMap.get(category.parentId);
+          if (!realParentId) {
+            console.warn(`⚠️ Skipping subcategory ${category.name}: parent ${category.parentId} not found`);
+            continue;
+          }
+
+          const categoryWithRealParent = {
+            ...category,
+            parentId: realParentId
+          };
+
+          const created = await this.createCategory(categoryWithRealParent);
           createdChildren.push(created);
+          console.log(`✅ Created child: ${category.name} (parent: ${realParentId})`);
         } catch (err) {
-          console.warn(`Failed to create subcategory ${category.name}:`, err);
+          console.warn(`❌ Failed to create subcategory ${category.name}:`, err.message);
           // Continue with others even if one fails
         }
       }
 
+      console.log(`Created ${createdChildren.length}/${childCategories.length} subcategories`);
+
       const allCreated = [...createdParents, ...createdChildren];
-      console.log(`✅ Successfully created ${allCreated.length} categories`);
+      console.log(`✅ Successfully created ${allCreated.length}/${categoriesArray.length} categories total`);
 
       return allCreated;
     } catch (error) {
@@ -200,12 +231,21 @@ class CategoryService {
       color = isEmoji ? this._getColorForCategoryType(category.type) : this._mapIconToColor(category.icon);
     }
 
+    // Ensure color is always set
+    if (!color) {
+      color = this._getColorForCategoryType(category.type);
+    }
+
+    // Ensure is_active is always set (default to true)
+    const isActive = category.isActive !== undefined ? category.isActive : (category.is_active !== undefined ? category.is_active : true);
+
     return {
       name: category.name,
       type: category.type,
       color: color,
-      parent_id: category.parentId || category.parent_id,
-      is_active: category.isActive !== undefined ? category.isActive : category.is_active,
+      icon: category.icon || null, // Include icon field
+      parent_id: category.parentId || category.parent_id || null,
+      is_active: isActive,
     };
   }
 
