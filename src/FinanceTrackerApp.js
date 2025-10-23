@@ -1435,10 +1435,22 @@ function TransactionForm({ transaction, onClose }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">From Account *</label>
-            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="input-modern" required>
+            <select
+              value={formData.accountId}
+              onChange={e => {
+                const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
+                setFormData({
+                  ...formData,
+                  accountId: e.target.value,
+                  currency: selectedAccount?.currency || 'EUR' // Set currency from selected account
+                });
+              }}
+              className="input-modern"
+              required
+            >
               <option value="">Select Account</option>
               {state.accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
               ))}
             </select>
           </div>
