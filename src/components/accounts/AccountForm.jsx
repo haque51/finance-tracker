@@ -74,7 +74,6 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
         dataToSubmit.current_balance = Number(formData.current_balance) || 0;
       }
 
-      console.log('Submitting account data:', dataToSubmit);
       await onSubmit(dataToSubmit);
     } catch (error) {
       console.error('Form submission error:', error);

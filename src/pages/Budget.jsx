@@ -21,14 +21,14 @@ export default function BudgetPage() {
     setIsLoading(true);
     try {
       const [categoriesData, transactionsData, budgetsData] = await Promise.all([
-        Category.filter({ created_by: user.email, type: 'expense', is_active: true }),
+        Category.filter({ user_id: user.id, type: 'expense', is_active: true }),
         Transaction.filter({
-          created_by: user.email,
+          user_id: user.id,
           type: 'expense',
           // A bit wider range to be safe with timezones
           date: { gte: format(subMonths(new Date(month), 1), 'yyyy-MM-01'), lte: format(addMonths(new Date(month), 1), 'yyyy-MM-dd') }
         }),
-        Budget.filter({ created_by: user.email, month: format(month, 'yyyy-MM') })
+        Budget.filter({ user_id: user.id, month: format(month, 'yyyy-MM') })
       ]);
 
       setCategories(categoriesData.filter(c => !c.parent_id));
@@ -65,11 +65,11 @@ export default function BudgetPage() {
           month: monthString,
           category_id: categoryId,
           amount,
-          created_by: currentUser.email,
+          user_id: currentUser.id,
         });
       }
       // Refresh budgets for the current month
-      const updatedBudgets = await Budget.filter({ created_by: currentUser.email, month: monthString });
+      const updatedBudgets = await Budget.filter({ user_id: currentUser.id, month: monthString });
       setBudgets(updatedBudgets);
     } catch (error) {
       console.error("Failed to update budget:", error);

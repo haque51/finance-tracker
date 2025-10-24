@@ -28,8 +28,8 @@ export default function GoalsPage() {
       setCurrentUser(user);
       
       const [goalsData, accountsData] = await Promise.all([
-        FinancialGoal.filter({ created_by: user.email }, "-target_date"),
-        Account.filter({ created_by: user.email }),
+        FinancialGoal.filter({ user_id: user.id }, "-target_date"),
+        Account.filter({ user_id: user.id }),
       ]);
 
       // Automatically update current_amount for linked accounts
@@ -83,7 +83,7 @@ export default function GoalsPage() {
       if (editingGoal) {
         await FinancialGoal.update(editingGoal.id, formData);
       } else {
-        await FinancialGoal.create({ ...formData, created_by: currentUser.email });
+        await FinancialGoal.create({ ...formData, user_id: currentUser.id });
       }
       setIsFormOpen(false);
       loadData();

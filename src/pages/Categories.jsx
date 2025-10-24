@@ -53,7 +53,7 @@ export default function CategoriesPage() {
                 const parentCategory = await Category.create({
                     name: cat.name,
                     type: type,
-                    created_by: user.email,
+                    user_id: user.id,
                 });
 
                 if (parentCategory && cat.sub) {
@@ -62,7 +62,7 @@ export default function CategoriesPage() {
                             name: subName,
                             type: type,
                             parent_id: parentCategory.id,
-                            created_by: user.email,
+                            user_id: user.id,
                             // Subcategories usually don't need separate icons unless specified
                         });
                     }
@@ -85,8 +85,8 @@ export default function CategoriesPage() {
       setCurrentUser(user);
 
       const [categoriesData, transactionsData] = await Promise.all([
-        Category.filter({ created_by: user.email }, '-created_date'),
-        Transaction.filter({ created_by: user.email }, '-created_date')
+        Category.filter({ user_id: user.id }, '-created_date'),
+        Transaction.filter({ user_id: user.id }, '-created_date')
       ]);
       
       setCategories(categoriesData);
@@ -96,7 +96,7 @@ export default function CategoriesPage() {
       if (categoriesData.length === 0 && user) {
         await setupDefaultCategories(user);
         // After setup, reload data again to show the newly created categories
-        const reloadedCategoriesData = await Category.filter({ created_by: user.email }, '-created_date');
+        const reloadedCategoriesData = await Category.filter({ user_id: user.id }, '-created_date');
         setCategories(reloadedCategoriesData);
       }
 
@@ -158,7 +158,7 @@ export default function CategoriesPage() {
     try {
       let categoryData = {
         ...formData,
-        created_by: currentUser.email, // Ensure new categories are associated with the current user
+        user_id: currentUser.id, // Ensure new categories are associated with the current user
       };
 
       if (editingCategory && editingCategory.id) {

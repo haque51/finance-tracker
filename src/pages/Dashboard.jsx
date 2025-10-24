@@ -53,13 +53,13 @@ export default function Dashboard() {
 
     try {
       await delay(500); // Add delay before fetching recurring transactions
-      const recurring = await RecurrentTransaction.filter({ created_by: user.email, is_active: true });
+      const recurring = await RecurrentTransaction.filter({ user_id: user.id, is_active: true });
       const todayDate = new Date();
       todayDate.setHours(0, 0, 0, 0);
 
       await delay(500); // Add delay before fetching accounts
       // Fetch all accounts for balance updates, creating a mutable copy for in-memory updates
-      const allAccounts = await Account.filter({ created_by: user.email });
+      const allAccounts = await Account.filter({ user_id: user.id });
       const accountsMap = new Map(allAccounts.map(acc => [acc.id, { ...acc }])); // Create mutable copies
 
       let hasProcessedAny = false;
@@ -97,7 +97,7 @@ export default function Dashboard() {
               currency: rt.currency,
               memo: `Recurring: ${rt.name}`,
               to_account_id: rt.to_account_id,
-              created_by: user.email,
+              user_id: user.id,
               amount_eur: rt.amount * transactionCurrencyRateToEur,
               exchange_rate: transactionCurrencyRateToEur
           });
@@ -280,15 +280,15 @@ export default function Dashboard() {
 
         // Filter all data by current user concurrently, but with delays between different entity fetches
         await delay(500); // Delay before fetching accounts
-        const accountsData = await Account.filter({ created_by: user.email }, '-updated_date');
+        const accountsData = await Account.filter({ user_id: user.id }, '-updated_date');
         if (!isMounted) return;
         
         await delay(500); // Delay before fetching transactions
-        const transactionsData = await Transaction.filter({ created_by: user.email }, '-date');
+        const transactionsData = await Transaction.filter({ user_id: user.id }, '-date');
         if (!isMounted) return;
         
         await delay(500); // Delay before fetching categories
-        const categoriesData = await Category.filter({ created_by: user.email }, '-created_date');
+        const categoriesData = await Category.filter({ user_id: user.id }, '-created_date');
         if (!isMounted) return;
 
         setAccounts(accountsData);

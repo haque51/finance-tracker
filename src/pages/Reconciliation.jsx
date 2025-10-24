@@ -31,7 +31,7 @@ export default function ReconciliationPage() {
 
                 // Filter accounts by current user
                 const accountsData = await Account.filter({ 
-                    created_by: user.email, 
+                    user_id: user.id, 
                     is_active: true 
                 });
                 setAccounts(accountsData);
@@ -56,7 +56,7 @@ export default function ReconciliationPage() {
 
                 const filters = {
                     account_id: selectedAccountId,
-                    created_by: currentUser.email, // Filter by current user
+                    user_id: currentUser.id, // Filter by current user
                     reconciled: false,
                 };
                 if (account.last_reconciled_date) {

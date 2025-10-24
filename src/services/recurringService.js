@@ -114,6 +114,10 @@ class RecurringService {
       endDate: apiRecurring.end_date,
       nextOccurrence: apiRecurring.next_occurrence,
       isActive: apiRecurring.is_active,
+      userId: apiRecurring.user_id,
+      user_id: apiRecurring.user_id, // Keep both formats for compatibility
+      createdBy: apiRecurring.created_by || apiRecurring.user_id, // Fallback to user_id
+      created_by: apiRecurring.created_by || apiRecurring.user_id, // Fallback to user_id
       createdAt: apiRecurring.created_at,
       updatedAt: apiRecurring.updated_at,
       accountName: apiRecurring.account_name,
