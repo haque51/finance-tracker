@@ -103,9 +103,10 @@ export default function FinanceTrackerApp() {
           }
 
           if (!categoriesData || categoriesData.length === 0) {
-            console.log('🆕 New user detected - initializing default categories in backend...');
+            console.log('🆕 New user detected - initializing default categories (one-time setup, ~15 seconds)...');
             try {
-              // Save default categories to backend
+              // Save default categories to backend (with delays to avoid rate limiting)
+              // This takes ~15 seconds but only happens ONCE for new users
               const savedCategories = await globalContext.createCategoriesBulk(DEFAULT_CATEGORIES);
               console.log('Saved categories from backend:', savedCategories?.length || 0);
               if (savedCategories && savedCategories.length > 0) {
@@ -366,6 +367,8 @@ export default function FinanceTrackerApp() {
                 <div className="text-center">
                   <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 border-t-primary shadow-card"></div>
                   <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-300">Loading your financial data...</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">First login may take ~15 seconds (setting up default categories)</p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Future logins will be much faster!</p>
                 </div>
               </div>
             )}
