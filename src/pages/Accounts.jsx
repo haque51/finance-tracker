@@ -117,32 +117,41 @@ export default function AccountsPage() {
 
     try {
       const rate = exchangeRates[formData.currency] || 1;
-      let dataToSave = { 
-        ...formData,
-        created_by: currentUser.email
-      };
-  
+
       if (editingAccount) {
         // For editing, use the current_balance from the form
-        dataToSave.balance = formData.current_balance;
-        dataToSave.balance_eur = formData.current_balance * rate;
+        let dataToSave = {
+          ...formData,
+          balance: formData.current_balance,
+          balance_eur: formData.current_balance * rate,
+        };
         // Don't update opening_balance when editing, it's an initial value
         delete dataToSave.opening_balance;
         // Remove current_balance as it's a form-specific field, not a database field
-        delete dataToSave.current_balance; 
-        
+        delete dataToSave.current_balance;
+
         await Account.update(editingAccount.id, dataToSave);
       } else {
-        // For new accounts, set both opening and current balance
-        const initialBalance = formData.current_balance || formData.opening_balance;
-        dataToSave.balance = initialBalance;
-        dataToSave.balance_eur = initialBalance * rate;
-        // Remove current_balance as it's a form-specific field, not a database field
-        delete dataToSave.current_balance; 
-        
+        // For new accounts, only send the opening_balance
+        // Backend will automatically set balance, balance_eur, and created_by
+        let dataToSave = {
+          name: formData.name,
+          type: formData.type,
+          currency: formData.currency,
+          opening_balance: formData.opening_balance,
+        };
+
+        // Include optional fields if provided
+        if (formData.institution) {
+          dataToSave.institution = formData.institution;
+        }
+        if (formData.notes) {
+          dataToSave.notes = formData.notes;
+        }
+
         await Account.create(dataToSave);
       }
-  
+
       setIsFormOpen(false);
       setEditingAccount(null);
       loadAccounts();

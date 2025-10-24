@@ -148,20 +148,6 @@ class AccountService {
       opening_balance: account.openingBalance !== undefined ? account.openingBalance : account.opening_balance,
     };
 
-    // Include balance fields if provided
-    if (account.balance !== undefined) {
-      apiData.balance = account.balance;
-    }
-
-    if (account.balance_eur !== undefined) {
-      apiData.balance_eur = account.balance_eur;
-    }
-
-    // Include created_by if provided (for user association)
-    if (account.created_by !== undefined && account.created_by !== null && account.created_by !== '') {
-      apiData.created_by = account.created_by;
-    }
-
     // Only include optional fields if they have values
     if (account.institution !== undefined && account.institution !== null && account.institution !== '') {
       apiData.institution = account.institution;
