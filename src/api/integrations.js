@@ -49,9 +49,24 @@ export const GenerateImage = async (prompt) => {
   };
 };
 
+/**
+ * Create File Signed URL Integration (placeholder)
+ */
+export const CreateFileSignedUrl = async (fileUrl) => {
+  console.warn('CreateFileSignedUrl called but not implemented');
+  console.log('File URL:', fileUrl);
+
+  // Return the same URL (no signing needed in our setup)
+  return {
+    url: fileUrl,
+    expiresAt: new Date(Date.now() + 3600000).toISOString() // 1 hour from now
+  };
+};
+
 // Export other integrations as needed
 export default {
   InvokeLLM,
   UploadPrivateFile,
-  GenerateImage
+  GenerateImage,
+  CreateFileSignedUrl
 };
