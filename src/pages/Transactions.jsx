@@ -78,7 +78,7 @@ export default function TransactionsPage() {
       const [transactionsData, accountsData, categoriesData, templatesData] = await Promise.all([
         Transaction.filter({}, '-date'),
         Account.filter({}), // Fetch all accounts to avoid issues
-        Category.filter({ is_active: true }),
+        Category.filter({}), // Fetch all categories (backend handles filtering)
         TransactionTemplate.filter({}),
       ]);
       
