@@ -89,11 +89,14 @@ export function AppProvider({ children }) {
    */
   const loadCategories = async (filters = {}) => {
     try {
-      const data = await categoryService.getCategoriesTree();
+      console.log('📂 Loading categories from backend...');
+      const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
+      console.log(`📂 Loaded ${data.length} categories from backend`);
       setCategories(data);
       return data;
     } catch (error) {
       console.error('Failed to load categories:', error);
+      console.error('Error details:', error.response?.data || error.message);
       throw error;
     }
   };
