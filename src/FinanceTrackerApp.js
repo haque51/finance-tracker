@@ -1104,7 +1104,9 @@ function TransactionsView() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredTransactions = state.transactions.filter(t => t.payee.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredTransactions = state.transactions.filter(t =>
+    (t.payee || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleDelete = async (id) => {
     const txn = state.transactions.find(t => t.id === id);
@@ -1180,7 +1182,7 @@ function TransactionsView() {
                 const subcategory = txn.subcategoryId ? state.categories.find(c => c.id === txn.subcategoryId) : null;
                 return (
                   <tr key={txn.id}>
-                    <td>{txn.date}</td>
+                    <td>{txn.date || 'N/A'}</td>
                     <td>
                       <span className={`badge-modern ${
                         txn.type === 'income' ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300' :
@@ -1191,7 +1193,7 @@ function TransactionsView() {
                         {txn.type}
                       </span>
                     </td>
-                    <td className="font-medium">{txn.payee}</td>
+                    <td className="font-medium">{txn.payee || 'N/A'}</td>
                     <td>
                       {category ? `${category.icon} ${category.name}` : 'Uncategorized'}
                       {subcategory && ` > ${subcategory.name}`}
