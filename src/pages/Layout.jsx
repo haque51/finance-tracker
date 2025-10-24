@@ -36,7 +36,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-import UserMenu from "./components/layout/UserMenu";
+import UserMenu from "@/components/layout/UserMenu";
 
 const navigationItems = [
   {

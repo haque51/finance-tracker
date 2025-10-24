@@ -1,0 +1,10 @@
+
+> finance-tracker@1.0.0 build
+> craco build
+
+Creating an optimized production build...
+Failed to compile.
+
+Attempted import error: 'CreateFileSignedUrl' is not exported from '@/api/integrations' (imported as 'CreateFileSignedUrl').
+
+
