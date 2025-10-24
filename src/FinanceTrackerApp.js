@@ -466,8 +466,8 @@ function DashboardView() {
 
   const previousMonth = getPreviousMonth(selectedMonth);
 
-  const currentMonthTxns = state.transactions.filter(t => t.date.startsWith(selectedMonth));
-  const previousMonthTxns = state.transactions.filter(t => t.date.startsWith(previousMonth));
+  const currentMonthTxns = state.transactions.filter(t => t.date && t.date.startsWith(selectedMonth));
+  const previousMonthTxns = state.transactions.filter(t => t.date && t.date.startsWith(previousMonth));
 
   const monthlyIncome = currentMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const previousIncome = previousMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
