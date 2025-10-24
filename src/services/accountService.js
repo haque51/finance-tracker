@@ -141,17 +141,41 @@ class AccountService {
    * @private
    */
   _mapAccountToAPI(account) {
-    return {
+    const apiData = {
       name: account.name,
       type: account.type,
       currency: account.currency,
       opening_balance: account.openingBalance !== undefined ? account.openingBalance : account.opening_balance,
-      is_active: account.isActive !== undefined ? account.isActive : account.is_active,
-      institution: account.institution,
-      credit_limit: account.creditLimit !== undefined ? account.creditLimit : account.credit_limit,
-      interest_rate: account.interestRate !== undefined ? account.interestRate : account.interest_rate,
-      notes: account.notes,
     };
+
+    // Only include optional fields if they have values
+    if (account.institution !== undefined && account.institution !== null && account.institution !== '') {
+      apiData.institution = account.institution;
+    }
+
+    if (account.notes !== undefined && account.notes !== null && account.notes !== '') {
+      apiData.notes = account.notes;
+    }
+
+    if (account.isActive !== undefined) {
+      apiData.is_active = account.isActive;
+    } else if (account.is_active !== undefined) {
+      apiData.is_active = account.is_active;
+    }
+
+    if (account.creditLimit !== undefined) {
+      apiData.credit_limit = account.creditLimit;
+    } else if (account.credit_limit !== undefined) {
+      apiData.credit_limit = account.credit_limit;
+    }
+
+    if (account.interestRate !== undefined) {
+      apiData.interest_rate = account.interestRate;
+    } else if (account.interest_rate !== undefined) {
+      apiData.interest_rate = account.interest_rate;
+    }
+
+    return apiData;
   }
 }
 
