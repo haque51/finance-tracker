@@ -3,11 +3,11 @@ import { FinancialGoal, Account, User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Target } from "lucide-react";
 import {
-  Dialog
-  DialogContent
-  DialogHeader
-  DialogTitle
-  DialogTrigger
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 
 import GoalCard from "../components/goals/GoalCard";
@@ -28,8 +28,8 @@ export default function GoalsPage() {
       setCurrentUser(user);
       
       const [goalsData, accountsData] = await Promise.all([
-        FinancialGoal.filter({ }, "-target_date")
-        Account.filter({ })
+        FinancialGoal.filter({}, "-target_date"),
+        Account.filter({}),
       ]);
 
       // Automatically update current_amount for linked accounts
@@ -83,7 +83,7 @@ export default function GoalsPage() {
       if (editingGoal) {
         await FinancialGoal.update(editingGoal.id, formData);
       } else {
-        await FinancialGoal.create({ ...formData});
+        await FinancialGoal.create({ ...formData, user_id: currentUser.id });
       }
       setIsFormOpen(false);
       loadData();

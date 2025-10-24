@@ -15,9 +15,9 @@ export default function ForecastPage() {
   const [projectionData, setProjectionData] = useState([]);
 
   const [forecastParams, setForecastParams] = useState({
-    monthlySavings: 500
-    annualGrowthRate: 7
-    forecastYears: 10
+    monthlySavings: 500,
+    annualGrowthRate: 7,
+    forecastYears: 10,
   });
 
   const loadInitialData = useCallback(async () => {
@@ -29,8 +29,8 @@ export default function ForecastPage() {
 
       // Filter data by current user
       const [accountsData, transactionsData] = await Promise.all([
-        Account.filter({ })
-        Transaction.filter({ })
+        Account.filter({}),
+        Transaction.filter({}),
       ]);
 
       const netWorth = accountsData.reduce((sum, acc) => {
@@ -43,8 +43,8 @@ export default function ForecastPage() {
 
       // Calculate average savings over last 6 months
       const last6Months = eachMonthOfInterval({
-        start: subMonths(new Date(), 6)
-        end: subMonths(new Date(), 1)
+        start: subMonths(new Date(), 6),
+        end: subMonths(new Date(), 1),
       });
 
       const totalSavingsLast6Months = last6Months.reduce((total, month) => {

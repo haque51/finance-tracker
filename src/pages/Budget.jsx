@@ -23,6 +23,7 @@ export default function BudgetPage() {
       const [categoriesData, transactionsData, budgetsData] = await Promise.all([
         Category.filter({ type: 'expense', is_active: true }),
         Transaction.filter({
+          user_id: user.id,
           type: 'expense',
           // A bit wider range to be safe with timezones
           date: { gte: format(subMonths(new Date(month), 1), 'yyyy-MM-01'), lte: format(addMonths(new Date(month), 1), 'yyyy-MM-dd') }
@@ -63,7 +64,8 @@ export default function BudgetPage() {
         await Budget.create({
           month: monthString,
           category_id: categoryId,
-          amount
+          amount,
+          user_id: currentUser.id,
         });
       }
       // Refresh budgets for the current month
@@ -95,10 +97,10 @@ export default function BudgetPage() {
       const budgeted = budgetEntry ? budgetEntry.amount : (category.budget_amount || 0);
 
       return {
-        categoryId: category.id
-        name: category.name
-        budgeted
-        spent
+        categoryId: category.id,
+        name: category.name,
+        budgeted,
+        spent,
         remaining: budgeted - spent
       };
     });

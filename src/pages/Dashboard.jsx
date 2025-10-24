@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  TrendingUp
-  TrendingDown
-  Wallet
-  PiggyBank
-  DollarSign
-  Calendar
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  PiggyBank,
+  DollarSign,
+  Calendar,
   ArrowRight
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths, addDays, addWeeks, addMonths as addMonthsDateFns, addYears } from "date-fns";
@@ -59,7 +59,7 @@ export default function Dashboard() {
 
       await delay(500); // Add delay before fetching accounts
       // Fetch all accounts for balance updates, creating a mutable copy for in-memory updates
-      const allAccounts = await Account.filter({ });
+      const allAccounts = await Account.filter({});
       const accountsMap = new Map(allAccounts.map(acc => [acc.id, { ...acc }])); // Create mutable copies
 
       let hasProcessedAny = false;
@@ -87,18 +87,18 @@ export default function Dashboard() {
 
           // Prepare transaction for creation
           transactionsToCreate.push({
-              date: format(next_due, 'yyyy-MM-dd')
-              account_id: rt.account_id
-              type: rt.type
-              payee: rt.payee
-              category_id: rt.category_id
-              subcategory_id: rt.subcategory_id
-              amount: rt.amount
-              currency: rt.currency
-              memo: `Recurring: ${rt.name}`
-              to_account_id: rt.to_account_id
-              
-              amount_eur: rt.amount * transactionCurrencyRateToEur
+              date: format(next_due, 'yyyy-MM-dd'),
+              account_id: rt.account_id,
+              type: rt.type,
+              payee: rt.payee,
+              category_id: rt.category_id,
+              subcategory_id: rt.subcategory_id,
+              amount: rt.amount,
+              currency: rt.currency,
+              memo: `Recurring: ${rt.name}`,
+              to_account_id: rt.to_account_id,
+              user_id: user.id,
+              amount_eur: rt.amount * transactionCurrencyRateToEur,
               exchange_rate: transactionCurrencyRateToEur
           });
 
@@ -223,12 +223,12 @@ export default function Dashboard() {
 
     try {
       const result = await InvokeLLM({
-        prompt: "Get current exchange rates for USD to EUR and BDT to EUR. Return only the current rates."
-        add_context_from_internet: true
+        prompt: "Get current exchange rates for USD to EUR and BDT to EUR. Return only the current rates.",
+        add_context_from_internet: true,
         response_json_schema: {
-          type: "object"
+          type: "object",
           properties: {
-            USD_to_EUR: { type: "number" }
+            USD_to_EUR: { type: "number" },
             BDT_to_EUR: { type: "number" }
           }
         }
@@ -236,8 +236,8 @@ export default function Dashboard() {
 
       if (result.USD_to_EUR && result.BDT_to_EUR) {
         const newRates = {
-          USD: result.USD_to_EUR
-          BDT: result.BDT_to_EUR
+          USD: result.USD_to_EUR,
+          BDT: result.BDT_to_EUR,
           EUR: 1 // Explicitly set EUR to EUR rate as 1
         };
         
@@ -280,15 +280,15 @@ export default function Dashboard() {
 
         // Filter all data by current user concurrently, but with delays between different entity fetches
         await delay(500); // Delay before fetching accounts
-        const accountsData = await Account.filter({ }, '-updated_date');
+        const accountsData = await Account.filter({}, '-updated_date');
         if (!isMounted) return;
         
         await delay(500); // Delay before fetching transactions
-        const transactionsData = await Transaction.filter({ }, '-date');
+        const transactionsData = await Transaction.filter({}, '-date');
         if (!isMounted) return;
         
         await delay(500); // Delay before fetching categories
-        const categoriesData = await Category.filter({ }, '-created_date');
+        const categoriesData = await Category.filter({}, '-created_date');
         if (!isMounted) return;
 
         setAccounts(accountsData);
@@ -453,11 +453,11 @@ export default function Dashboard() {
   // --- Breakdown Handlers ---
   const showIncomeBreakdown = () => {
     setBreakdownData({
-      title: 'Monthly Income Breakdown'
+      title: 'Monthly Income Breakdown',
       data: currentMonthTransactions
         .filter(t => t.type === 'income')
-        .map(t => ({ label: t.payee || 'Income', value: t.amount_eur || 0 }))
-      total: monthlyIncome
+        .map(t => ({ label: t.payee || 'Income', value: t.amount_eur || 0 })),
+      total: monthlyIncome,
       notes: 'This shows your income sources for the selected month.'
     });
     setIsBreakdownOpen(true);
@@ -465,11 +465,11 @@ export default function Dashboard() {
 
   const showExpenseBreakdown = () => {
     setBreakdownData({
-      title: 'Monthly Expenses Breakdown'
+      title: 'Monthly Expenses Breakdown',
       data: currentMonthTransactions
         .filter(t => t.type === 'expense')
-        .map(t => ({ label: t.payee || 'Expense', value: t.amount_eur || 0 }))
-      total: monthlyExpenses
+        .map(t => ({ label: t.payee || 'Expense', value: t.amount_eur || 0 })),
+      total: monthlyExpenses,
       notes: 'This shows your expense details for the selected month.'
     });
     setIsBreakdownOpen(true);
@@ -480,17 +480,17 @@ export default function Dashboard() {
     // For simplicity, this breakdown currently shows current balances.
     // A more complex implementation would calculate account balances as of monthEnd.
     setBreakdownData({
-      title: `Net Worth Breakdown as of ${format(monthEnd, 'MMM dd, yyyy')}`
+      title: `Net Worth Breakdown as of ${format(monthEnd, 'MMM dd, yyyy')}`,
       data: accounts.map(acc => {
         const isDebt = acc.type === 'loan' || acc.type === 'credit_card';
-        // This is a simplified breakdown. For true historical breakdown per account
+        // This is a simplified breakdown. For true historical breakdown per account,
         // we'd need to roll back transactions for each account.
         const effectiveBalance = isDebt ? -(acc.balance_eur || 0) : (acc.balance_eur || 0);
         return {
-          label: acc.name
-          value: effectiveBalance
+          label: acc.name,
+          value: effectiveBalance,
         };
-      })
+      }),
       total: totalNetWorth, // Display the calculated historical net worth
       notes: 'Liabilities (loans, credit cards) are deducted from net worth. This breakdown shows current account values, which may not perfectly sum to the historical net worth displayed due to transactions after the selected month end.'
     });
@@ -499,12 +499,12 @@ export default function Dashboard() {
   
   const showSavingsBreakdown = () => {
     setBreakdownData({
-      title: 'Savings Rate Calculation'
+      title: 'Savings Rate Calculation',
       data: [
-        { label: 'Total Income', value: monthlyIncome }
+        { label: 'Total Income', value: monthlyIncome },
         { label: 'Total Expenses', value: -monthlyExpenses }, // Represent expenses as negative for clear calculation
-      ]
-      total: monthlySavings
+      ],
+      total: monthlySavings,
       notes: `Savings Rate (${savingsRate.toFixed(1)}%) = (Net Savings / Total Income) * 100.\nNet Savings = Total Income - Total Expenses.`
     });
     setIsBreakdownOpen(true);
