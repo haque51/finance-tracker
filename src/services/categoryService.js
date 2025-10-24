@@ -220,6 +220,10 @@ class CategoryService {
       icon: icon,
       parentId: apiCategory.parent_id,
       isActive: apiCategory.is_active,
+      userId: apiCategory.user_id,
+      user_id: apiCategory.user_id, // Keep both formats for compatibility
+      createdBy: apiCategory.created_by || apiCategory.user_id, // Fallback to user_id
+      created_by: apiCategory.created_by || apiCategory.user_id, // Fallback to user_id
       createdAt: apiCategory.created_at,
       updatedAt: apiCategory.updated_at,
       // If tree structure, recursively map children

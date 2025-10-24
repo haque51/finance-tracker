@@ -29,8 +29,8 @@ export default function ForecastPage() {
 
       // Filter data by current user
       const [accountsData, transactionsData] = await Promise.all([
-        Account.filter({ created_by: user.email }),
-        Transaction.filter({ created_by: user.email }),
+        Account.filter({ user_id: user.id }),
+        Transaction.filter({ user_id: user.id }),
       ]);
 
       const netWorth = accountsData.reduce((sum, acc) => {

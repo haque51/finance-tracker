@@ -31,11 +31,11 @@ export default function DebtPayoffPage() {
 
       const [accountsData, plansData] = await Promise.all([
         Account.filter({ 
-          created_by: user.email, 
+          user_id: user.id, 
           is_active: true,
           type: ['loan', 'credit_card'] 
         }),
-        DebtPayoffPlan.filter({ created_by: user.email })
+        DebtPayoffPlan.filter({ user_id: user.id })
       ]);
 
       // Filter for debt accounts with balances > 0
@@ -77,7 +77,7 @@ export default function DebtPayoffPage() {
     try {
       const dataToSave = {
         ...formData,
-        created_by: currentUser.email,
+        user_id: currentUser.id,
       };
 
       if (editingPlan) {

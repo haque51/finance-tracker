@@ -27,11 +27,11 @@ export default function InsightsPage() {
       setCurrentUser(user);
 
       const [transactionsData, categoriesData, accountsData, alertsData, rulesData] = await Promise.all([
-        Transaction.filter({ created_by: user.email }, '-date'),
-        Category.filter({ created_by: user.email, is_active: true }),
-        Account.filter({ created_by: user.email, is_active: true }),
-        SpendingAlert.filter({ created_by: user.email }),
-        CategorizationRule.filter({ created_by: user.email })
+        Transaction.filter({ user_id: user.id }, '-date'),
+        Category.filter({ user_id: user.id, is_active: true }),
+        Account.filter({ user_id: user.id, is_active: true }),
+        SpendingAlert.filter({ user_id: user.id }),
+        CategorizationRule.filter({ user_id: user.id })
       ]);
 
       setTransactions(transactionsData);

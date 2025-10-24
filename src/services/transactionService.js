@@ -170,6 +170,10 @@ class TransactionService {
       reconciled: apiTxn.is_reconciled,
       notes: apiTxn.notes,
       memo: apiTxn.notes, // Alias for frontend compatibility
+      userId: apiTxn.user_id,
+      user_id: apiTxn.user_id, // Keep both formats for compatibility
+      createdBy: apiTxn.created_by || apiTxn.user_id, // Fallback to user_id
+      created_by: apiTxn.created_by || apiTxn.user_id, // Fallback to user_id
       createdAt: apiTxn.created_at,
       updatedAt: apiTxn.updated_at,
       // Joined data from backend

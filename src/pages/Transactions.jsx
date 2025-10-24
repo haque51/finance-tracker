@@ -76,10 +76,10 @@ export default function TransactionsPage() {
       setCurrentUser(user);
 
       const [transactionsData, accountsData, categoriesData, templatesData] = await Promise.all([
-        Transaction.filter({ created_by: user.email }, '-date'),
-        Account.filter({ created_by: user.email }), // Fetch all accounts to avoid issues
-        Category.filter({ created_by: user.email, is_active: true }),
-        TransactionTemplate.filter({ created_by: user.email }),
+        Transaction.filter({ user_id: user.id }, '-date'),
+        Account.filter({ user_id: user.id }), // Fetch all accounts to avoid issues
+        Category.filter({ user_id: user.id, is_active: true }),
+        TransactionTemplate.filter({ user_id: user.id }),
       ]);
       
       setTransactions(transactionsData);
@@ -191,7 +191,7 @@ export default function TransactionsPage() {
     };
 
     // Fetch fresh account data to prevent stale data issues, especially during rapid updates
-    const allAccounts = await Account.filter({ created_by: currentUser.email });
+    const allAccounts = await Account.filter({ user_id: currentUser.id });
 
     const fromAccount = allAccounts.find(a => a.id === transaction.account_id);
     const toAccount = transaction.to_account_id ? allAccounts.find(a => a.id === transaction.to_account_id) : null;
@@ -301,7 +301,7 @@ export default function TransactionsPage() {
         ...formData,
         amount_eur: amountEur,
         exchange_rate: rate,
-        created_by: currentUser.email,
+        user_id: currentUser.id,
       };
 
       let savedTransactionResult;

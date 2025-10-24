@@ -29,9 +29,9 @@ export default function ReportsPage() {
     setIsLoading(true);
     try {
       const [accountsData, categoriesData, transactionsData] = await Promise.all([
-        Account.filter({ created_by: user.email }),
-        Category.filter({ created_by: user.email }),
-        Transaction.filter({ created_by: user.email }, '-date'),
+        Account.filter({ user_id: user.id }),
+        Category.filter({ user_id: user.id }),
+        Transaction.filter({ user_id: user.id }, '-date'),
       ]);
       setAccounts(accountsData);
       setCategories(categoriesData);

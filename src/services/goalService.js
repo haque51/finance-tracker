@@ -103,6 +103,10 @@ class GoalService {
       targetDate: apiGoal.target_date,
       linkedAccountId: apiGoal.linked_account_id,
       status: apiGoal.status,
+      userId: apiGoal.user_id,
+      user_id: apiGoal.user_id, // Keep both formats for compatibility
+      createdBy: apiGoal.created_by || apiGoal.user_id, // Fallback to user_id
+      created_by: apiGoal.created_by || apiGoal.user_id, // Fallback to user_id
       createdAt: apiGoal.created_at,
       updatedAt: apiGoal.updated_at,
       accountName: apiGoal.account_name,
