@@ -307,7 +307,7 @@ class FinancialGoalAdapter {
 class RecurrentTransactionAdapter {
   async filter(filters = {}) {
     try {
-      const recurring = await recurringService.getRecurring();
+      const recurring = await recurringService.getRecurringTransactions();
 
       // Apply client-side filtering
       if (Object.keys(filters).length === 0) {
