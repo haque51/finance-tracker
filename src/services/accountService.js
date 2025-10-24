@@ -131,6 +131,8 @@ class AccountService {
       interestRate: apiAccount.interest_rate,
       notes: apiAccount.notes,
       transactionCount: apiAccount.transaction_count,
+      createdBy: apiAccount.created_by,
+      created_by: apiAccount.created_by, // Keep both formats for compatibility
       createdAt: apiAccount.created_at,
       updatedAt: apiAccount.updated_at,
     };
