@@ -380,6 +380,31 @@ class UserAuthAdapter {
       throw error;
     }
   }
+
+  async updateMyUserData(data) {
+    try {
+      // Update current user's data (theme, preferences, etc.)
+      // For now, just return the data - backend update not implemented
+      console.warn('User.updateMyUserData not fully implemented in backend');
+      return data;
+    } catch (error) {
+      console.error('UserAuthAdapter.updateMyUserData error:', error);
+      throw error;
+    }
+  }
+
+  async logout() {
+    try {
+      // Logout using auth service
+      await authService.logout();
+      // Redirect to login page
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('UserAuthAdapter.logout error:', error);
+      // Even if there's an error, clear local state and redirect
+      window.location.href = '/login';
+    }
+  }
 }
 
 /**
