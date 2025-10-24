@@ -20,7 +20,38 @@ export const InvokeLLM = async (prompt, context = {}) => {
   };
 };
 
+/**
+ * File Upload Integration (placeholder)
+ */
+export const UploadPrivateFile = async (file) => {
+  console.warn('UploadPrivateFile called but not implemented');
+  console.log('File:', file);
+
+  // Return mock response
+  return {
+    url: URL.createObjectURL(file),
+    name: file.name,
+    size: file.size
+  };
+};
+
+/**
+ * Image Generation Integration (placeholder)
+ */
+export const GenerateImage = async (prompt) => {
+  console.warn('GenerateImage called but not implemented');
+  console.log('Prompt:', prompt);
+
+  // Return placeholder image
+  return {
+    url: `https://via.placeholder.com/150?text=${encodeURIComponent(prompt)}`,
+    prompt
+  };
+};
+
 // Export other integrations as needed
 export default {
-  InvokeLLM
+  InvokeLLM,
+  UploadPrivateFile,
+  GenerateImage
 };
