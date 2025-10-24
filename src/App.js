@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from './components/ui/toaster';
+import { ToastProvider } from './context/ToastContext';
 import OfflineBanner from './components/OfflineBanner';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from 'next-themes';
@@ -37,10 +38,11 @@ import DemoModePage from './pages/DemoModePage';
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <BrowserRouter>
-          <AppProvider>
-            <OfflineBanner />
+      <ToastProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <BrowserRouter>
+            <AppProvider>
+              <OfflineBanner />
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<LoginPage />} />
@@ -197,6 +199,7 @@ function App() {
           </AppProvider>
         </BrowserRouter>
       </ThemeProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
