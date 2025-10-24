@@ -5,11 +5,11 @@ import { InvokeLLM } from "@/api/integrations";
 import { Button } from "@/components/ui/button";
 import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog
+  DialogContent
+  DialogHeader
+  DialogTitle
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import AccountCard from "../components/accounts/AccountCard";
@@ -26,21 +26,21 @@ export default function AccountsPage() {
   const fetchExchangeRates = useCallback(async () => {
     try {
       const result = await InvokeLLM({
-        prompt: "Get current exchange rates for USD to EUR and BDT to EUR.",
-        add_context_from_internet: true,
+        prompt: "Get current exchange rates for USD to EUR and BDT to EUR."
+        add_context_from_internet: true
         response_json_schema: {
-          type: "object",
+          type: "object"
           properties: {
-            USD_to_EUR: { type: "number" },
-            BDT_to_EUR: { type: "number" },
-          },
-        },
+            USD_to_EUR: { type: "number" }
+            BDT_to_EUR: { type: "number" }
+          }
+        }
       });
       if (result.USD_to_EUR && result.BDT_to_EUR) {
         setExchangeRates({
-          USD: result.USD_to_EUR,
-          BDT: result.BDT_to_EUR,
-          EUR: 1,
+          USD: result.USD_to_EUR
+          BDT: result.BDT_to_EUR
+          EUR: 1
         });
       }
     } catch (error) {
@@ -56,7 +56,7 @@ export default function AccountsPage() {
       setCurrentUser(user);
 
       // Filter accounts by current user ID
-      const accountsData = await Account.filter({ user_id: user.id }, "-created_date");
+      const accountsData = await Account.filter({ }, "-created_date");
       setAccounts(accountsData);
     } catch (error) {
       console.error("Error loading accounts:", error);
@@ -93,8 +93,7 @@ export default function AccountsPage() {
         // First, find all transactions for this account and delete them.
         // Only delete transactions created by current user for this account
         const transactionsToDelete = await Transaction.filter({
-          account_id: accountId,
-          user_id: currentUser.id
+          account_id: accountId
         });
         for (const trans of transactionsToDelete) {
           await Transaction.delete(trans.id);
@@ -121,9 +120,9 @@ export default function AccountsPage() {
       if (editingAccount) {
         // For editing, use the current_balance from the form
         let dataToSave = {
-          ...formData,
-          balance: formData.current_balance,
-          balance_eur: formData.current_balance * rate,
+          ...formData
+          balance: formData.current_balance
+          balance_eur: formData.current_balance * rate
         };
         // Don't update opening_balance when editing, it's an initial value
         delete dataToSave.opening_balance;
@@ -135,10 +134,10 @@ export default function AccountsPage() {
         // For new accounts, only send the opening_balance
         // Backend will automatically set balance, balance_eur, and user_id
         let dataToSave = {
-          name: formData.name,
-          type: formData.type,
-          currency: formData.currency,
-          opening_balance: formData.opening_balance,
+          name: formData.name
+          type: formData.type
+          currency: formData.currency
+          opening_balance: formData.opening_balance
         };
 
         // Include optional fields if provided

@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog
+  DialogContent
+  DialogHeader
+  DialogTitle
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Plus, Search, Filter, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
@@ -35,23 +35,23 @@ export default function TransactionsPage() {
   const [netWorth, setNetWorth] = useState(0);
   
   const [filters, setFilters] = useState({
-    search: "",
-    account: "all",
-    type: "all",
-    category: "all",
-    dateFrom: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    search: ""
+    account: "all"
+    type: "all"
+    category: "all"
+    dateFrom: format(startOfMonth(new Date()), 'yyyy-MM-dd')
     dateTo: format(endOfMonth(new Date()), 'yyyy-MM-dd')
   });
 
   const fetchExchangeRates = useCallback(async () => {
     try {
       const result = await InvokeLLM({
-        prompt: "Get current exchange rates for USD to EUR and BDT to EUR.",
-        add_context_from_internet: true,
+        prompt: "Get current exchange rates for USD to EUR and BDT to EUR."
+        add_context_from_internet: true
         response_json_schema: {
-          type: "object",
+          type: "object"
           properties: {
-            USD_to_EUR: { type: "number" },
+            USD_to_EUR: { type: "number" }
             BDT_to_EUR: { type: "number" }
           }
         }
@@ -59,8 +59,8 @@ export default function TransactionsPage() {
       
       if (result.USD_to_EUR && result.BDT_to_EUR) {
         setExchangeRates({
-          USD: result.USD_to_EUR,
-          BDT: result.BDT_to_EUR,
+          USD: result.USD_to_EUR
+          BDT: result.BDT_to_EUR
           EUR: 1
         });
       }
@@ -76,10 +76,10 @@ export default function TransactionsPage() {
       setCurrentUser(user);
 
       const [transactionsData, accountsData, categoriesData, templatesData] = await Promise.all([
-        Transaction.filter({ user_id: user.id }, '-date'),
-        Account.filter({ user_id: user.id }), // Fetch all accounts to avoid issues
-        Category.filter({ user_id: user.id, is_active: true }),
-        TransactionTemplate.filter({ user_id: user.id }),
+        Transaction.filter({ }, '-date')
+        Account.filter({ }), // Fetch all accounts to avoid issues
+        Category.filter({ is_active: true })
+        TransactionTemplate.filter({ })
       ]);
       
       setTransactions(transactionsData);
@@ -191,7 +191,7 @@ export default function TransactionsPage() {
     };
 
     // Fetch fresh account data to prevent stale data issues, especially during rapid updates
-    const allAccounts = await Account.filter({ user_id: currentUser.id });
+    const allAccounts = await Account.filter({ });
 
     const fromAccount = allAccounts.find(a => a.id === transaction.account_id);
     const toAccount = transaction.to_account_id ? allAccounts.find(a => a.id === transaction.to_account_id) : null;
@@ -226,7 +226,7 @@ export default function TransactionsPage() {
 
         if (newBalance !== undefined) {
             await Account.update(fromAccount.id, {
-                balance: newBalance,
+                balance: newBalance
                 // Update balance_eur based on the new native balance and current exchange rate of the account's currency to EUR
                 balance_eur: newBalance * (exchangeRates[fromAccount.currency] || 1)
             });
@@ -241,7 +241,7 @@ export default function TransactionsPage() {
         let newToBalance;
         
         // CRITICAL LOGIC FOR LOAN/DEBT ACCOUNTS:
-        // When transferring TO a debt account (e.g., making a payment to a credit card or loan),
+        // When transferring TO a debt account (e.g., making a payment to a credit card or loan)
         // we REDUCE the balance owed (subtract the payment amount).
         // When transferring TO an asset account, we INCREASE its balance.
         newToBalance = isToAccountDebt
@@ -249,7 +249,7 @@ export default function TransactionsPage() {
             : toAccount.balance + (amountInToAccountCurrency * multiplier);
 
         await Account.update(toAccount.id, {
-            balance: newToBalance,
+            balance: newToBalance
             balance_eur: newToBalance * (exchangeRates[toAccount.currency] || 1)
         });
     }
@@ -298,10 +298,10 @@ export default function TransactionsPage() {
       const rate = exchangeRates[formData.currency] || 1;
       const amountEur = formData.amount * rate;
       const dataToSave = {
-        ...formData,
-        amount_eur: amountEur,
-        exchange_rate: rate,
-        user_id: currentUser.id,
+        ...formData
+        amount_eur: amountEur
+        exchange_rate: rate
+        
       };
 
       let savedTransactionResult;

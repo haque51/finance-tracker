@@ -16,16 +16,16 @@ export default function LoginPage() {
   const toast = useToast();
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: ''
+    password: ''
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+      ...formData
+      [e.target.name]: e.target.value
     });
     // Clear error when user starts typing
     if (error) setError('');

@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown, Plus, Calculator } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog
+  DialogContent
+  DialogHeader
+  DialogTitle
+  DialogTrigger
 } from "@/components/ui/dialog";
 
 import DebtPayoffPlanCard from "../components/debt/DebtPayoffPlanCard";
@@ -30,12 +30,11 @@ export default function DebtPayoffPage() {
       setCurrentUser(user);
 
       const [accountsData, plansData] = await Promise.all([
-        Account.filter({ 
-          user_id: user.id, 
+        Account.filter({
           is_active: true,
-          type: ['loan', 'credit_card'] 
+          type: ['loan', 'credit_card']
         }),
-        DebtPayoffPlan.filter({ user_id: user.id })
+        DebtPayoffPlan.filter({ })
       ]);
 
       // Filter for debt accounts with balances > 0
@@ -76,8 +75,8 @@ export default function DebtPayoffPage() {
   const handleSave = async (formData) => {
     try {
       const dataToSave = {
-        ...formData,
-        user_id: currentUser.id,
+        ...formData
+        
       };
 
       if (editingPlan) {
