@@ -29,7 +29,6 @@ class AccountService {
       const response = await api.get(url);
 
       // Backend returns: { status: "success", data: [...] }
-      console.log('Raw API response for accounts:', response.data.data);
       return response.data.data.map(this._mapAccountFromAPI);
     } catch (error) {
       console.error('Get accounts error:', error);

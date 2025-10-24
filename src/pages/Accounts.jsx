@@ -53,16 +53,10 @@ export default function AccountsPage() {
     try {
       // Get current user first
       const user = await User.me();
-      console.log('Current user:', user);
       setCurrentUser(user);
 
-      // Get all accounts first to see what we have
-      const allAccounts = await Account.filter({});
-      console.log('All accounts from backend:', allAccounts);
-
-      // Filter accounts by current user ID (not email)
+      // Filter accounts by current user ID
       const accountsData = await Account.filter({ user_id: user.id }, "-created_date");
-      console.log('Filtered accounts:', accountsData);
       setAccounts(accountsData);
     } catch (error) {
       console.error("Error loading accounts:", error);
@@ -116,8 +110,6 @@ export default function AccountsPage() {
   };
 
   const handleSave = async (formData) => {
-    console.log('handleSave called with:', formData);
-
     if (!currentUser) {
       alert("Error: Current user not identified. Cannot save account.");
       return;
@@ -138,11 +130,10 @@ export default function AccountsPage() {
         // Remove current_balance as it's a form-specific field, not a database field
         delete dataToSave.current_balance;
 
-        console.log('Updating account with:', dataToSave);
         await Account.update(editingAccount.id, dataToSave);
       } else {
         // For new accounts, only send the opening_balance
-        // Backend will automatically set balance, balance_eur, and created_by
+        // Backend will automatically set balance, balance_eur, and user_id
         let dataToSave = {
           name: formData.name,
           type: formData.type,
@@ -158,9 +149,7 @@ export default function AccountsPage() {
           dataToSave.notes = formData.notes;
         }
 
-        console.log('Creating account with:', dataToSave);
         await Account.create(dataToSave);
-        console.log('Account created successfully');
       }
 
       setIsFormOpen(false);
