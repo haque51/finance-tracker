@@ -15,7 +15,6 @@ import {
 import { User as UserIcon, Settings, LogOut, ChevronDown, Sun, Moon, Laptop } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import authService from "@/services/authService";
 
 export default function UserMenu({ onThemeChange }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -41,14 +40,19 @@ export default function UserMenu({ onThemeChange }) {
 
   const handleLogout = async () => {
     try {
-      // Clear tokens and logout
-      await authService.logout();
-      // Navigate to login page using React Router
+      // Logout using the User adapter method
+      await User.logout();
+      // Navigate to login page
       navigate('/login', { replace: true });
     } catch (error) {
       console.error("Error during logout:", error);
-      // Even if error, navigate to login
-      navigate('/login', { replace: true });
+      // Even if error, try to navigate
+      try {
+        navigate('/login', { replace: true });
+      } catch (navError) {
+        // Fallback to window location if navigate fails
+        window.location.href = '/login';
+      }
     }
   };
 
