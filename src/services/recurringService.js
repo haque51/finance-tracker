@@ -13,7 +13,9 @@ class RecurringService {
   async getRecurringTransactions() {
     try {
       const response = await api.get(API_ENDPOINTS.RECURRING);
-      return response.data.map(this._mapRecurringFromAPI);
+      // Backend returns: { status: "success", data: [...] }
+      const data = response.data.data || response.data || [];
+      return Array.isArray(data) ? data.map(this._mapRecurringFromAPI) : [];
     } catch (error) {
       console.error('Get recurring transactions error:', error);
       throw error;
@@ -28,7 +30,8 @@ class RecurringService {
   async getRecurringTransaction(id) {
     try {
       const response = await api.get(`${API_ENDPOINTS.RECURRING}/${id}`);
-      return this._mapRecurringFromAPI(response.data);
+      const data = response.data.data || response.data;
+      return this._mapRecurringFromAPI(data);
     } catch (error) {
       console.error('Get recurring transaction error:', error);
       throw error;
@@ -44,7 +47,8 @@ class RecurringService {
     try {
       const apiData = this._mapRecurringToAPI(recurringData);
       const response = await api.post(API_ENDPOINTS.RECURRING, apiData);
-      return this._mapRecurringFromAPI(response.data);
+      const data = response.data.data || response.data;
+      return this._mapRecurringFromAPI(data);
     } catch (error) {
       console.error('Create recurring transaction error:', error);
       throw error;
@@ -61,7 +65,8 @@ class RecurringService {
     try {
       const apiData = this._mapRecurringToAPI(recurringData);
       const response = await api.put(`${API_ENDPOINTS.RECURRING}/${id}`, apiData);
-      return this._mapRecurringFromAPI(response.data);
+      const data = response.data.data || response.data;
+      return this._mapRecurringFromAPI(data);
     } catch (error) {
       console.error('Update recurring transaction error:', error);
       throw error;
