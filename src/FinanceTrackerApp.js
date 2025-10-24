@@ -93,7 +93,7 @@ export default function FinanceTrackerApp() {
             globalContext.loadRecurringTransactions().catch(err => { console.error('Failed to load recurring:', err); return []; })
           ]);
 
-          // If backend has no categories, this is a new user - save defaults to backend
+          // If backend has no categories, user can create them via Reset Categories button
           let finalCategories = categoriesData;
 
           console.log('=== CATEGORY LOADING DEBUG ===');
@@ -103,20 +103,8 @@ export default function FinanceTrackerApp() {
           }
 
           if (!categoriesData || categoriesData.length === 0) {
-            console.log('🆕 New user detected - initializing default categories in backend...');
-            try {
-              // Save default categories to backend
-              const savedCategories = await globalContext.createCategoriesBulk(DEFAULT_CATEGORIES);
-              console.log('Saved categories from backend:', savedCategories?.length || 0);
-              if (savedCategories && savedCategories.length > 0) {
-                console.log('Sample saved category:', savedCategories[0]);
-              }
-              finalCategories = savedCategories && savedCategories.length > 0 ? savedCategories : DEFAULT_CATEGORIES;
-              console.log(`✅ Default categories saved to backend: ${finalCategories.length} categories`);
-            } catch (err) {
-              console.warn('⚠️ Failed to save default categories to backend, using local defaults:', err);
-              finalCategories = DEFAULT_CATEGORIES;
-            }
+            console.log('ℹ️ No categories found. User can create them via Settings > Data Management > Reset Categories');
+            finalCategories = [];
           }
 
           console.log('Final categories being used:', finalCategories?.length || 0);
@@ -365,7 +353,8 @@ export default function FinanceTrackerApp() {
               <div className="absolute inset-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-glass flex items-center justify-center z-50 animate-fade-in">
                 <div className="text-center">
                   <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 border-t-primary shadow-card"></div>
-                  <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-300">Loading your financial data...</p>
+                  <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-300">Loading your data...</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">This may take a few seconds</p>
                 </div>
               </div>
             )}
