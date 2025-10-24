@@ -19,8 +19,8 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
     name: "",
     type: "checking",
     currency: "EUR",
-    opening_balance: 0,
-    current_balance: 0,
+    opening_balance: "",
+    current_balance: "",
     institution: "",
     notes: "",
   });
@@ -32,8 +32,8 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
         name: account.name || "",
         type: account.type || "checking",
         currency: account.currency || "EUR",
-        opening_balance: account.opening_balance || 0,
-        current_balance: account.balance || 0,
+        opening_balance: account.opening_balance || "",
+        current_balance: account.balance || "",
         institution: account.institution || "",
         notes: account.notes || "",
       });
@@ -42,8 +42,8 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
         name: "",
         type: "checking",
         currency: "EUR",
-        opening_balance: 0,
-        current_balance: 0,
+        opening_balance: "",
+        current_balance: "",
         institution: "",
         notes: "",
       });
@@ -57,11 +57,22 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Prepare data for submission
     const dataToSubmit = {
-      ...formData,
+      name: formData.name,
+      type: formData.type,
+      currency: formData.currency,
+      institution: formData.institution || "",
+      notes: formData.notes || "",
       opening_balance: Number(formData.opening_balance) || 0,
-      current_balance: Number(formData.current_balance) || 0,
+    };
+
+    // Only include current_balance when editing, not creating
+    if (account) {
+      dataToSubmit.current_balance = Number(formData.current_balance) || 0;
     }
+
     await onSubmit(dataToSubmit);
     setIsSubmitting(false);
   };
@@ -123,8 +134,8 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
           <Label htmlFor="opening_balance">Opening Balance</Label>
           <Input
             id="opening_balance"
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             value={formData.opening_balance}
             onChange={(e) => handleChange("opening_balance", e.target.value)}
             placeholder="0.00"
@@ -136,11 +147,12 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
           <Label htmlFor="current_balance">Current Balance</Label>
           <Input
             id="current_balance"
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             value={formData.current_balance}
             onChange={(e) => handleChange("current_balance", e.target.value)}
             placeholder="0.00"
+            disabled={!account}
           />
           <p className="text-xs text-slate-500">
             {account ? "Adjust for manual reconciliation." : "Will be set to opening balance initially."}
