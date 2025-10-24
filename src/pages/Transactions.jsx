@@ -226,9 +226,7 @@ export default function TransactionsPage() {
 
         if (newBalance !== undefined) {
             await Account.update(fromAccount.id, {
-                balance: newBalance,
-                // Update balance_eur based on the new native balance and current exchange rate of the account's currency to EUR
-                balance_eur: newBalance * (exchangeRates[fromAccount.currency] || 1)
+                current_balance: newBalance
             });
         }
     }
@@ -249,8 +247,7 @@ export default function TransactionsPage() {
             : toAccount.balance + (amountInToAccountCurrency * multiplier);
 
         await Account.update(toAccount.id, {
-            balance: newToBalance,
-            balance_eur: newToBalance * (exchangeRates[toAccount.currency] || 1)
+            current_balance: newToBalance
         });
     }
   }, [currentUser, exchangeRates]);
