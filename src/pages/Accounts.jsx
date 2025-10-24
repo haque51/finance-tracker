@@ -53,15 +53,21 @@ export default function AccountsPage() {
     try {
       // Get current user first
       const user = await User.me();
+      console.log('Current user:', user);
       setCurrentUser(user);
+
+      // Get all accounts first to see what we have
+      const allAccounts = await Account.filter({});
+      console.log('All accounts from backend:', allAccounts);
 
       // Filter accounts by current user
       const accountsData = await Account.filter({ created_by: user.email }, "-created_date");
+      console.log('Filtered accounts:', accountsData);
       setAccounts(accountsData);
     } catch (error) {
       console.error("Error loading accounts:", error);
       // Handle cases where user might not be logged in or other errors
-      setCurrentUser(null); 
+      setCurrentUser(null);
       setAccounts([]);
     }
     setIsLoading(false);
