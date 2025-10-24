@@ -21,14 +21,13 @@ export default function BudgetPage() {
     setIsLoading(true);
     try {
       const [categoriesData, transactionsData, budgetsData] = await Promise.all([
-        Category.filter({ user_id: user.id, type: 'expense', is_active: true }),
+        Category.filter({ type: 'expense', is_active: true }),
         Transaction.filter({
-          user_id: user.id,
           type: 'expense',
           // A bit wider range to be safe with timezones
           date: { gte: format(subMonths(new Date(month), 1), 'yyyy-MM-01'), lte: format(addMonths(new Date(month), 1), 'yyyy-MM-dd') }
         }),
-        Budget.filter({ user_id: user.id, month: format(month, 'yyyy-MM') })
+        Budget.filter({ month: format(month, 'yyyy-MM') })
       ]);
 
       setCategories(categoriesData.filter(c => !c.parent_id));
@@ -64,12 +63,11 @@ export default function BudgetPage() {
         await Budget.create({
           month: monthString,
           category_id: categoryId,
-          amount,
-          user_id: currentUser.id,
+          amount
         });
       }
       // Refresh budgets for the current month
-      const updatedBudgets = await Budget.filter({ user_id: currentUser.id, month: monthString });
+      const updatedBudgets = await Budget.filter({ month: monthString });
       setBudgets(updatedBudgets);
     } catch (error) {
       console.error("Failed to update budget:", error);
@@ -97,10 +95,10 @@ export default function BudgetPage() {
       const budgeted = budgetEntry ? budgetEntry.amount : (category.budget_amount || 0);
 
       return {
-        categoryId: category.id,
-        name: category.name,
-        budgeted,
-        spent,
+        categoryId: category.id
+        name: category.name
+        budgeted
+        spent
         remaining: budgeted - spent
       };
     });

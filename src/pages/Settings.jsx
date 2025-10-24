@@ -8,21 +8,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select
+  SelectContent
+  SelectItem
+  SelectTrigger
+  SelectValue
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Settings as SettingsIcon, 
-  User as UserIcon, 
-  DollarSign,
-  RefreshCw,
-  Target,
-  CreditCard,
-  Globe,
+  Settings as SettingsIcon
+  User as UserIcon
+  DollarSign
+  RefreshCw
+  Target
+  CreditCard
+  Globe
   Database
 } from "lucide-react";
 
@@ -48,7 +48,7 @@ export default function SettingsPage() {
       
       // Filter accounts by current user
       const accountsData = await Account.filter({ 
-        created_by: userData.email, 
+        created_by: userData.email
         is_active: true 
       });
       
@@ -64,13 +64,13 @@ export default function SettingsPage() {
     setIsRefreshingRates(true);
     try {
       const result = await InvokeLLM({
-        prompt: "Get current exchange rates for USD to EUR and BDT to EUR. Provide accurate real-time rates.",
-        add_context_from_internet: true,
+        prompt: "Get current exchange rates for USD to EUR and BDT to EUR. Provide accurate real-time rates."
+        add_context_from_internet: true
         response_json_schema: {
-          type: "object",
+          type: "object"
           properties: {
-            USD_to_EUR: { type: "number" },
-            BDT_to_EUR: { type: "number" },
+            USD_to_EUR: { type: "number" }
+            BDT_to_EUR: { type: "number" }
             last_updated: { type: "string" }
           }
         }
@@ -78,8 +78,8 @@ export default function SettingsPage() {
       
       if (result.USD_to_EUR && result.BDT_to_EUR) {
         setExchangeRates({
-          USD: result.USD_to_EUR,
-          BDT: result.BDT_to_EUR,
+          USD: result.USD_to_EUR
+          BDT: result.BDT_to_EUR
           EUR: 1
         });
       }

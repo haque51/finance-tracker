@@ -15,19 +15,19 @@ export default function RegisterPage() {
   const toast = useToast();
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    baseCurrency: 'EUR',
+    name: ''
+    email: ''
+    password: ''
+    confirmPassword: ''
+    baseCurrency: 'EUR'
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+      ...formData
+      [e.target.name]: e.target.value
     });
     if (error) setError('');
   };
@@ -83,10 +83,10 @@ export default function RegisterPage() {
 
     try {
       await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        base_currency: formData.baseCurrency,
+        name: formData.name
+        email: formData.email
+        password: formData.password
+        base_currency: formData.baseCurrency
         enabled_currencies: [formData.baseCurrency], // Backend requires array
       });
 
