@@ -5,105 +5,105 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { User } from "@/api/entities";
 import { 
-  LayoutDashboard
-  CreditCard
-  Receipt
-  FolderTree
-  Settings
-  Target
-  TrendingUp
-  Wallet
-  BrainCircuit
-  ClipboardCheck
-  Repeat
-  PiggyBank
-  FilePieChart
+  LayoutDashboard, 
+  CreditCard, 
+  Receipt, 
+  FolderTree, 
+  Settings,
+  Target,
+  TrendingUp,
+  Wallet,
+  BrainCircuit,
+  ClipboardCheck,
+  Repeat,
+  PiggyBank,
+  FilePieChart,
   TrendingDown, // New icon for debt management
   Zap // New icon for insights
 } from "lucide-react";
 import {
-  Sidebar
-  SidebarContent
-  SidebarGroup
-  SidebarGroupContent
-  SidebarGroupLabel
-  SidebarMenu
-  SidebarMenuButton
-  SidebarMenuItem
-  SidebarHeader
-  SidebarFooter
-  SidebarProvider
-  SidebarTrigger
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 import UserMenu from "@/components/layout/UserMenu";
 
 const navigationItems = [
   {
-    title: "Dashboard"
-    url: createPageUrl("Dashboard")
-    icon: LayoutDashboard
-  }
+    title: "Dashboard",
+    url: createPageUrl("Dashboard"),
+    icon: LayoutDashboard,
+  },
   {
-    title: "Accounts"
-    url: createPageUrl("Accounts")
-    icon: CreditCard
-  }
+    title: "Accounts",
+    url: createPageUrl("Accounts"),
+    icon: CreditCard,
+  },
   {
-    title: "Transactions"
-    url: createPageUrl("Transactions")
-    icon: Receipt
-  }
+    title: "Transactions", 
+    url: createPageUrl("Transactions"),
+    icon: Receipt,
+  },
   {
-    title: "Budget"
-    url: createPageUrl("Budget")
-    icon: PiggyBank
-  }
+    title: "Budget",
+    url: createPageUrl("Budget"),
+    icon: PiggyBank,
+  },
   {
-    title: "Reports"
-    url: createPageUrl("Reports")
-    icon: FilePieChart
-  }
+    title: "Reports",
+    url: createPageUrl("Reports"),
+    icon: FilePieChart,
+  },
   {
-    title: "Categories"
-    url: createPageUrl("Categories")
-    icon: FolderTree
-  }
+    title: "Categories",
+    url: createPageUrl("Categories"),
+    icon: FolderTree,
+  },
   {
-    title: "Recurring"
-    url: createPageUrl("Recurring")
-    icon: Repeat
-  }
+    title: "Recurring",
+    url: createPageUrl("Recurring"),
+    icon: Repeat,
+  },
   {
-    title: "Reconciliation"
-    url: createPageUrl("Reconciliation")
-    icon: ClipboardCheck
-  }
+    title: "Reconciliation",
+    url: createPageUrl("Reconciliation"),
+    icon: ClipboardCheck,
+  },
   {
-    title: "Goals"
-    url: createPageUrl("Goals")
-    icon: Target
-  }
+    title: "Goals",
+    url: createPageUrl("Goals"),
+    icon: Target,
+  },
   {
     title: "Debt Payoff", // New navigation item
-    url: createPageUrl("DebtPayoff")
-    icon: TrendingDown
-  }
+    url: createPageUrl("DebtPayoff"),
+    icon: TrendingDown,
+  },
   {
     title: "Insights", // New navigation item
-    url: createPageUrl("Insights")
-    icon: Zap
-  }
+    url: createPageUrl("Insights"),
+    icon: Zap,
+  },
   {
-    title: "Forecast"
-    url: createPageUrl("Forecast")
-    icon: BrainCircuit
-  }
+    title: "Forecast",
+    url: createPageUrl("Forecast"),
+    icon: BrainCircuit,
+  },
   {
-    title: "Settings"
-    url: createPageUrl("Settings")
-    icon: Settings
-  }
+    title: "Settings",
+    url: createPageUrl("Settings"),
+    icon: Settings,
+  },
 ];
 
 export default function Layout({ children, currentPageName }) {

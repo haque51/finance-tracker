@@ -21,10 +21,10 @@ export default function RecurringPage() {
             setCurrentUser(user);
 
             const [recTrans, tempTrans, accData, catData] = await Promise.all([
-                RecurrentTransaction.filter({ })
-                TransactionTemplate.filter({ })
-                Account.filter({ })
-                Category.filter({ })
+                RecurrentTransaction.filter({}),
+                TransactionTemplate.filter({}),
+                Account.filter({}),
+                Category.filter({})
             ]);
 
             setRecurrentTransactions(recTrans);

@@ -55,9 +55,9 @@ export default function ReconciliationPage() {
                 if (!account) return;
 
                 const filters = {
-                    account_id: selectedAccountId
+                    account_id: selectedAccountId,
                     // Filter by current user
-                    reconciled: false
+                    reconciled: false,
                 };
                 if (account.last_reconciled_date) {
                   // We fetch all unreconciled, and filter client-side up to statement date
@@ -131,7 +131,7 @@ export default function ReconciliationPage() {
 
             // Update account
             await Account.update(selectedAccountId, {
-                last_reconciled_date: statementDate
+                last_reconciled_date: statementDate,
                 last_reconciled_balance: Number(statementBalance)
             });
 

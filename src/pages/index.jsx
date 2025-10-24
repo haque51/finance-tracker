@@ -30,31 +30,31 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 
 const PAGES = {
     
-    Dashboard: Dashboard
+    Dashboard: Dashboard,
     
-    Accounts: Accounts
+    Accounts: Accounts,
     
-    Transactions: Transactions
+    Transactions: Transactions,
     
-    Categories: Categories
+    Categories: Categories,
     
-    Settings: Settings
+    Settings: Settings,
     
-    Forecast: Forecast
+    Forecast: Forecast,
     
-    Reconciliation: Reconciliation
+    Reconciliation: Reconciliation,
     
-    Recurring: Recurring
+    Recurring: Recurring,
     
-    Goals: Goals
+    Goals: Goals,
     
-    Budget: Budget
+    Budget: Budget,
     
-    Reports: Reports
+    Reports: Reports,
     
-    DebtPayoff: DebtPayoff
+    DebtPayoff: DebtPayoff,
     
-    Insights: Insights
+    Insights: Insights,
     
 }
 

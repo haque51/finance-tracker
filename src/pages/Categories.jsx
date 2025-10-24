@@ -5,11 +5,11 @@ import { GenerateImage } from "@/api/integrations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog
-  DialogContent
-  DialogHeader
-  DialogTitle
-  DialogTrigger
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, FolderTree } from "lucide-react"; // Removed FileText, Repeat as they are not used here
 
@@ -19,18 +19,18 @@ import CategoryStats from "../components/categories/CategoryStats";
 
 const DEFAULT_CATEGORIES = {
     expense: [
-        { name: 'Immediate Obligations', sub: ['Rent/Mortgage', 'Utilities', 'Internet', 'Mobile Phone', 'Home Insurance', 'Health Insurance', 'Auto Insurance', 'Loan Payment'] }
-        { name: 'Food & Dining', sub: ['Groceries', 'Restaurants', 'Coffee Shops', 'Alcohol & Bars'] }
-        { name: 'Personal', sub: ['Clothing', 'Haircut', 'Cosmetics', 'Subscriptions'] }
-        { name: 'Transportation', sub: ['Fuel', 'Public Transport', 'Car Maintenance', 'Parking', 'Auto Registration'] }
-        { name: 'Health & Wellness', sub: ['Pharmacy', 'Doctor', 'Dentist', 'Eyecare', 'Fitness'] }
-        { name: 'Shopping', sub: ['Home Supplies', 'Electronics', 'Software', 'Hobbies', 'Books', 'Gifts'] }
-        { name: 'Entertainment', sub: ['Movies', 'Concerts', 'Games', 'Travel'] }
-        { name: 'Financial', sub: ['Bank Fees', 'Taxes', 'Charity'] }
-    ]
+        { name: 'Immediate Obligations', sub: ['Rent/Mortgage', 'Utilities', 'Internet', 'Mobile Phone', 'Home Insurance', 'Health Insurance', 'Auto Insurance', 'Loan Payment'] },
+        { name: 'Food & Dining', sub: ['Groceries', 'Restaurants', 'Coffee Shops', 'Alcohol & Bars'] },
+        { name: 'Personal', sub: ['Clothing', 'Haircut', 'Cosmetics', 'Subscriptions'] },
+        { name: 'Transportation', sub: ['Fuel', 'Public Transport', 'Car Maintenance', 'Parking', 'Auto Registration'] },
+        { name: 'Health & Wellness', sub: ['Pharmacy', 'Doctor', 'Dentist', 'Eyecare', 'Fitness'] },
+        { name: 'Shopping', sub: ['Home Supplies', 'Electronics', 'Software', 'Hobbies', 'Books', 'Gifts'] },
+        { name: 'Entertainment', sub: ['Movies', 'Concerts', 'Games', 'Travel'] },
+        { name: 'Financial', sub: ['Bank Fees', 'Taxes', 'Charity'] },
+    ],
     income: [
-        { name: 'Wages', sub: ['Salary', 'Bonus', 'Commission'] }
-        { name: 'Other Income', sub: ['Investment', 'Gift', 'Rental Income'] }
+        { name: 'Wages', sub: ['Salary', 'Bonus', 'Commission'] },
+        { name: 'Other Income', sub: ['Investment', 'Gift', 'Rental Income'] },
     ]
 };
 
@@ -52,7 +52,8 @@ export default function CategoriesPage() {
                 // Remove AI icon generation from default setup for speed and consistency
                 const parentCategory = await Category.create({
                     name: cat.name,
-                    type: type
+                    type: type,
+                    user_id: user.id,
                 });
 
                 if (parentCategory && cat.sub) {
@@ -60,7 +61,8 @@ export default function CategoriesPage() {
                         await Category.create({
                             name: subName,
                             type: type,
-                            parent_id: parentCategory.id
+                            parent_id: parentCategory.id,
+                            user_id: user.id,
                             // Subcategories usually don't need separate icons unless specified
                         });
                     }
@@ -83,8 +85,8 @@ export default function CategoriesPage() {
       setCurrentUser(user);
 
       const [categoriesData, transactionsData] = await Promise.all([
-        Category.filter({ }, '-created_date')
-        Transaction.filter({ }, '-created_date')
+        Category.filter({}, '-created_date'),
+        Transaction.filter({}, '-created_date')
       ]);
       
       setCategories(categoriesData);
@@ -94,7 +96,7 @@ export default function CategoriesPage() {
       if (categoriesData.length === 0 && user) {
         await setupDefaultCategories(user);
         // After setup, reload data again to show the newly created categories
-        const reloadedCategoriesData = await Category.filter({ }, '-created_date');
+        const reloadedCategoriesData = await Category.filter({}, '-created_date');
         setCategories(reloadedCategoriesData);
       }
 
@@ -155,7 +157,7 @@ export default function CategoriesPage() {
   const handleSave = async (formData) => {
     try {
       let categoryData = {
-        ...formData
+        ...formData,
         // Ensure new categories are associated with the current user
       };
 
@@ -178,7 +180,7 @@ export default function CategoriesPage() {
         }
         
         await Category.create({
-          ...categoryData
+          ...categoryData,
           type: editingCategory?.type || activeTab // Use type from editingCategory if it's a subcategory creation, else activeTab
         });
       }

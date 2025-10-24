@@ -18,20 +18,20 @@ export default function ReportsPage() {
 
   const [filters, setFilters] = useState({
     dateRange: {
-      from: startOfMonth(new Date())
-      to: endOfMonth(new Date())
-    }
-    accounts: []
-    categories: []
+      from: startOfMonth(new Date()),
+      to: endOfMonth(new Date()),
+    },
+    accounts: [],
+    categories: [],
   });
 
   const loadData = useCallback(async (user) => {
     setIsLoading(true);
     try {
       const [accountsData, categoriesData, transactionsData] = await Promise.all([
-        Account.filter({ })
-        Category.filter({ })
-        Transaction.filter({ }, '-date')
+        Account.filter({}),
+        Category.filter({}),
+        Transaction.filter({}, '-date'),
       ]);
       setAccounts(accountsData);
       setCategories(categoriesData);
