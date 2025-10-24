@@ -58,23 +58,29 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Prepare data for submission
-    const dataToSubmit = {
-      name: formData.name,
-      type: formData.type,
-      currency: formData.currency,
-      institution: formData.institution || "",
-      notes: formData.notes || "",
-      opening_balance: Number(formData.opening_balance) || 0,
-    };
+    try {
+      // Prepare data for submission
+      const dataToSubmit = {
+        name: formData.name,
+        type: formData.type,
+        currency: formData.currency,
+        institution: formData.institution || "",
+        notes: formData.notes || "",
+        opening_balance: Number(formData.opening_balance) || 0,
+      };
 
-    // Only include current_balance when editing, not creating
-    if (account) {
-      dataToSubmit.current_balance = Number(formData.current_balance) || 0;
+      // Only include current_balance when editing, not creating
+      if (account) {
+        dataToSubmit.current_balance = Number(formData.current_balance) || 0;
+      }
+
+      console.log('Submitting account data:', dataToSubmit);
+      await onSubmit(dataToSubmit);
+    } catch (error) {
+      console.error('Form submission error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    await onSubmit(dataToSubmit);
-    setIsSubmitting(false);
   };
 
   return (
