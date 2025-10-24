@@ -132,8 +132,10 @@ class AccountService {
       interestRate: apiAccount.interest_rate,
       notes: apiAccount.notes,
       transactionCount: apiAccount.transaction_count,
-      createdBy: apiAccount.created_by,
-      created_by: apiAccount.created_by, // Keep both formats for compatibility
+      userId: apiAccount.user_id,
+      user_id: apiAccount.user_id, // Keep both formats for compatibility
+      createdBy: apiAccount.created_by || apiAccount.user_id, // Fallback to user_id
+      created_by: apiAccount.created_by || apiAccount.user_id, // Fallback to user_id
       createdAt: apiAccount.created_at,
       updatedAt: apiAccount.updated_at,
     };

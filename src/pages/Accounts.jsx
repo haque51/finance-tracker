@@ -60,8 +60,8 @@ export default function AccountsPage() {
       const allAccounts = await Account.filter({});
       console.log('All accounts from backend:', allAccounts);
 
-      // Filter accounts by current user
-      const accountsData = await Account.filter({ created_by: user.email }, "-created_date");
+      // Filter accounts by current user ID (not email)
+      const accountsData = await Account.filter({ user_id: user.id }, "-created_date");
       console.log('Filtered accounts:', accountsData);
       setAccounts(accountsData);
     } catch (error) {
@@ -98,14 +98,14 @@ export default function AccountsPage() {
         // This is a cascading delete, be careful.
         // First, find all transactions for this account and delete them.
         // Only delete transactions created by current user for this account
-        const transactionsToDelete = await Transaction.filter({ 
+        const transactionsToDelete = await Transaction.filter({
           account_id: accountId,
-          created_by: currentUser.email 
+          user_id: currentUser.id
         });
         for (const trans of transactionsToDelete) {
           await Transaction.delete(trans.id);
         }
-        
+
         await Account.delete(accountId);
         loadAccounts();
       } catch (error) {
