@@ -110,6 +110,8 @@ export default function AccountsPage() {
   };
 
   const handleSave = async (formData) => {
+    console.log('handleSave called with:', formData);
+
     if (!currentUser) {
       alert("Error: Current user not identified. Cannot save account.");
       return;
@@ -130,6 +132,7 @@ export default function AccountsPage() {
         // Remove current_balance as it's a form-specific field, not a database field
         delete dataToSave.current_balance;
 
+        console.log('Updating account with:', dataToSave);
         await Account.update(editingAccount.id, dataToSave);
       } else {
         // For new accounts, only send the opening_balance
@@ -149,7 +152,9 @@ export default function AccountsPage() {
           dataToSave.notes = formData.notes;
         }
 
+        console.log('Creating account with:', dataToSave);
         await Account.create(dataToSave);
+        console.log('Account created successfully');
       }
 
       setIsFormOpen(false);
