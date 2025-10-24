@@ -394,16 +394,8 @@ class UserAuthAdapter {
   }
 
   async logout() {
-    try {
-      // Logout using auth service
-      await authService.logout();
-      // Redirect to login page
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('UserAuthAdapter.logout error:', error);
-      // Even if there's an error, clear local state and redirect
-      window.location.href = '/login';
-    }
+    // Simply clear tokens - let the calling component handle navigation
+    await authService.logout();
   }
 }
 

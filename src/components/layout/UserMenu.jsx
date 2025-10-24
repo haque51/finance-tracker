@@ -13,12 +13,14 @@ import {
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { User as UserIcon, Settings, LogOut, ChevronDown, Sun, Moon, Laptop } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import authService from "@/services/authService";
 
 export default function UserMenu({ onThemeChange }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -39,9 +41,14 @@ export default function UserMenu({ onThemeChange }) {
 
   const handleLogout = async () => {
     try {
-      await User.logout();
+      // Clear tokens and logout
+      await authService.logout();
+      // Navigate to login page using React Router
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error("Error during logout:", error);
+      // Even if error, navigate to login
+      navigate('/login', { replace: true });
     }
   };
 
