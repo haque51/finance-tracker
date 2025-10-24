@@ -85,7 +85,8 @@ class AccountAdapter {
 class TransactionAdapter {
   async filter(filters = {}) {
     try {
-      const transactions = await transactionService.getTransactions(filters);
+      const result = await transactionService.getTransactions(filters);
+      const transactions = result.transactions || [];
 
       // Apply additional client-side filtering if needed
       if (Object.keys(filters).length === 0) {
