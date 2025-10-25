@@ -253,28 +253,16 @@ export default function TransactionsPage() {
   }, [currentUser, exchangeRates]);
 
   const handleDelete = async (transactionId) => {
-    if (window.confirm("Are you sure you want to delete this transaction? This will also update the linked account balances.")) {
+    if (window.confirm("Are you sure you want to delete this transaction?")) {
       try {
-        const transactionToDelete = transactions.find(t => t.id === transactionId);
-        if (!transactionToDelete) {
-          console.warn(`Transaction with ID ${transactionId} not found for deletion.`);
-          return;
-        }
-
-        // --- REVERT BALANCES FIRST ---
-        // When reverting, we use 'revert' operation which uses multiplier = -1.
-        // This effectively reverses the effect of the original transaction on account balances.
-        await updateAccountBalances(transactionToDelete, 'revert');
-        
-        // --- DELETE TRANSACTION ---
+        // Backend automatically handles account balance updates
         await Transaction.delete(transactionId);
-        
-        // --- RELOAD DATA ---
-        // Ensure data is reloaded after successful deletion and balance update
+
+        // Reload data after successful deletion
         await loadData();
       } catch (error) {
         console.error("Error deleting transaction:", error);
-        alert("Failed to delete transaction. Please check console for details. Account balances may not have been updated correctly.");
+        alert("Failed to delete transaction.");
       }
     }
   };
@@ -285,13 +273,8 @@ export default function TransactionsPage() {
       return;
     }
     try {
-      // --- REVERT OLD BALANCES IF EDITING ---
-      // If we are editing an existing transaction, first revert its previous impact on balances.
-      if (editingTransaction) {
-        await updateAccountBalances(editingTransaction, 'revert');
-      }
-
       // --- SAVE TRANSACTION DATA ---
+      // Backend automatically handles account balance updates
       const rate = exchangeRates[formData.currency] || 1;
       const amountEur = formData.amount * rate;
       const dataToSave = {
@@ -301,33 +284,21 @@ export default function TransactionsPage() {
         user_id: currentUser.id,
       };
 
-      let savedTransactionResult;
       if (editingTransaction) {
-        savedTransactionResult = await Transaction.update(editingTransaction.id, dataToSave);
+        await Transaction.update(editingTransaction.id, dataToSave);
       } else {
-        savedTransactionResult = await Transaction.create(dataToSave);
+        await Transaction.create(dataToSave);
       }
-        
-      // Ensure the transaction object passed to update balances is complete with its ID.
-      // For new transactions, the ID comes from savedTransactionResult.
-      // For edited transactions, merge existing with new data.
-      const finalTransaction = editingTransaction
-        ? { ...editingTransaction, ...dataToSave }
-        : { ...dataToSave, id: savedTransactionResult.id };
-
-      // --- APPLY NEW BALANCES ---
-      // Apply the impact of the newly saved/updated transaction on balances.
-      await updateAccountBalances(finalTransaction, 'apply');
 
       setIsFormOpen(false);
       setEditingTransaction(null);
-      // Ensure data is reloaded after successful save and balance update
+      // Reload data after successful save
       await loadData();
     } catch (error) {
       console.error("Error saving transaction:", error);
-      alert("Failed to save transaction. Please check console for details. Account balances may not have been updated correctly.");
-      // Reload data to potentially revert UI on failure and fetch latest state
-      await loadData(); 
+      alert("Failed to save transaction.");
+      // Reload data to fetch latest state
+      await loadData();
     }
   };
 
