@@ -57,46 +57,49 @@ export default function DataManagement({ user }) {
       console.log('User ID:', user?.id);
 
       // 1. Delete all existing categories for the user
-      // Use tree endpoint to get ALL categories including subcategories
-      console.log('Step 1: Fetching existing categories tree...');
-      const categoryTree = await Category.getTree();
-      console.log(`Found ${categoryTree.length} parent categories with children`);
+      // Use multi-pass deletion: keep trying until all are deleted
+      // Backend won't delete parents with children, so we delete in multiple passes
+      console.log('Step 1: Deleting all categories (multi-pass approach)...');
 
-      // Flatten the tree to get all categories (parents + all their children)
-      const allCategories = [];
-      const subcategories = [];
-      const parentCategories = [];
+      let passNumber = 1;
+      let remainingCategories = await Category.filter({});
+      console.log(`Pass ${passNumber}: Found ${remainingCategories.length} categories`);
 
-      for (const parent of categoryTree) {
-        parentCategories.push(parent);
-        if (parent.children && parent.children.length > 0) {
-          for (const child of parent.children) {
-            subcategories.push(child);
-            allCategories.push(child);
+      while (remainingCategories.length > 0 && passNumber <= 10) {
+        let deletedCount = 0;
+        let skippedCount = 0;
+
+        for (const category of remainingCategories) {
+          try {
+            console.log(`  Trying to delete: ${category.name} (${category.id})`);
+            await Category.delete(category.id);
+            deletedCount++;
+          } catch (error) {
+            // If it fails because it has subcategories, skip it for this pass
+            if (error.message && error.message.includes('subcategories')) {
+              console.log(`    Skipped (has children): ${category.name}`);
+              skippedCount++;
+            } else {
+              // Re-throw if it's a different error
+              throw error;
+            }
           }
         }
-        allCategories.push(parent);
+
+        console.log(`Pass ${passNumber} complete: deleted ${deletedCount}, skipped ${skippedCount}`);
+
+        if (deletedCount === 0) {
+          console.error('No categories could be deleted in this pass - breaking to avoid infinite loop');
+          throw new Error('Unable to delete categories - they may have circular dependencies');
+        }
+
+        passNumber++;
+        remainingCategories = await Category.filter({});
+        if (remainingCategories.length > 0) {
+          console.log(`Pass ${passNumber}: ${remainingCategories.length} categories remaining`);
+        }
       }
 
-      console.log(`Total: ${allCategories.length} categories (${subcategories.length} subcategories + ${parentCategories.length} parents)`);
-
-      console.log(`Deleting ${subcategories.length} subcategories first...`);
-      if (subcategories.length > 0) {
-        console.log('Sample subcategory:', subcategories[0]);
-      }
-      if (parentCategories.length > 0) {
-        console.log('Sample parent category:', parentCategories[0]);
-      }
-      for (const category of subcategories) {
-        console.log(`Deleting subcategory: ${category.name} (${category.id})`);
-        await Category.delete(category.id);
-      }
-
-      console.log(`Deleting ${parentCategories.length} parent categories...`);
-      for (const category of parentCategories) {
-        console.log(`Deleting parent category: ${category.name} (${category.id})`);
-        await Category.delete(category.id);
-      }
       console.log('All existing categories deleted');
 
       // 2. Setup default categories
