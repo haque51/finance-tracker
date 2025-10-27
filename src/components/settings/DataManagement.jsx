@@ -54,7 +54,8 @@ export default function DataManagement({ user }) {
 
     try {
       // 1. Delete all existing categories for the user
-      const existingCategories = await Category.filter({ created_by: user.email });
+      // Backend automatically filters by authenticated user via JWT, so just get all categories
+      const existingCategories = await Category.filter({});
       for (const category of existingCategories) {
         await Category.delete(category.id);
       }
@@ -65,7 +66,7 @@ export default function DataManagement({ user }) {
           const parentCategory = await Category.create({
             name: cat.name,
             type: type,
-            created_by: user.email,
+            user_id: user.id, // Backend uses UUID user_id
           });
 
           if (parentCategory && cat.sub) {
@@ -74,13 +75,13 @@ export default function DataManagement({ user }) {
                 name: subName,
                 type: type,
                 parent_id: parentCategory.id,
-                created_by: user.email,
+                user_id: user.id, // Backend uses UUID user_id
               });
             }
           }
         }
       }
-      
+
       setShowSuccessAlert(true);
 
     } catch (error) {
