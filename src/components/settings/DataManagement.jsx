@@ -117,6 +117,15 @@ export default function DataManagement({ user }) {
             type: type,
             user_id: user.id, // Backend uses UUID user_id
           });
+
+          console.log('Parent category response:', parentCategory);
+
+          if (!parentCategory || !parentCategory.id) {
+            console.error('ERROR: Category creation returned null or missing id');
+            console.error('Category name:', cat.name);
+            throw new Error(`Failed to create parent category: ${cat.name}`);
+          }
+
           console.log(`Created parent: ${parentCategory.name} with ID: ${parentCategory.id}`);
           categoriesCreated++;
 
