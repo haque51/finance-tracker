@@ -53,40 +53,66 @@ export default function DataManagement({ user }) {
     setShowSuccessAlert(false);
 
     try {
+      console.log('=== CATEGORY RESET START ===');
+      console.log('User ID:', user?.id);
+
       // 1. Delete all existing categories for the user
       // Backend automatically filters by authenticated user via JWT, so just get all categories
+      console.log('Step 1: Fetching existing categories...');
       const existingCategories = await Category.filter({});
+      console.log(`Found ${existingCategories.length} categories to delete`);
+
       for (const category of existingCategories) {
+        console.log(`Deleting category: ${category.name} (${category.id})`);
         await Category.delete(category.id);
       }
+      console.log('All existing categories deleted');
 
       // 2. Setup default categories
+      console.log('Step 2: Creating default categories...');
+      let categoriesCreated = 0;
       for (const type in DEFAULT_CATEGORIES) {
+        console.log(`Creating ${type} categories...`);
         for (const cat of DEFAULT_CATEGORIES[type]) {
+          console.log(`Creating parent category: ${cat.name}`);
           const parentCategory = await Category.create({
             name: cat.name,
             type: type,
             user_id: user.id, // Backend uses UUID user_id
           });
+          console.log(`Created parent: ${parentCategory.name} with ID: ${parentCategory.id}`);
+          categoriesCreated++;
 
           if (parentCategory && cat.sub) {
+            console.log(`Creating ${cat.sub.length} subcategories for ${cat.name}...`);
             for (const subName of cat.sub) {
+              console.log(`Creating subcategory: ${subName}`);
               await Category.create({
                 name: subName,
                 type: type,
                 parent_id: parentCategory.id,
                 user_id: user.id, // Backend uses UUID user_id
               });
+              categoriesCreated++;
             }
           }
         }
       }
+      console.log(`Successfully created ${categoriesCreated} categories total`);
+      console.log('=== CATEGORY RESET COMPLETE ===');
 
       setShowSuccessAlert(true);
 
     } catch (error) {
-      console.error("Error resetting categories:", error);
-      alert("An error occurred while resetting categories. Please try again.");
+      console.error("=== CATEGORY RESET ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error.message);
+      console.error("Error response:", error.response);
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      }
+      alert("An error occurred while resetting categories. Please check the console for details.");
     }
 
     setIsResetting(false);
