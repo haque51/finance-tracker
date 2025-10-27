@@ -340,32 +340,13 @@ export default function Dashboard() {
     return transDate >= prevMonthStart && transDate <= prevMonthEnd;
   });
 
-  // Debug logging
-  console.log('=== DASHBOARD DEBUG ===');
-  console.log('Total transactions:', transactions.length);
-  console.log('Current month transactions:', currentMonthTransactions.length);
-  if (currentMonthTransactions.length > 0) {
-    const sample = currentMonthTransactions[0];
-    console.log('Sample transaction:', sample);
-    console.log('Sample transaction type:', sample.type);
-    console.log('Sample transaction amount_eur:', sample.amount_eur);
-    console.log('Sample transaction amountEur:', sample.amountEur);
-    console.log('Sample transaction amount:', sample.amount);
-  }
-  console.log('Current month range:', format(monthStart, 'yyyy-MM-dd'), 'to', format(monthEnd, 'yyyy-MM-dd'));
+  const monthlyIncome = currentMonthTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + (t.amount_eur || 0), 0);
 
-  const incomeTransactions = currentMonthTransactions.filter(t => t.type === 'income');
-  const expenseTransactions = currentMonthTransactions.filter(t => t.type === 'expense');
-
-  console.log('Income transactions:', incomeTransactions.length);
-  console.log('Expense transactions:', expenseTransactions.length);
-
-  const monthlyIncome = incomeTransactions.reduce((sum, t) => sum + (t.amount_eur || 0), 0);
-  const monthlyExpenses = expenseTransactions.reduce((sum, t) => sum + (t.amount_eur || 0), 0);
-
-  console.log('Monthly income:', monthlyIncome);
-  console.log('Monthly expenses:', monthlyExpenses);
-  console.log('======================');
+  const monthlyExpenses = currentMonthTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + (t.amount_eur || 0), 0);
 
   const prevMonthIncome = prevMonthTransactions
     .filter(t => t.type === 'income')
