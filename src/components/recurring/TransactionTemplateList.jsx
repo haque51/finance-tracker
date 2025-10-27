@@ -31,7 +31,7 @@ export default function TransactionTemplateList({ transactionTemplates, accounts
         if (editingTemplate) {
             await TransactionTemplate.update(editingTemplate.id, formData);
         } else {
-            await TransactionTemplate.create({ ...formData, created_by: currentUser.email });
+            await TransactionTemplate.create({ ...formData, user_id: currentUser.id }); // Backend uses UUID user_id
         }
         setIsFormOpen(false);
         onDataChange();

@@ -27,26 +27,26 @@ export default function StartOver({ user, onComplete }) {
 
     setIsResetting(true);
     try {
-      // Delete all transactions
-      const transactions = await Transaction.filter({ created_by: user.email });
+      // Delete all transactions (backend auto-filters by authenticated user)
+      const transactions = await Transaction.filter({});
       for (const transaction of transactions) {
         await Transaction.delete(transaction.id);
       }
 
-      // Delete all recurring transactions
-      const recurringTransactions = await RecurrentTransaction.filter({ created_by: user.email });
+      // Delete all recurring transactions (backend auto-filters by authenticated user)
+      const recurringTransactions = await RecurrentTransaction.filter({});
       for (const recurring of recurringTransactions) {
         await RecurrentTransaction.delete(recurring.id);
       }
 
-      // Delete all transaction templates
-      const templates = await TransactionTemplate.filter({ created_by: user.email });
+      // Delete all transaction templates (backend auto-filters by authenticated user)
+      const templates = await TransactionTemplate.filter({});
       for (const template of templates) {
         await TransactionTemplate.delete(template.id);
       }
 
-      // Reset all account balances to their opening balance
-      const accounts = await Account.filter({ created_by: user.email });
+      // Reset all account balances to their opening balance (backend auto-filters by authenticated user)
+      const accounts = await Account.filter({});
       for (const account of accounts) {
         const openingBalance = account.opening_balance || 0;
         await Account.update(account.id, {

@@ -340,6 +340,13 @@ export default function Dashboard() {
     return transDate >= prevMonthStart && transDate <= prevMonthEnd;
   });
 
+  // Debug logging
+  console.log('=== DASHBOARD DEBUG ===');
+  console.log('Total transactions:', transactions.length);
+  console.log('Current month transactions:', currentMonthTransactions.length);
+  console.log('Sample transaction:', currentMonthTransactions[0]);
+  console.log('Current month range:', format(monthStart, 'yyyy-MM-dd'), 'to', format(monthEnd, 'yyyy-MM-dd'));
+
   const monthlyIncome = currentMonthTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + (t.amount_eur || 0), 0);
@@ -347,6 +354,10 @@ export default function Dashboard() {
   const monthlyExpenses = currentMonthTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + (t.amount_eur || 0), 0);
+
+  console.log('Monthly income:', monthlyIncome);
+  console.log('Monthly expenses:', monthlyExpenses);
+  console.log('======================');
 
   const prevMonthIncome = prevMonthTransactions
     .filter(t => t.type === 'income')

@@ -32,7 +32,7 @@ export default function RecurrentTransactionList({ recurrentTransactions, accoun
         if (editingTransaction) {
             await RecurrentTransaction.update(editingTransaction.id, formData);
         } else {
-            await RecurrentTransaction.create({ ...formData, created_by: currentUser.email });
+            await RecurrentTransaction.create({ ...formData, user_id: currentUser.id }); // Backend uses UUID user_id
         }
         setIsFormOpen(false);
         onDataChange();
