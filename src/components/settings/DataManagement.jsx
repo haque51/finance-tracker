@@ -57,21 +57,28 @@ export default function DataManagement({ user }) {
       console.log('User ID:', user?.id);
 
       // 1. Delete all existing categories for the user
-      // Backend automatically filters by authenticated user via JWT, so just get all categories
-      console.log('Step 1: Fetching existing categories...');
-      const existingCategories = await Category.filter({});
-      console.log(`Found ${existingCategories.length} categories to delete`);
+      // Use tree endpoint to get ALL categories including subcategories
+      console.log('Step 1: Fetching existing categories tree...');
+      const categoryTree = await Category.getTree();
+      console.log(`Found ${categoryTree.length} parent categories with children`);
 
-      // Delete subcategories first, then parent categories
-      // Backend doesn't allow deleting parents with children
-      if (existingCategories.length > 0) {
-        console.log('Sample category:', existingCategories[0]);
-        console.log('Sample parentId:', existingCategories[0].parentId);
-        console.log('Sample parent_id:', existingCategories[0].parent_id);
+      // Flatten the tree to get all categories (parents + all their children)
+      const allCategories = [];
+      const subcategories = [];
+      const parentCategories = [];
+
+      for (const parent of categoryTree) {
+        parentCategories.push(parent);
+        if (parent.children && parent.children.length > 0) {
+          for (const child of parent.children) {
+            subcategories.push(child);
+            allCategories.push(child);
+          }
+        }
+        allCategories.push(parent);
       }
 
-      const subcategories = existingCategories.filter(cat => cat.parentId || cat.parent_id);
-      const parentCategories = existingCategories.filter(cat => !cat.parentId && !cat.parent_id);
+      console.log(`Total: ${allCategories.length} categories (${subcategories.length} subcategories + ${parentCategories.length} parents)`);
 
       console.log(`Deleting ${subcategories.length} subcategories first...`);
       if (subcategories.length > 0) {

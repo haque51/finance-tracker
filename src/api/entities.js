@@ -176,6 +176,15 @@ class CategoryAdapter {
     }
   }
 
+  async getTree() {
+    try {
+      return await categoryService.getCategoriesTree();
+    } catch (error) {
+      console.error('CategoryAdapter.getTree error:', error);
+      throw error;
+    }
+  }
+
   async create(data) {
     try {
       return await categoryService.createCategory(data);
