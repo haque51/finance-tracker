@@ -125,6 +125,8 @@ class AccountService {
       openingBalance: apiAccount.opening_balance,
       currentBalance: apiAccount.current_balance,
       balance: apiAccount.current_balance, // Alias for compatibility
+      balanceEur: apiAccount.balance_eur, // EUR equivalent balance - needed for net worth
+      balance_eur: apiAccount.balance_eur, // EUR equivalent balance - needed for net worth
       isActive: apiAccount.is_active,
       institution: apiAccount.institution,
       creditLimit: apiAccount.credit_limit,
