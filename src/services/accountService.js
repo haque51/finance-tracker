@@ -29,7 +29,18 @@ class AccountService {
       const response = await api.get(url);
 
       // Backend returns: { status: "success", data: [...] }
-      return response.data.data.map(this._mapAccountFromAPI);
+      console.log('=== ACCOUNT SERVICE DEBUG ===');
+      console.log('Raw API response:', response.data);
+      if (response.data.data && response.data.data.length > 0) {
+        console.log('First account from API:', response.data.data[0]);
+        console.log('First account balance_eur:', response.data.data[0].balance_eur);
+        console.log('First account current_balance:', response.data.data[0].current_balance);
+      }
+      const mapped = response.data.data.map(this._mapAccountFromAPI);
+      console.log('First mapped account:', mapped[0]);
+      console.log('First mapped account balance_eur:', mapped[0]?.balance_eur);
+      console.log('=============================');
+      return mapped;
     } catch (error) {
       console.error('Get accounts error:', error);
       throw error;
