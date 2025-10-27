@@ -291,7 +291,16 @@ export default function Dashboard() {
         const categoriesData = await Category.filter({}, '-created_date');
         if (!isMounted) return;
 
-        setAccounts(accountsData);
+        // Calculate balance_eur for each account if not provided by backend
+        const accountsWithEurBalance = accountsData.map(acc => {
+          if (!acc.balance_eur) {
+            const rate = rates[acc.currency] || 1;
+            acc.balance_eur = (acc.balance || acc.currentBalance || 0) * rate;
+          }
+          return acc;
+        });
+
+        setAccounts(accountsWithEurBalance);
         setTransactions(transactionsData);
         setCategories(categoriesData);
       } catch (error) {
@@ -371,26 +380,12 @@ export default function Dashboard() {
   const savingsPercentChange = prevMonthSavings !== 0 ? (savingsChange / Math.abs(prevMonthSavings)) * 100 : (monthlySavings !== 0 ? 100 : 0);
 
   // Calculate current net worth based on actual account balances
-  console.log('=== DASHBOARD NET WORTH DEBUG ===');
-  console.log('Accounts in dashboard:', accounts.length);
-  if (accounts.length > 0) {
-    console.log('First account:', accounts[0]);
-    console.log('First account balance:', accounts[0].balance);
-    console.log('First account balance_eur:', accounts[0].balance_eur);
-    console.log('First account balanceEur:', accounts[0].balanceEur);
-  }
-
   const currentNetWorth = accounts.reduce((sum, acc) => {
-    const balEur = acc.balance_eur || 0;
-    console.log(`Account ${acc.name}: type=${acc.type}, balance_eur=${balEur}`);
     if (acc.type === 'loan' || acc.type === 'credit_card') {
-      return sum - balEur;
+      return sum - (acc.balance_eur || 0);
     }
-    return sum + balEur;
+    return sum + (acc.balance_eur || 0);
   }, 0);
-
-  console.log('Total Net Worth:', currentNetWorth);
-  console.log('=================================');
 
   // Get all transactions that happened AFTER the selected month end
   const transactionsAfterMonth = transactions.filter(t => {
