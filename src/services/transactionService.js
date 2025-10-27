@@ -154,6 +154,11 @@ class TransactionService {
    * @private
    */
   _mapTransactionFromAPI(apiTxn) {
+    // Calculate amount_eur if not provided by backend
+    // Backend stores expenses as negative amounts, so we need absolute value
+    const absoluteAmount = Math.abs(apiTxn.amount || 0);
+    const calculatedAmountEur = apiTxn.amount_eur || (absoluteAmount * (apiTxn.exchange_rate || 1));
+
     return {
       id: apiTxn.id,
       type: apiTxn.type,
@@ -165,10 +170,12 @@ class TransactionService {
       categoryId: apiTxn.category_id,
       category_id: apiTxn.category_id, // Keep both formats for compatibility
       subcategoryId: apiTxn.subcategory_id,
-      amount: apiTxn.amount,
-      amountEur: apiTxn.amount_eur,
-      amount_eur: apiTxn.amount_eur, // Backend returns this field - needed for dashboard calculations
+      amount: absoluteAmount, // Use absolute value for frontend
+      amountEur: calculatedAmountEur,
+      amount_eur: calculatedAmountEur, // Calculated from amount * exchange_rate if not provided
       currency: apiTxn.currency || 'EUR',
+      exchangeRate: apiTxn.exchange_rate || 1,
+      exchange_rate: apiTxn.exchange_rate || 1,
       description: apiTxn.description,
       payee: apiTxn.description, // Alias for frontend compatibility
       date: apiTxn.date || apiTxn.transaction_date, // Backend returns "date"
