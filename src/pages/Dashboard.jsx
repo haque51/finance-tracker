@@ -371,25 +371,12 @@ export default function Dashboard() {
   const savingsPercentChange = prevMonthSavings !== 0 ? (savingsChange / Math.abs(prevMonthSavings)) * 100 : (monthlySavings !== 0 ? 100 : 0);
 
   // Calculate current net worth based on actual account balances
-  console.log('=== NET WORTH DEBUG ===');
-  console.log('Total accounts:', accounts.length);
-  if (accounts.length > 0) {
-    console.log('Sample account:', accounts[0]);
-    console.log('Account balance:', accounts[0].balance);
-    console.log('Account balance_eur:', accounts[0].balance_eur);
-    console.log('Account current_balance:', accounts[0].current_balance);
-  }
-
   const currentNetWorth = accounts.reduce((sum, acc) => {
-    console.log(`Account ${acc.name}: type=${acc.type}, balance_eur=${acc.balance_eur}`);
     if (acc.type === 'loan' || acc.type === 'credit_card') {
       return sum - (acc.balance_eur || 0);
     }
     return sum + (acc.balance_eur || 0);
   }, 0);
-
-  console.log('Calculated Net Worth:', currentNetWorth);
-  console.log('======================');
 
   // Get all transactions that happened AFTER the selected month end
   const transactionsAfterMonth = transactions.filter(t => {
