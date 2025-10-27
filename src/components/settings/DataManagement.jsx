@@ -65,13 +65,12 @@ export default function DataManagement({ user }) {
       // Delete subcategories first, then parent categories
       // Backend doesn't allow deleting parents with children
       if (existingCategories.length > 0) {
-        console.log('Sample category:', existingCategories[0]);
-        console.log('Sample parentId:', existingCategories[0].parentId);
-        console.log('Sample parent_id:', existingCategories[0].parent_id);
+        console.log('First 10 categories:', existingCategories.slice(0, 10).map(c => ({ name: c.name, parentId: c.parentId })));
       }
 
-      const subcategories = existingCategories.filter(cat => cat.parentId || cat.parent_id);
-      const parentCategories = existingCategories.filter(cat => !cat.parentId && !cat.parent_id);
+      // Filter by checking if parentId is not null (null means parent category, UUID means subcategory)
+      const subcategories = existingCategories.filter(cat => cat.parentId != null);
+      const parentCategories = existingCategories.filter(cat => cat.parentId == null);
 
       console.log(`Deleting ${subcategories.length} subcategories first...`);
       if (subcategories.length > 0) {
