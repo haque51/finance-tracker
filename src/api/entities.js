@@ -86,7 +86,9 @@ class TransactionAdapter {
   async filter(filters = {}) {
     try {
       const result = await transactionService.getTransactions(filters);
+      console.log('TransactionAdapter.filter - raw result:', result);
       const transactions = result.transactions || [];
+      console.log('TransactionAdapter.filter - extracted transactions:', transactions.length, 'items');
 
       // Apply additional client-side filtering if needed
       if (Object.keys(filters).length === 0) {
