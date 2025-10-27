@@ -53,7 +53,7 @@ export default function SmartAlerts({ alerts, transactions, categories, accounts
     try {
       const dataToSave = {
         ...formData,
-        created_by: currentUser.email,
+        user_id: currentUser.id, // Backend uses UUID user_id
       };
 
       // Sanitize numeric fields before saving

@@ -50,7 +50,7 @@ export default function AutoCategorizationRules({ rules, categories, currentUser
 
   const handleSave = async (formData) => {
     try {
-      const dataToSave = { ...formData, created_by: currentUser.email };
+      const dataToSave = { ...formData, user_id: currentUser.id }; // Backend uses UUID user_id
       if (editingRule) {
         await CategorizationRule.update(editingRule.id, dataToSave);
       } else {

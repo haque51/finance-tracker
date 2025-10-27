@@ -45,11 +45,10 @@ export default function SettingsPage() {
     setIsLoading(true);
     try {
       const userData = await User.me();
-      
-      // Filter accounts by current user
-      const accountsData = await Account.filter({ 
-        created_by: userData.email, 
-        is_active: true 
+
+      // Filter accounts by current user (backend auto-filters by authenticated user)
+      const accountsData = await Account.filter({
+        is_active: true
       });
       
       setCurrentUser(userData);
