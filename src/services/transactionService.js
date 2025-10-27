@@ -158,15 +158,20 @@ class TransactionService {
       id: apiTxn.id,
       type: apiTxn.type,
       accountId: apiTxn.account_id,
+      account_id: apiTxn.account_id, // Keep both formats for compatibility
       toAccountId: apiTxn.to_account_id,
+      to_account_id: apiTxn.to_account_id, // Keep both formats for compatibility
       transferAccountId: apiTxn.to_account_id, // Alias for frontend compatibility
       categoryId: apiTxn.category_id,
+      category_id: apiTxn.category_id, // Keep both formats for compatibility
       subcategoryId: apiTxn.subcategory_id,
       amount: apiTxn.amount,
+      amountEur: apiTxn.amount_eur,
+      amount_eur: apiTxn.amount_eur, // Backend returns this field - needed for dashboard calculations
       currency: apiTxn.currency || 'EUR',
       description: apiTxn.description,
       payee: apiTxn.description, // Alias for frontend compatibility
-      date: apiTxn.transaction_date,
+      date: apiTxn.date || apiTxn.transaction_date, // Backend returns "date"
       reconciled: apiTxn.is_reconciled,
       notes: apiTxn.notes,
       memo: apiTxn.notes, // Alias for frontend compatibility
