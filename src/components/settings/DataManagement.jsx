@@ -62,8 +62,20 @@ export default function DataManagement({ user }) {
       const existingCategories = await Category.filter({});
       console.log(`Found ${existingCategories.length} categories to delete`);
 
-      for (const category of existingCategories) {
-        console.log(`Deleting category: ${category.name} (${category.id})`);
+      // Delete subcategories first, then parent categories
+      // Backend doesn't allow deleting parents with children
+      const subcategories = existingCategories.filter(cat => cat.parentId || cat.parent_id);
+      const parentCategories = existingCategories.filter(cat => !cat.parentId && !cat.parent_id);
+
+      console.log(`Deleting ${subcategories.length} subcategories first...`);
+      for (const category of subcategories) {
+        console.log(`Deleting subcategory: ${category.name} (${category.id})`);
+        await Category.delete(category.id);
+      }
+
+      console.log(`Deleting ${parentCategories.length} parent categories...`);
+      for (const category of parentCategories) {
+        console.log(`Deleting parent category: ${category.name} (${category.id})`);
         await Category.delete(category.id);
       }
       console.log('All existing categories deleted');
