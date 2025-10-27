@@ -68,8 +68,16 @@ export default function DataManagement({ user }) {
 
       for (const parent of parentCategories) {
         try {
-          // Fetch children of this parent
-          const children = await Category.filter({ parentId: parent.id });
+          // Fetch children of this parent - try both parentId and parent_id
+          console.log(`  Querying children of "${parent.name}" (${parent.id})...`);
+          let children = await Category.filter({ parentId: parent.id });
+          console.log(`  Got ${children.length} children with parentId filter`);
+
+          if (children.length === 0) {
+            // Try snake_case
+            children = await Category.filter({ parent_id: parent.id });
+            console.log(`  Got ${children.length} children with parent_id filter`);
+          }
 
           if (children && children.length > 0) {
             console.log(`  Parent "${parent.name}" has ${children.length} subcategories`);
