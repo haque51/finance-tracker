@@ -244,6 +244,12 @@ class CategoryService {
       type: category.type,
     };
 
+    // Include user_id if provided (required for category creation)
+    const userId = category.userId || category.user_id;
+    if (userId) {
+      payload.user_id = userId;
+    }
+
     // Only include parent_id if it has a value (don't send null)
     const parentId = category.parentId || category.parent_id;
     if (parentId) {
