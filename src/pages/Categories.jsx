@@ -43,6 +43,7 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [activeTab, setActiveTab] = useState("expense");
   const [isSettingUp, setIsSettingUp] = useState(false);
+  const [diagnosticInfo, setDiagnosticInfo] = useState(null);
 
   const setupDefaultCategories = useCallback(async (user) => {
     setIsSettingUp(true);
@@ -88,7 +89,27 @@ export default function CategoriesPage() {
         Category.filter({}, '-created_date'),
         Transaction.filter({}, '-created_date')
       ]);
-      
+
+      // Diagnostic information
+      const parentCats = categoriesData.filter(c => !c.parent_id && !c.parentId);
+      const subCats = categoriesData.filter(c => c.parent_id || c.parentId);
+
+      console.log('=== CATEGORIES DATA DEBUG ===');
+      console.log('Total categories:', categoriesData.length);
+      console.log('Parent categories:', parentCats.length);
+      console.log('Subcategories:', subCats.length);
+      console.log('Sample parent:', parentCats[0]);
+      console.log('Sample subcategory:', subCats[0]);
+      console.log('All categories:', categoriesData);
+      console.log('=== END DEBUG ===');
+
+      setDiagnosticInfo({
+        total: categoriesData.length,
+        parents: parentCats.length,
+        subcategories: subCats.length,
+        sampleSubcategory: subCats[0],
+      });
+
       setCategories(categoriesData);
       setTransactions(transactionsData);
 
@@ -256,6 +277,25 @@ export default function CategoriesPage() {
         <div className="text-center p-8 bg-blue-50 rounded-lg">
             <p className="font-semibold text-blue-700">One moment... we're setting up some smart categories for you!</p>
             <p className="text-sm text-blue-600">This only happens once.</p>
+        </div>
+      )}
+
+      {diagnosticInfo && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="font-semibold text-yellow-900 mb-2">Debug Information:</p>
+          <div className="text-sm text-yellow-800 space-y-1">
+            <p>Total categories: {diagnosticInfo.total}</p>
+            <p>Parent categories: {diagnosticInfo.parents}</p>
+            <p>Subcategories: {diagnosticInfo.subcategories}</p>
+            {diagnosticInfo.sampleSubcategory && (
+              <p>Sample subcategory: {JSON.stringify(diagnosticInfo.sampleSubcategory)}</p>
+            )}
+            <p className="mt-2 text-yellow-900 font-medium">
+              {diagnosticInfo.subcategories === 0
+                ? "⚠️ No subcategories found in database. They may need to be recreated."
+                : "✓ Subcategories exist in database"}
+            </p>
+          </div>
         </div>
       )}
 
