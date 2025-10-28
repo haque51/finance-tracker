@@ -152,7 +152,7 @@ const CategoryCard = ({
   onDeleteSubcategory,
   getSubcategoryTransactionCount
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const colors = typeColors[category.type] || typeColors.expense;
   const Icon = categoryIcons[category.name] || categoryIcons.Default;
 
