@@ -252,11 +252,8 @@ class CategoryService {
       type: category.type,
     };
 
-    // Include user_id if provided (required for category creation)
-    const userId = category.userId || category.user_id;
-    if (userId) {
-      payload.user_id = userId;
-    }
+    // NOTE: Do NOT include user_id - backend gets it from JWT token automatically
+    // The validation schema does not accept user_id in the request body
 
     // Only include parent_id if it has a value (don't send null)
     const parentId = category.parentId || category.parent_id;
@@ -264,7 +261,7 @@ class CategoryService {
       payload.parent_id = parentId;
     }
 
-    // Note: Backend does NOT accept 'color', 'icon', or 'is_active' fields on create/update
+    // Note: Backend does NOT accept 'color', 'icon', 'user_id', or 'is_active' fields on create/update
     // These are auto-generated or returned by the backend
 
     return payload;
