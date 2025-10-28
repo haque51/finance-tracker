@@ -16,24 +16,24 @@ import {
 import { Category } from "@/api/entities";
 import { AlertTriangle, RefreshCw, Trash2, PartyPopper } from "lucide-react";
 
-// The default categories from your last request
+// Default categories and subcategories
 const DEFAULT_CATEGORIES = {
     expense: [
         { name: 'Housing', sub: ['Rent/Mortgage', 'Maintenance & Repairs', 'HOA/Condo Fees', 'Property Tax', 'Utilities & Bills', 'Electricity', 'Gas/Heating', 'Water/Sewer/Trash', 'Internet', 'Mobile Phone'] },
         { name: 'Transportation', sub: ['Fuel', 'Public Transit', 'Rideshare/Taxi', 'Parking & Tolls', 'Maintenance & Repairs', 'Registration/Inspection'] },
         { name: 'Food & Drink', sub: ['Groceries', 'Restaurants', 'Takeout/Delivery', 'Coffee & Snacks', 'Bars/Alcohol'] },
         { name: 'Health & Medical', sub: ['Doctor/Dentist/Clinic', 'Pharmacy', 'Mental Health', 'Vision', 'Medical Devices'] },
-        { name: 'Insurance', sub: ['Health Insurance', 'Auto Insurance', 'Home/Renter’s Insurance', 'Life/Disability', 'Other Insurance'] },
+        { name: 'Insurance', sub: ['Health Insurance', 'Auto Insurance', 'Home/Renters Insurance', 'Life/Disability', 'Other Insurance'] },
         { name: 'Debt & Loans', sub: ['Credit Card Payment', 'Student Loan', 'Auto Loan/Lease', 'Personal Loan'] },
         { name: 'Shopping & Household', sub: ['Household Supplies', 'Furniture/Appliances', 'Electronics', 'Clothing & Accessories', 'Office/School Supplies'] },
-        { name: 'Personal & Family', sub: ['Personal Care (hair, cosmetics, etc.)', 'Childcare/Kids', 'Pet Care', 'Gifts & Donations' ] },
+        { name: 'Personal & Family', sub: ['Personal Care (hair, cosmetics, etc.)', 'Childcare/Kids', 'Pet Care', 'Gifts & Donations'] },
         { name: 'Entertainment & Subscriptions', sub: ['Streaming Services', 'Music/Books/Games', 'Events/Movies/Concerts', 'Hobbies', 'Apps/Software'] },
         { name: 'Taxes & Government & Fees', sub: ['Income Tax', 'Other Taxes & Duties', 'Bank Fees', 'Interest & Late Fees'] },
         { name: 'Travel & Experiences', sub: ['Flights/Long-distance Transport', 'Lodging', 'Local Transport/Car Rental', 'Activities/Tours', 'Trip Miscellaneous'] }
     ],
     income: [
         { name: 'Wages', sub: ['Salary', 'Bonus', 'Commission'] },
-        { name: 'Other Income', sub: ['Investment', 'Gift', 'Rental Income'] },
+        { name: 'Other Income', sub: ['Investment', 'Gift', 'Rental Income'] }
     ]
 };
 
