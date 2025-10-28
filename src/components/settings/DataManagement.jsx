@@ -128,7 +128,7 @@ export default function DataManagement({ user }) {
           const parentCategory = await Category.create({
             name: cat.name,
             type: type,
-            user_id: user.id, // Backend uses UUID user_id
+            // NOTE: Don't send user_id - backend gets it from JWT token automatically
           });
 
           console.log('Parent category response:', parentCategory);
@@ -151,7 +151,7 @@ export default function DataManagement({ user }) {
                 name: subName,
                 type: type,
                 parent_id: parentCategory.id,
-                user_id: user.id, // Backend uses UUID user_id
+                // NOTE: Don't send user_id - backend gets it from JWT token automatically
               });
               categoriesCreated++;
 
