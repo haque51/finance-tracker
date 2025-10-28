@@ -15,33 +15,52 @@ class CategoryService {
    */
   async getCategories(filters = {}) {
     try {
-      const params = new URLSearchParams();
+      // If a specific filter is provided, use it directly
+      if (filters.type || filters.parentId) {
+        const params = new URLSearchParams();
+        if (filters.type) params.append('type', filters.type);
+        if (filters.parentId) params.append('parent_id', filters.parentId);
 
-      if (filters.type) params.append('type', filters.type);
-      if (filters.parentId) params.append('parent_id', filters.parentId);
+        const url = `${API_ENDPOINTS.CATEGORIES}?${params}`;
+        console.log('Fetching filtered categories from:', url);
 
-      const url = params.toString()
-        ? `${API_ENDPOINTS.CATEGORIES}?${params}`
-        : API_ENDPOINTS.CATEGORIES;
-
-      console.log('Fetching categories from:', url);
-
-      const response = await api.get(url);
-      console.log('Raw API response:', response.data);
-      console.log('Categories count from API:', response.data.data?.length || 0);
-
-      if (response.data.data && response.data.data.length > 0) {
-        console.log('First category raw:', response.data.data[0]);
-        console.log('Sample categories with parent_id:',
-          response.data.data.filter(c => c.parent_id).slice(0, 3)
-        );
+        const response = await api.get(url);
+        return response.data.data.map(this._mapCategoryFromAPI);
       }
 
-      const mapped = response.data.data.map(this._mapCategoryFromAPI);
-      console.log('Mapped categories count:', mapped.length);
-      console.log('Mapped categories with parent_id:',
-        mapped.filter(c => c.parent_id || c.parentId).length
-      );
+      // Otherwise, fetch ALL categories (parents + subcategories)
+      // The backend only returns parents by default, so we need to fetch subcategories separately
+      console.log('Fetching all parents from:', API_ENDPOINTS.CATEGORIES);
+
+      const parentResponse = await api.get(API_ENDPOINTS.CATEGORIES);
+      const parents = parentResponse.data.data;
+      console.log('Parent categories count:', parents.length);
+
+      // Fetch subcategories for each parent
+      const allCategories = [...parents];
+
+      for (const parent of parents) {
+        try {
+          const subcategoryUrl = `${API_ENDPOINTS.CATEGORIES}?parent_id=${parent.id}`;
+          console.log(`Fetching subcategories for ${parent.name}:`, subcategoryUrl);
+
+          const subResponse = await api.get(subcategoryUrl);
+          const subcategories = subResponse.data.data;
+          console.log(`  Found ${subcategories.length} subcategories for ${parent.name}`);
+
+          allCategories.push(...subcategories);
+        } catch (error) {
+          console.warn(`Failed to fetch subcategories for ${parent.name}:`, error);
+          // Continue with other parents even if one fails
+        }
+      }
+
+      console.log('Total categories (parents + subcategories):', allCategories.length);
+      console.log('Categories with parent_id:', allCategories.filter(c => c.parent_id).length);
+
+      const mapped = allCategories.map(this._mapCategoryFromAPI);
+      console.log('Mapped total:', mapped.length);
+      console.log('Mapped with parent_id:', mapped.filter(c => c.parent_id || c.parentId).length);
 
       return mapped;
     } catch (error) {
