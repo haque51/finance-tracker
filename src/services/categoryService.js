@@ -42,13 +42,26 @@ class CategoryService {
       for (const parent of parents) {
         try {
           const subcategoryUrl = `${API_ENDPOINTS.CATEGORIES}?parent_id=${parent.id}`;
-          console.log(`Fetching subcategories for ${parent.name}:`, subcategoryUrl);
+          console.log(`Fetching subcategories for ${parent.name} (${parent.id}):`, subcategoryUrl);
 
           const subResponse = await api.get(subcategoryUrl);
           const subcategories = subResponse.data.data;
-          console.log(`  Found ${subcategories.length} subcategories for ${parent.name}`);
 
-          allCategories.push(...subcategories);
+          console.log(`  Backend returned ${subcategories.length} items for ${parent.name}`);
+
+          if (subcategories.length > 0) {
+            console.log(`  First item:`, subcategories[0]);
+            console.log(`  First item parent_id:`, subcategories[0].parent_id);
+            console.log(`  Items with parent_id matching ${parent.id}:`,
+              subcategories.filter(c => c.parent_id === parent.id).length
+            );
+          }
+
+          // Only add items that actually have this parent_id
+          const actualSubcategories = subcategories.filter(c => c.parent_id === parent.id);
+          console.log(`  Adding ${actualSubcategories.length} actual subcategories`);
+
+          allCategories.push(...actualSubcategories);
         } catch (error) {
           console.warn(`Failed to fetch subcategories for ${parent.name}:`, error);
           // Continue with other parents even if one fails
