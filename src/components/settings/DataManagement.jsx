@@ -98,9 +98,16 @@ export default function DataManagement({ user }) {
 
       // Now delete all parent categories (they should have no children now)
       console.log('Step 3: Deleting all parent categories...');
-      for (const parent of parentCategories) {
-        console.log(`  Deleting parent: ${parent.name} (${parent.id})`);
+      for (let i = 0; i < parentCategories.length; i++) {
+        const parent = parentCategories[i];
+        console.log(`  Deleting parent ${i + 1}/${parentCategories.length}: ${parent.name} (${parent.id})`);
         await Category.delete(parent.id);
+
+        // Add delay to avoid rate limiting (every 10 deletions, wait 1 second)
+        if ((i + 1) % 10 === 0) {
+          console.log(`  Pausing to avoid rate limit...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
 
       console.log('All existing categories deleted');
@@ -131,7 +138,8 @@ export default function DataManagement({ user }) {
 
           if (parentCategory && cat.sub) {
             console.log(`Creating ${cat.sub.length} subcategories for ${cat.name}...`);
-            for (const subName of cat.sub) {
+            for (let j = 0; j < cat.sub.length; j++) {
+              const subName = cat.sub[j];
               console.log(`Creating subcategory: ${subName}`);
               await Category.create({
                 name: subName,
@@ -140,8 +148,17 @@ export default function DataManagement({ user }) {
                 user_id: user.id, // Backend uses UUID user_id
               });
               categoriesCreated++;
+
+              // Add delay to avoid rate limiting (every 10 creates, wait 500ms)
+              if (categoriesCreated % 10 === 0) {
+                console.log(`  Pausing to avoid rate limit...`);
+                await new Promise(resolve => setTimeout(resolve, 500));
+              }
             }
           }
+
+          // Add small delay between parent categories
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       console.log(`Successfully created ${categoriesCreated} categories total`);
