@@ -15,32 +15,42 @@ class CategoryService {
    */
   async getCategories(filters = {}) {
     try {
-      const params = new URLSearchParams();
+      // Use the tree endpoint to get ALL categories (parents + children)
+      // then flatten it to a single array
+      console.log('Fetching categories tree...');
+      const tree = await this.getCategoriesTree();
+      console.log('Tree categories count:', tree.length);
 
-      if (filters.type) params.append('type', filters.type);
-      if (filters.parentId) params.append('parent_id', filters.parentId);
+      // Flatten the tree structure
+      const flattened = [];
+      const flattenCategory = (cat) => {
+        // Add the category itself (without children array for consistency)
+        const { children, ...categoryWithoutChildren } = cat;
+        flattened.push(categoryWithoutChildren);
 
-      // Request ALL categories including subcategories
-      // Some backends filter out subcategories by default, so we need to be explicit
-      params.append('include_all', 'true');
+        // Add all children
+        if (children && children.length > 0) {
+          children.forEach(child => flattenCategory(child));
+        }
+      };
 
-      const url = params.toString()
-        ? `${API_ENDPOINTS.CATEGORIES}?${params}`
-        : `${API_ENDPOINTS.CATEGORIES}?include_all=true`;
+      tree.forEach(cat => flattenCategory(cat));
 
-      console.log('Fetching categories from:', url);
+      console.log('Flattened categories count:', flattened.length);
+      console.log('Categories with parent_id:', flattened.filter(c => c.parent_id || c.parentId).length);
+      console.log('Sample flattened category:', flattened[5]);
 
-      const response = await api.get(url);
-      console.log('getCategories response count:', response.data.data.length);
-      console.log('First category from API:', response.data.data[0]);
-      console.log('First category parent_id:', response.data.data[0]?.parent_id);
+      // Apply filters if provided
+      if (Object.keys(filters).length > 0) {
+        return flattened.filter(category => {
+          return Object.keys(filters).every(key => {
+            if (key === 'created_by') return true;
+            return category[key] === filters[key];
+          });
+        });
+      }
 
-      const mapped = response.data.data.map(this._mapCategoryFromAPI);
-      console.log('First mapped category:', mapped[0]);
-      console.log('First mapped parent_id:', mapped[0]?.parent_id);
-      console.log('Categories with parent_id:', mapped.filter(c => c.parent_id || c.parentId).length);
-
-      return mapped;
+      return flattened;
     } catch (error) {
       console.error('Get categories error:', error);
       throw error;
