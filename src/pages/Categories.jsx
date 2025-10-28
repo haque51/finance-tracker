@@ -131,6 +131,34 @@ export default function CategoriesPage() {
     loadData();
   }, [loadData]);
 
+  const handleResetCategories = async () => {
+    if (!window.confirm('This will delete ALL categories and recreate them with subcategories. Any custom categories you created will be lost. Continue?')) {
+      return;
+    }
+
+    setIsSettingUp(true);
+    try {
+      // Delete all existing categories
+      console.log('Deleting all categories...');
+      for (const category of categories) {
+        await Category.delete(category.id);
+      }
+      console.log('All categories deleted');
+
+      // Recreate default categories with subcategories
+      if (currentUser) {
+        await setupDefaultCategories(currentUser);
+        // Reload data
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Error resetting categories:', error);
+      alert('Failed to reset categories. Please try again.');
+    } finally {
+      setIsSettingUp(false);
+    }
+  };
+
   const handleAddNew = (type = activeTab, parentId = null) => {
     setEditingCategory(null);
     setIsFormOpen(true);
@@ -296,6 +324,20 @@ export default function CategoriesPage() {
                 : "✓ Subcategories exist in database"}
             </p>
           </div>
+          {diagnosticInfo.subcategories === 0 && (
+            <div className="mt-4">
+              <Button
+                onClick={handleResetCategories}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                disabled={isSettingUp}
+              >
+                {isSettingUp ? 'Resetting...' : 'Reset Categories & Create Subcategories'}
+              </Button>
+              <p className="text-xs text-yellow-700 mt-2">
+                This will delete all existing categories and recreate them with subcategories.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
