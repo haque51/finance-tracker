@@ -49,12 +49,18 @@ export default function DataManagement({ user }) {
       return;
     }
 
+    if (!user || !user.id) {
+      alert('Error: User not loaded. Please refresh the page and try again.');
+      console.error('User is not loaded:', user);
+      return;
+    }
+
     setIsResetting(true);
     setShowSuccessAlert(false);
 
     try {
       console.log('=== CATEGORY RESET START ===');
-      console.log('User ID:', user?.id);
+      console.log('User ID:', user.id);
 
       // 1. Delete all existing categories for the user
       // First get all parent categories
@@ -208,8 +214,12 @@ export default function DataManagement({ user }) {
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button variant="outline" className="border-amber-300 bg-white hover:bg-amber-100/50">
-                            Reset Categories to Default
+                        <Button
+                            variant="outline"
+                            className="border-amber-300 bg-white hover:bg-amber-100/50"
+                            disabled={!user || !user.id}
+                        >
+                            {!user ? 'Loading...' : 'Reset Categories to Default'}
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
