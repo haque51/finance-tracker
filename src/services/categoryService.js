@@ -227,6 +227,7 @@ class CategoryService {
       color: apiCategory.color,
       icon: icon,
       parentId: apiCategory.parent_id,
+      parent_id: apiCategory.parent_id, // Keep snake_case for compatibility with UI filters
       isActive: apiCategory.is_active,
       userId: apiCategory.user_id,
       user_id: apiCategory.user_id, // Keep both formats for compatibility
