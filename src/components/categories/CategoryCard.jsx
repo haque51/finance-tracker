@@ -87,7 +87,7 @@ const categoryIcons = {
   // Insurance
   'Health Insurance': ShieldCheck,
   'Auto Insurance': ShieldCheck,
-  'Home/Renter’s Insurance': ShieldCheck,
+  'Home/Renters Insurance': ShieldCheck,
   'Life/Disability': ShieldCheck,
   'Other Insurance': Shield,
 
@@ -99,7 +99,7 @@ const categoryIcons = {
 
   // Shopping & Household
   'Household Supplies': ShoppingBasket,
-  'Furniture/Appliance': BedDouble,
+  'Furniture/Appliances': BedDouble,
   'Electronics': Laptop,
   'Clothing & Accessories': Shirt,
   'Office/School Supplies': BookOpen,
