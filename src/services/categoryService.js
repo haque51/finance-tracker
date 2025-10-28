@@ -15,42 +15,35 @@ class CategoryService {
    */
   async getCategories(filters = {}) {
     try {
-      // Use the tree endpoint to get ALL categories (parents + children)
-      // then flatten it to a single array
-      console.log('Fetching categories tree...');
-      const tree = await this.getCategoriesTree();
-      console.log('Tree categories count:', tree.length);
+      const params = new URLSearchParams();
 
-      // Flatten the tree structure
-      const flattened = [];
-      const flattenCategory = (cat) => {
-        // Add the category itself (without children array for consistency)
-        const { children, ...categoryWithoutChildren } = cat;
-        flattened.push(categoryWithoutChildren);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.parentId) params.append('parent_id', filters.parentId);
 
-        // Add all children
-        if (children && children.length > 0) {
-          children.forEach(child => flattenCategory(child));
-        }
-      };
+      const url = params.toString()
+        ? `${API_ENDPOINTS.CATEGORIES}?${params}`
+        : API_ENDPOINTS.CATEGORIES;
 
-      tree.forEach(cat => flattenCategory(cat));
+      console.log('Fetching categories from:', url);
 
-      console.log('Flattened categories count:', flattened.length);
-      console.log('Categories with parent_id:', flattened.filter(c => c.parent_id || c.parentId).length);
-      console.log('Sample flattened category:', flattened[5]);
+      const response = await api.get(url);
+      console.log('Raw API response:', response.data);
+      console.log('Categories count from API:', response.data.data?.length || 0);
 
-      // Apply filters if provided
-      if (Object.keys(filters).length > 0) {
-        return flattened.filter(category => {
-          return Object.keys(filters).every(key => {
-            if (key === 'created_by') return true;
-            return category[key] === filters[key];
-          });
-        });
+      if (response.data.data && response.data.data.length > 0) {
+        console.log('First category raw:', response.data.data[0]);
+        console.log('Sample categories with parent_id:',
+          response.data.data.filter(c => c.parent_id).slice(0, 3)
+        );
       }
 
-      return flattened;
+      const mapped = response.data.data.map(this._mapCategoryFromAPI);
+      console.log('Mapped categories count:', mapped.length);
+      console.log('Mapped categories with parent_id:',
+        mapped.filter(c => c.parent_id || c.parentId).length
+      );
+
+      return mapped;
     } catch (error) {
       console.error('Get categories error:', error);
       throw error;
