@@ -25,7 +25,16 @@ class CategoryService {
         : API_ENDPOINTS.CATEGORIES;
 
       const response = await api.get(url);
-      return response.data.data.map(this._mapCategoryFromAPI);
+      console.log('getCategories response count:', response.data.data.length);
+      console.log('First category from API:', response.data.data[0]);
+      console.log('First category parent_id:', response.data.data[0]?.parent_id);
+
+      const mapped = response.data.data.map(this._mapCategoryFromAPI);
+      console.log('First mapped category:', mapped[0]);
+      console.log('First mapped parent_id:', mapped[0]?.parent_id);
+      console.log('Categories with parent_id:', mapped.filter(c => c.parent_id || c.parentId).length);
+
+      return mapped;
     } catch (error) {
       console.error('Get categories error:', error);
       throw error;
@@ -80,9 +89,12 @@ class CategoryService {
       console.log('API response:', response);
       console.log('API response.data:', response.data);
       console.log('API response.data.data:', response.data.data);
+      console.log('API response parent_id:', response.data.data?.parent_id);
 
       const mapped = this._mapCategoryFromAPI(response.data.data);
       console.log('Mapped category:', mapped);
+      console.log('Mapped category parent_id:', mapped.parent_id);
+      console.log('Mapped category parentId:', mapped.parentId);
 
       return mapped;
     } catch (error) {
