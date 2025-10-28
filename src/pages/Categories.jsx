@@ -48,34 +48,53 @@ export default function CategoriesPage() {
   const setupDefaultCategories = useCallback(async (user) => {
     setIsSettingUp(true);
     try {
+        console.log('=== STARTING DEFAULT CATEGORY SETUP ===');
+        console.log('User:', user);
+        console.log('DEFAULT_CATEGORIES:', DEFAULT_CATEGORIES);
+
         for (const type in DEFAULT_CATEGORIES) {
+            console.log(`\n--- Processing ${type} categories ---`);
             for (const cat of DEFAULT_CATEGORIES[type]) {
-                // Remove AI icon generation from default setup for speed and consistency
+                console.log(`\nCreating parent category: ${cat.name}`);
+                console.log('Has subcategories:', cat.sub ? cat.sub.length : 0);
+
                 const parentCategory = await Category.create({
                     name: cat.name,
                     type: type,
-                    user_id: user.id,
+                    // user_id removed - backend gets it from JWT token
                 });
 
+                console.log('Parent category created:', parentCategory);
+                console.log('Parent category ID:', parentCategory?.id);
+
                 if (parentCategory && cat.sub) {
+                    console.log(`Creating ${cat.sub.length} subcategories for ${cat.name}...`);
                     for (const subName of cat.sub) {
-                        await Category.create({
-                            name: subName,
-                            type: type,
-                            parent_id: parentCategory.id,
-                            user_id: user.id,
-                            // Subcategories usually don't need separate icons unless specified
-                        });
+                        try {
+                            console.log(`  - Creating subcategory: ${subName} with parent_id: ${parentCategory.id}`);
+                            const subcategory = await Category.create({
+                                name: subName,
+                                type: type,
+                                parent_id: parentCategory.id,
+                                // user_id removed - backend gets it from JWT token
+                            });
+                            console.log(`  ✓ Subcategory created:`, subcategory);
+                        } catch (subError) {
+                            console.error(`  ✗ Failed to create subcategory ${subName}:`, subError);
+                        }
                     }
+                    console.log(`Finished creating subcategories for ${cat.name}`);
+                } else {
+                    console.log(`No subcategories to create for ${cat.name}`);
                 }
             }
         }
+        console.log('\n=== FINISHED DEFAULT CATEGORY SETUP ===');
     } catch(e) {
         console.error("Failed to set up default categories", e);
+        console.error("Error stack:", e.stack);
     } finally {
         setIsSettingUp(false);
-        // After setting up defaults, reload all data
-        // We'll call loadData from the place that called setupDefaultCategories instead
     }
   }, []); // Empty dependency array as it only depends on fixed data and async calls
 
