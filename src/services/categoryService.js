@@ -76,7 +76,15 @@ class CategoryService {
       console.log('Mapped API data:', JSON.stringify(apiData, null, 2));
 
       const response = await api.post(API_ENDPOINTS.CATEGORIES, apiData);
-      return this._mapCategoryFromAPI(response.data.data);
+
+      console.log('API response:', response);
+      console.log('API response.data:', response.data);
+      console.log('API response.data.data:', response.data.data);
+
+      const mapped = this._mapCategoryFromAPI(response.data.data);
+      console.log('Mapped category:', mapped);
+
+      return mapped;
     } catch (error) {
       console.error('Create category error:', error);
       console.error('Failed category data:', categoryData);
