@@ -20,9 +20,15 @@ class CategoryService {
       if (filters.type) params.append('type', filters.type);
       if (filters.parentId) params.append('parent_id', filters.parentId);
 
+      // Request ALL categories including subcategories
+      // Some backends filter out subcategories by default, so we need to be explicit
+      params.append('include_all', 'true');
+
       const url = params.toString()
         ? `${API_ENDPOINTS.CATEGORIES}?${params}`
-        : API_ENDPOINTS.CATEGORIES;
+        : `${API_ENDPOINTS.CATEGORIES}?include_all=true`;
+
+      console.log('Fetching categories from:', url);
 
       const response = await api.get(url);
       console.log('getCategories response count:', response.data.data.length);
