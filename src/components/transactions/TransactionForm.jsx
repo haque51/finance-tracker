@@ -52,6 +52,9 @@ export default function TransactionForm({
         ...transaction,
         date: format(new Date(transaction.date || new Date()), 'yyyy-MM-dd'),
         amount: transaction.amount ? transaction.amount.toString() : '', // Ensure amount is string for input
+        payee: transaction.payee || '', // Ensure payee is never undefined
+        memo: transaction.memo || '', // Ensure memo is never undefined
+        subcategory_id: transaction.subcategory_id || '', // Ensure subcategory_id is never undefined
         receipt_url: transaction.receipt_url || '' // Load existing receipt url
       });
     }
