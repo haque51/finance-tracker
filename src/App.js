@@ -695,8 +695,19 @@ function CategoriesView() {
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   
-  const incomeCategories = state.categories.filter(c => c.type === 'income' && !c.parentId);
-  const expenseCategories = state.categories.filter(c => c.type === 'expense' && !c.parentId);
+  // Filter and deduplicate categories
+  const deduplicateById = (categories) => {
+    const unique = categories.filter((cat, index, self) =>
+      index === self.findIndex((c) => c.id === cat.id)
+    );
+    if (categories.length !== unique.length) {
+      console.warn('Duplicate categories detected and removed:', categories.length - unique.length);
+    }
+    return unique;
+  };
+
+  const incomeCategories = deduplicateById(state.categories.filter(c => c.type === 'income' && !c.parentId));
+  const expenseCategories = deduplicateById(state.categories.filter(c => c.type === 'expense' && !c.parentId));
 
   const handleDelete = (id) => {
     const hasSubcategories = state.categories.some(c => c.parentId === id);
@@ -716,7 +727,13 @@ function CategoriesView() {
     updateState({ categories: state.categories.filter(c => c.id !== id) });
   };
 
-  const getSubcategories = (parentId) => state.categories.filter(c => c.parentId === parentId);
+  const getSubcategories = (parentId) => {
+    // Filter subcategories and remove duplicates by id
+    const subs = state.categories.filter(c => c.parentId === parentId);
+    return subs.filter((sub, index, self) =>
+      index === self.findIndex((s) => s.id === sub.id)
+    );
+  };
 
   return (
     <div className="space-y-6">
