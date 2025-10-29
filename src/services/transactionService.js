@@ -218,11 +218,10 @@ class TransactionService {
    * @private
    */
   _mapTransactionToAPI(txn) {
-    // Build payload - only include fields that exist in the database
+    // Build payload - only include fields that can be updated in the database
     const payload = {
       date: txn.date || txn.transaction_date,
       amount: txn.amount,
-      currency: txn.currency || 'EUR',
       // Map frontend field names to database column names
       payee: txn.payee || txn.description || '',
       memo: txn.memo || txn.notes || '',
