@@ -276,6 +276,12 @@ export default function TransactionsPage() {
       return;
     }
     try {
+      console.log('=== HANDLE SAVE DEBUG ===');
+      console.log('Form data received:', formData);
+      console.log('payee:', formData.payee);
+      console.log('memo:', formData.memo);
+      console.log('========================');
+
       // --- SAVE TRANSACTION DATA ---
       // Backend automatically handles account balance updates
       const rate = exchangeRates[formData.currency] || 1;
@@ -286,6 +292,9 @@ export default function TransactionsPage() {
         exchange_rate: rate,
         user_id: currentUser.id,
       };
+
+      console.log('Data to save:', dataToSave);
+      console.log('Is update?', !!editingTransaction);
 
       if (editingTransaction) {
         await Transaction.update(editingTransaction.id, dataToSave);
