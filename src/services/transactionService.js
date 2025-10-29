@@ -94,7 +94,12 @@ class TransactionService {
     try {
       console.log('=== TRANSACTION UPDATE DEBUG ===');
       console.log('Transaction ID:', id);
-      console.log('Frontend data (before mapping):', transactionData);
+      console.log('Frontend data (before mapping):');
+      console.log('  - Full object:', transactionData);
+      console.log('  - payee:', transactionData.payee);
+      console.log('  - memo:', transactionData.memo);
+      console.log('  - subcategory_id:', transactionData.subcategory_id);
+      console.log('  - category_id:', transactionData.category_id);
 
       const apiData = this._mapTransactionToAPI(transactionData);
 
@@ -220,6 +225,9 @@ class TransactionService {
       amount: txn.amount,
       currency: txn.currency || 'EUR',
       date: txn.date || txn.transaction_date,
+      // Always include description and notes (default to empty string if not provided)
+      description: txn.payee || txn.description || '',
+      notes: txn.memo || txn.notes || '',
     };
 
     // Only include to_account_id for transfers
@@ -238,16 +246,6 @@ class TransactionService {
     const subcategoryId = txn.subcategoryId || txn.subcategory_id;
     if (subcategoryId && txn.type !== 'transfer') {
       payload.subcategory_id = subcategoryId;
-    }
-
-    // Include payee/description (allow empty string to clear field)
-    if (txn.payee !== undefined && txn.payee !== null) {
-      payload.description = txn.payee;
-    }
-
-    // Include memo/notes (allow empty string to clear field)
-    if (txn.memo !== undefined && txn.memo !== null) {
-      payload.notes = txn.memo;
     }
 
     // Include receipt_url (allow empty string to clear field)
