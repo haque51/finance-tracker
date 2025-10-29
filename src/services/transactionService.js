@@ -239,7 +239,8 @@ class TransactionService {
     }
 
     // Add category_id for income/expense (optional)
-    const categoryId = txn.categoryId || txn.category_id;
+    // If subcategory is selected, use it as category_id (subcategories are just categories with parent_id)
+    const categoryId = txn.subcategory_id || txn.categoryId || txn.category_id;
     if (categoryId && txn.type !== 'transfer') {
       payload.category_id = categoryId;
     }
@@ -259,8 +260,9 @@ class TransactionService {
       memo: txn.memo || txn.notes || '',
     };
 
-    // Only include category_id for income/expense (not for transfers)
-    const categoryId = txn.categoryId || txn.category_id;
+    // If subcategory is selected, use it as category_id (subcategories are just categories with parent_id)
+    // Otherwise use the parent category_id
+    const categoryId = txn.subcategory_id || txn.categoryId || txn.category_id;
     if (categoryId && txn.type !== 'transfer') {
       payload.category_id = categoryId;
     }
