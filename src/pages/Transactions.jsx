@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Account, Transaction, User, TransactionTemplate } from "@/api/entities";
+import { Account, Transaction, TransactionTemplate } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
 import { useApp } from '../context/AppContext';  // Import useApp to access shared categories
+import { useCurrentUser } from '../hooks/useCurrentUser';  // Import custom hook
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,10 +25,10 @@ import { formatCurrency } from "../components/utils/CurrencyFormatter";
 
 export default function TransactionsPage() {
   const { categories: sharedCategories } = useApp(); // Get categories from shared context
+  const { user: currentUser } = useCurrentUser(); // Get user from AppContext instead of API call
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -74,11 +75,14 @@ export default function TransactionsPage() {
   }, []);
 
   const loadData = useCallback(async () => {
+    // Wait for user to be available from AppContext
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const user = await User.me();
-      setCurrentUser(user);
-
       const [transactionsData, accountsData, templatesData] = await Promise.all([
         Transaction.filter({}, '-date'),
         Account.filter({}), // Fetch all accounts to avoid issues
@@ -93,7 +97,7 @@ export default function TransactionsPage() {
       console.error('Error loading data:', error);
     }
     setIsLoading(false);
-  }, []);
+  }, [currentUser]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...transactions];

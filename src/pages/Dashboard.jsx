@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Account, Transaction, User, RecurrentTransaction } from "@/api/entities";
+import { Account, Transaction, RecurrentTransaction } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
-import { useApp } from '../context/AppContext';  // Import useApp to access shared categories
+import { useApp } from '../context/AppContext';  // Import useApp to access shared categories and user
+import { useCurrentUser } from '../hooks/useCurrentUser';  // Import custom hook
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,9 +32,9 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function Dashboard() {
   const { categories: sharedCategories } = useApp(); // Get categories from shared context
+  const { user: currentUser } = useCurrentUser(); // Get user from AppContext instead of API call
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [isLoading, setIsLoading] = useState(true);
   const [exchangeRates, setExchangeRates] = useState({ USD: 0.92, BDT: 0.0084, EUR: 1 }); // Default rates, EUR is 1
@@ -264,18 +265,20 @@ export default function Dashboard() {
     let isMounted = true; // Flag to prevent state updates on unmounted components
 
     const init = async () => {
+      // Wait for user to be available from AppContext
+      if (!currentUser) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
-        const user = await User.me();
-        if (!isMounted) return;
-        setCurrentUser(user);
-
         const rates = await fetchExchangeRates(); // Fetch rates
         if (!isMounted) return;
         setExchangeRates(rates); // Update state with fetched rates
 
         // Process recurring transactions
-        await processRecurringTransactions(user, rates);
+        await processRecurringTransactions(currentUser, rates);
         if (!isMounted) return;
 
         // Load accounts and transactions in parallel (categories come from context)
@@ -319,7 +322,7 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, []); // Empty dependency array means this effect runs only once on mount
+  }, [currentUser]); // Run when currentUser becomes available
 
   // No separate effect needed for currentMonth changes.
   // The data (transactions, accounts) is loaded once.
