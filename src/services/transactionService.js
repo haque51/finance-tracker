@@ -66,7 +66,7 @@ class TransactionService {
   async createTransaction(transactionData) {
     let apiData;
     try {
-      apiData = this._mapTransactionToAPI(transactionData);
+      apiData = this._mapTransactionForCreate(transactionData);
 
       // Detailed logging to debug validation issues
       console.log('=== TRANSACTION CREATE DEBUG ===');
@@ -101,7 +101,7 @@ class TransactionService {
       console.log('  - subcategory_id:', transactionData.subcategory_id);
       console.log('  - category_id:', transactionData.category_id);
 
-      const apiData = this._mapTransactionToAPI(transactionData);
+      const apiData = this._mapTransactionForUpdate(transactionData);
 
       console.log('Mapped API payload:', apiData);
       console.log('Payload JSON:', JSON.stringify(apiData, null, 2));
@@ -214,15 +214,47 @@ class TransactionService {
   }
 
   /**
-   * Map transaction from frontend format to API format
+   * Map transaction for CREATE operation (includes all required fields)
    * @private
    */
-  _mapTransactionToAPI(txn) {
-    // Build payload - only include fields that can be updated in the database
+  _mapTransactionForCreate(txn) {
+    const payload = {
+      date: txn.date || txn.transaction_date,
+      type: txn.type,
+      amount: txn.amount,
+      currency: txn.currency || 'EUR',
+      payee: txn.payee || txn.description || '',
+      memo: txn.memo || txn.notes || '',
+    };
+
+    // Add account_id for income/expense
+    if (txn.type !== 'transfer') {
+      payload.account_id = txn.account_id || txn.accountId;
+    }
+
+    // Add from/to accounts for transfers
+    if (txn.type === 'transfer') {
+      payload.from_account_id = txn.from_account_id || txn.account_id || txn.accountId;
+      payload.to_account_id = txn.to_account_id || txn.toAccountId;
+    }
+
+    // Add category_id for income/expense (optional)
+    const categoryId = txn.categoryId || txn.category_id;
+    if (categoryId && txn.type !== 'transfer') {
+      payload.category_id = categoryId;
+    }
+
+    return payload;
+  }
+
+  /**
+   * Map transaction for UPDATE operation (only fields that can be updated)
+   * @private
+   */
+  _mapTransactionForUpdate(txn) {
     const payload = {
       date: txn.date || txn.transaction_date,
       amount: txn.amount,
-      // Map frontend field names to database column names
       payee: txn.payee || txn.description || '',
       memo: txn.memo || txn.notes || '',
     };
