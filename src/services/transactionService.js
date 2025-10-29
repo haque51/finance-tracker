@@ -218,47 +218,20 @@ class TransactionService {
    * @private
    */
   _mapTransactionToAPI(txn) {
-    // Build payload - include all fields backend accepts
+    // Build payload - only include fields that exist in the database
     const payload = {
-      type: txn.type,
-      account_id: txn.accountId || txn.account_id,
+      date: txn.date || txn.transaction_date,
       amount: txn.amount,
       currency: txn.currency || 'EUR',
-      date: txn.date || txn.transaction_date,
-      // Always include description and notes (default to empty string if not provided)
-      description: txn.payee || txn.description || '',
-      notes: txn.memo || txn.notes || '',
+      // Map frontend field names to database column names
+      payee: txn.payee || txn.description || '',
+      memo: txn.memo || txn.notes || '',
     };
-
-    // Only include to_account_id for transfers
-    const toAccountId = txn.toAccountId || txn.to_account_id;
-    if (toAccountId && txn.type === 'transfer') {
-      payload.to_account_id = toAccountId;
-    }
 
     // Only include category_id for income/expense (not for transfers)
     const categoryId = txn.categoryId || txn.category_id;
     if (categoryId && txn.type !== 'transfer') {
       payload.category_id = categoryId;
-    }
-
-    // Include subcategory_id if provided (for income/expense only)
-    const subcategoryId = txn.subcategoryId || txn.subcategory_id;
-    if (subcategoryId && txn.type !== 'transfer') {
-      payload.subcategory_id = subcategoryId;
-    }
-
-    // Include receipt_url (allow empty string to clear field)
-    if (txn.receipt_url !== undefined) {
-      payload.receipt_url = txn.receipt_url;
-    }
-
-    // Include exchange rate and amount_eur if provided (calculated in frontend)
-    if (txn.exchange_rate !== undefined) {
-      payload.exchange_rate = txn.exchange_rate;
-    }
-    if (txn.amount_eur !== undefined) {
-      payload.amount_eur = txn.amount_eur;
     }
 
     return payload;
