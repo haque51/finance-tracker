@@ -64,12 +64,22 @@ class TransactionService {
    * @returns {Promise<Object>} Created transaction
    */
   async createTransaction(transactionData) {
+    let apiData;
     try {
-      const apiData = this._mapTransactionToAPI(transactionData);
+      apiData = this._mapTransactionForCreate(transactionData);
+
+      // Detailed logging to debug validation issues
+      console.log('=== TRANSACTION CREATE DEBUG ===');
+      console.log('Frontend data:', transactionData);
+      console.log('Mapped API payload:', apiData);
+      console.log('Payload JSON:', JSON.stringify(apiData, null, 2));
+      console.log('================================');
+
       const response = await api.post(API_ENDPOINTS.TRANSACTIONS, apiData);
       return this._mapTransactionFromAPI(response.data.data);
     } catch (error) {
       console.error('Create transaction error:', error);
+      console.error('Failed payload was:', apiData);
       throw error;
     }
   }
@@ -82,11 +92,26 @@ class TransactionService {
    */
   async updateTransaction(id, transactionData) {
     try {
-      const apiData = this._mapTransactionToAPI(transactionData);
+      console.log('=== TRANSACTION UPDATE DEBUG ===');
+      console.log('Transaction ID:', id);
+      console.log('Frontend data (before mapping):');
+      console.log('  - Full object:', transactionData);
+      console.log('  - payee:', transactionData.payee);
+      console.log('  - memo:', transactionData.memo);
+      console.log('  - subcategory_id:', transactionData.subcategory_id);
+      console.log('  - category_id:', transactionData.category_id);
+
+      const apiData = this._mapTransactionForUpdate(transactionData);
+
+      console.log('Mapped API payload:', apiData);
+      console.log('Payload JSON:', JSON.stringify(apiData, null, 2));
+      console.log('================================');
+
       const response = await api.put(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, apiData);
       return this._mapTransactionFromAPI(response.data.data);
     } catch (error) {
       console.error('Update transaction error:', error);
+      console.error('Error response:', error.response?.data);
       throw error;
     }
   }
@@ -144,18 +169,40 @@ class TransactionService {
    * @private
    */
   _mapTransactionFromAPI(apiTxn) {
+    // Calculate amount_eur if not provided by backend
+    // Backend stores expenses as negative amounts, so we need absolute value
+    const absoluteAmount = Math.abs(apiTxn.amount || 0);
+    const calculatedAmountEur = apiTxn.amount_eur || (absoluteAmount * (apiTxn.exchange_rate || 1));
+
     return {
       id: apiTxn.id,
       type: apiTxn.type,
       accountId: apiTxn.account_id,
+      account_id: apiTxn.account_id, // Keep both formats for compatibility
       toAccountId: apiTxn.to_account_id,
+      to_account_id: apiTxn.to_account_id, // Keep both formats for compatibility
+      transferAccountId: apiTxn.to_account_id, // Alias for frontend compatibility
       categoryId: apiTxn.category_id,
-      amount: apiTxn.amount,
-      currency: apiTxn.currency,
+      category_id: apiTxn.category_id, // Keep both formats for compatibility
+      subcategoryId: apiTxn.subcategory_id,
+      subcategory_id: apiTxn.subcategory_id, // Keep both formats for compatibility
+      amount: absoluteAmount, // Use absolute value for frontend
+      amountEur: calculatedAmountEur,
+      amount_eur: calculatedAmountEur, // Calculated from amount * exchange_rate if not provided
+      currency: apiTxn.currency || 'EUR',
+      exchangeRate: apiTxn.exchange_rate || 1,
+      exchange_rate: apiTxn.exchange_rate || 1,
       description: apiTxn.description,
-      date: apiTxn.transaction_date,
+      payee: apiTxn.description, // Alias for frontend compatibility
+      date: apiTxn.date || apiTxn.transaction_date, // Backend returns "date"
       reconciled: apiTxn.is_reconciled,
       notes: apiTxn.notes,
+      memo: apiTxn.notes, // Alias for frontend compatibility
+      receipt_url: apiTxn.receipt_url, // Include receipt URL
+      userId: apiTxn.user_id,
+      user_id: apiTxn.user_id, // Keep both formats for compatibility
+      createdBy: apiTxn.created_by || apiTxn.user_id, // Fallback to user_id
+      created_by: apiTxn.created_by || apiTxn.user_id, // Fallback to user_id
       createdAt: apiTxn.created_at,
       updatedAt: apiTxn.updated_at,
       // Joined data from backend
@@ -167,21 +214,63 @@ class TransactionService {
   }
 
   /**
-   * Map transaction from frontend format to API format
+   * Map transaction for CREATE operation (includes all required fields)
    * @private
    */
-  _mapTransactionToAPI(txn) {
-    return {
+  _mapTransactionForCreate(txn) {
+    const payload = {
+      date: txn.date || txn.transaction_date,
       type: txn.type,
-      account_id: txn.accountId || txn.account_id,
-      to_account_id: txn.toAccountId || txn.to_account_id,
-      category_id: txn.categoryId || txn.category_id,
       amount: txn.amount,
-      description: txn.description,
-      transaction_date: txn.date || txn.transaction_date,
-      is_reconciled: txn.reconciled !== undefined ? txn.reconciled : txn.is_reconciled,
-      notes: txn.notes,
+      currency: txn.currency || 'EUR',
+      payee: txn.payee || txn.description || '',
+      memo: txn.memo || txn.notes || '',
     };
+
+    // Add account_id for income/expense
+    if (txn.type !== 'transfer') {
+      payload.account_id = txn.account_id || txn.accountId;
+    }
+
+    // Add from/to accounts for transfers
+    if (txn.type === 'transfer') {
+      payload.from_account_id = txn.from_account_id || txn.account_id || txn.accountId;
+      payload.to_account_id = txn.to_account_id || txn.toAccountId;
+    }
+
+    // Add category_id for income/expense (optional)
+    // If subcategory is selected, use it as category_id (subcategories are just categories with parent_id)
+    const categoryId = txn.subcategory_id || txn.categoryId || txn.category_id;
+    if (categoryId && txn.type !== 'transfer') {
+      payload.category_id = categoryId;
+    }
+
+    return payload;
+  }
+
+  /**
+   * Map transaction for UPDATE operation (only fields that can be updated)
+   * @private
+   */
+  _mapTransactionForUpdate(txn) {
+    const payload = {
+      date: txn.date || txn.transaction_date,
+      amount: txn.amount,
+      payee: txn.payee || txn.description || '',
+      memo: txn.memo || txn.notes || '',
+    };
+
+    // Note: type, account_id, currency cannot be updated after creation
+    // These fields are immutable once a transaction is created
+
+    // If subcategory is selected, use it as category_id (subcategories are just categories with parent_id)
+    // Otherwise use the parent category_id
+    const categoryId = txn.subcategory_id || txn.categoryId || txn.category_id;
+    if (categoryId && txn.type !== 'transfer') {
+      payload.category_id = categoryId;
+    }
+
+    return payload;
   }
 }
 

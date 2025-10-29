@@ -123,12 +123,20 @@ class AccountService {
       type: apiAccount.type,
       currency: apiAccount.currency,
       openingBalance: apiAccount.opening_balance,
-      balance: apiAccount.current_balance,
+      currentBalance: apiAccount.current_balance,
+      balance: apiAccount.current_balance, // Alias for compatibility
+      balanceEur: apiAccount.balance_eur, // EUR equivalent balance - needed for net worth
+      balance_eur: apiAccount.balance_eur, // EUR equivalent balance - needed for net worth
       isActive: apiAccount.is_active,
+      institution: apiAccount.institution,
       creditLimit: apiAccount.credit_limit,
       interestRate: apiAccount.interest_rate,
       notes: apiAccount.notes,
       transactionCount: apiAccount.transaction_count,
+      userId: apiAccount.user_id,
+      user_id: apiAccount.user_id, // Keep both formats for compatibility
+      createdBy: apiAccount.created_by || apiAccount.user_id, // Fallback to user_id
+      created_by: apiAccount.created_by || apiAccount.user_id, // Fallback to user_id
       createdAt: apiAccount.created_at,
       updatedAt: apiAccount.updated_at,
     };
@@ -139,16 +147,41 @@ class AccountService {
    * @private
    */
   _mapAccountToAPI(account) {
-    return {
+    const apiData = {
       name: account.name,
       type: account.type,
       currency: account.currency,
       opening_balance: account.openingBalance !== undefined ? account.openingBalance : account.opening_balance,
-      is_active: account.isActive !== undefined ? account.isActive : account.is_active,
-      credit_limit: account.creditLimit !== undefined ? account.creditLimit : account.credit_limit,
-      interest_rate: account.interestRate !== undefined ? account.interestRate : account.interest_rate,
-      notes: account.notes,
     };
+
+    // Only include optional fields if they have values
+    if (account.institution !== undefined && account.institution !== null && account.institution !== '') {
+      apiData.institution = account.institution;
+    }
+
+    if (account.notes !== undefined && account.notes !== null && account.notes !== '') {
+      apiData.notes = account.notes;
+    }
+
+    if (account.isActive !== undefined) {
+      apiData.is_active = account.isActive;
+    } else if (account.is_active !== undefined) {
+      apiData.is_active = account.is_active;
+    }
+
+    if (account.creditLimit !== undefined) {
+      apiData.credit_limit = account.creditLimit;
+    } else if (account.credit_limit !== undefined) {
+      apiData.credit_limit = account.credit_limit;
+    }
+
+    if (account.interestRate !== undefined) {
+      apiData.interest_rate = account.interestRate;
+    } else if (account.interest_rate !== undefined) {
+      apiData.interest_rate = account.interest_rate;
+    }
+
+    return apiData;
   }
 }
 

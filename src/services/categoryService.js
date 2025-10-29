@@ -15,17 +15,67 @@ class CategoryService {
    */
   async getCategories(filters = {}) {
     try {
-      const params = new URLSearchParams();
+      // If a specific filter is provided, use it directly
+      if (filters.type || filters.parentId) {
+        const params = new URLSearchParams();
+        if (filters.type) params.append('type', filters.type);
+        if (filters.parentId) params.append('parent_id', filters.parentId);
 
-      if (filters.type) params.append('type', filters.type);
-      if (filters.parentId) params.append('parent_id', filters.parentId);
+        const url = `${API_ENDPOINTS.CATEGORIES}?${params}`;
+        console.log('Fetching filtered categories from:', url);
 
-      const url = params.toString()
-        ? `${API_ENDPOINTS.CATEGORIES}?${params}`
-        : API_ENDPOINTS.CATEGORIES;
+        const response = await api.get(url);
+        return response.data.data.map(this._mapCategoryFromAPI);
+      }
 
-      const response = await api.get(url);
-      return response.data.data.map(this._mapCategoryFromAPI);
+      // Otherwise, fetch ALL categories (parents + subcategories)
+      // The backend only returns parents by default, so we need to fetch subcategories separately
+      console.log('Fetching all parents from:', API_ENDPOINTS.CATEGORIES);
+
+      const parentResponse = await api.get(API_ENDPOINTS.CATEGORIES);
+      const parents = parentResponse.data.data;
+      console.log('Parent categories count:', parents.length);
+
+      // Fetch subcategories for each parent
+      const allCategories = [...parents];
+
+      for (const parent of parents) {
+        try {
+          const subcategoryUrl = `${API_ENDPOINTS.CATEGORIES}?parent_id=${parent.id}`;
+          console.log(`Fetching subcategories for ${parent.name} (${parent.id}):`, subcategoryUrl);
+
+          const subResponse = await api.get(subcategoryUrl);
+          const subcategories = subResponse.data.data;
+
+          console.log(`  Backend returned ${subcategories.length} items for ${parent.name}`);
+
+          if (subcategories.length > 0) {
+            console.log(`  First item:`, subcategories[0]);
+            console.log(`  First item parent_id:`, subcategories[0].parent_id);
+            console.log(`  Items with parent_id matching ${parent.id}:`,
+              subcategories.filter(c => c.parent_id === parent.id).length
+            );
+          }
+
+          // Only add items that actually have this parent_id
+          const actualSubcategories = subcategories.filter(c => c.parent_id === parent.id);
+          console.log(`  Adding ${actualSubcategories.length} actual subcategories`);
+
+          allCategories.push(...actualSubcategories);
+        } catch (error) {
+          console.warn(`Failed to fetch subcategories for ${parent.name}:`, error);
+          // Continue with other parents even if one fails
+        }
+      }
+
+      console.log('Total categories (parents + subcategories):', allCategories.length);
+      console.log('Categories with parent_id:', allCategories.filter(c => c.parent_id).length);
+
+      const mapped = allCategories.map(this._mapCategoryFromAPI);
+      console.log('Mapped total:', mapped.length);
+      console.log('Mapped with parent_id:', mapped.filter(c => c.parent_id || c.parentId).length);
+
+      return mapped;
     } catch (error) {
       console.error('Get categories error:', error);
       throw error;
@@ -67,12 +117,34 @@ class CategoryService {
    * @returns {Promise<Object>} Created category
    */
   async createCategory(categoryData) {
+    let apiData;
     try {
-      const apiData = this._mapCategoryToAPI(categoryData);
+      apiData = this._mapCategoryToAPI(categoryData);
+
+      // Debug logging
+      console.log('Creating category:', categoryData.name);
+      console.log('Mapped API data:', JSON.stringify(apiData, null, 2));
+
       const response = await api.post(API_ENDPOINTS.CATEGORIES, apiData);
-      return this._mapCategoryFromAPI(response.data.data);
+
+      console.log('API response:', response);
+      console.log('API response.data:', response.data);
+      console.log('API response.data.data:', response.data.data);
+      console.log('API response parent_id:', response.data.data?.parent_id);
+
+      const mapped = this._mapCategoryFromAPI(response.data.data);
+      console.log('Mapped category:', mapped);
+      console.log('Mapped category parent_id:', mapped.parent_id);
+      console.log('Mapped category parentId:', mapped.parentId);
+
+      return mapped;
     } catch (error) {
       console.error('Create category error:', error);
+      console.error('Failed category data:', categoryData);
+      console.error('Failed API payload:', apiData);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+      console.error('Backend validation details:', error.originalError?.response?.data);
       throw error;
     }
   }
@@ -86,6 +158,9 @@ class CategoryService {
     try {
       console.log(`📦 Creating ${categoriesArray.length} default categories...`);
 
+      // Helper to add delay between requests (avoid rate limiting)
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
       // Create categories one by one (since backend doesn't have bulk endpoint)
       // Create parent categories first, then children
       const parentCategories = categoriesArray.filter(cat => !cat.parentId);
@@ -94,30 +169,59 @@ class CategoryService {
       const createdParents = [];
       const createdChildren = [];
 
-      // Create parent categories first
+      // Map old demo IDs to new backend UUIDs
+      const idMap = new Map();
+
+      // Create parent categories first with delay to avoid rate limiting
       for (const category of parentCategories) {
         try {
           const created = await this.createCategory(category);
           createdParents.push(created);
+          // Map old demo ID to new backend UUID
+          idMap.set(category.id, created.id);
+          console.log(`✅ Created parent: ${category.name} (${category.id} → ${created.id})`);
+
+          // Add 150ms delay between requests to avoid rate limiting
+          await delay(150);
         } catch (err) {
-          console.warn(`Failed to create category ${category.name}:`, err);
+          console.warn(`❌ Failed to create category ${category.name}:`, err.message);
           // Continue with others even if one fails
         }
       }
 
-      // Create child categories
+      console.log(`Created ${createdParents.length}/${parentCategories.length} parent categories`);
+
+      // Create child categories with corrected parent IDs
       for (const category of childCategories) {
         try {
-          const created = await this.createCategory(category);
+          // Replace demo parent ID with real backend UUID
+          const realParentId = idMap.get(category.parentId);
+          if (!realParentId) {
+            console.warn(`⚠️ Skipping subcategory ${category.name}: parent ${category.parentId} not found`);
+            continue;
+          }
+
+          const categoryWithRealParent = {
+            ...category,
+            parentId: realParentId
+          };
+
+          const created = await this.createCategory(categoryWithRealParent);
           createdChildren.push(created);
+          console.log(`✅ Created child: ${category.name} (parent: ${realParentId})`);
+
+          // Add 150ms delay between requests to avoid rate limiting
+          await delay(150);
         } catch (err) {
-          console.warn(`Failed to create subcategory ${category.name}:`, err);
+          console.warn(`❌ Failed to create subcategory ${category.name}:`, err.message);
           // Continue with others even if one fails
         }
       }
 
+      console.log(`Created ${createdChildren.length}/${childCategories.length} subcategories`);
+
       const allCreated = [...createdParents, ...createdChildren];
-      console.log(`✅ Successfully created ${allCreated.length} categories`);
+      console.log(`✅ Successfully created ${allCreated.length}/${categoriesArray.length} categories total`);
 
       return allCreated;
     } catch (error) {
@@ -176,7 +280,12 @@ class CategoryService {
       color: apiCategory.color,
       icon: icon,
       parentId: apiCategory.parent_id,
+      parent_id: apiCategory.parent_id, // Keep snake_case for compatibility with UI filters
       isActive: apiCategory.is_active,
+      userId: apiCategory.user_id,
+      user_id: apiCategory.user_id, // Keep both formats for compatibility
+      createdBy: apiCategory.created_by || apiCategory.user_id, // Fallback to user_id
+      created_by: apiCategory.created_by || apiCategory.user_id, // Fallback to user_id
       createdAt: apiCategory.created_at,
       updatedAt: apiCategory.updated_at,
       // If tree structure, recursively map children
@@ -191,22 +300,25 @@ class CategoryService {
    * @private
    */
   _mapCategoryToAPI(category) {
-    // If category has an emoji icon, use a default color
-    // Otherwise try to map icon name to color
-    let color = category.color;
-    if (!color) {
-      // Check if icon is an emoji (non-ASCII characters)
-      const isEmoji = category.icon && /[\u{1F000}-\u{1F9FF}]/u.test(category.icon);
-      color = isEmoji ? this._getColorForCategoryType(category.type) : this._mapIconToColor(category.icon);
-    }
-
-    return {
+    // Build payload - only include fields backend accepts
+    const payload = {
       name: category.name,
       type: category.type,
-      color: color,
-      parent_id: category.parentId || category.parent_id,
-      is_active: category.isActive !== undefined ? category.isActive : category.is_active,
     };
+
+    // NOTE: Do NOT include user_id - backend gets it from JWT token automatically
+    // The validation schema does not accept user_id in the request body
+
+    // Only include parent_id if it has a value (don't send null)
+    const parentId = category.parentId || category.parent_id;
+    if (parentId) {
+      payload.parent_id = parentId;
+    }
+
+    // Note: Backend does NOT accept 'color', 'icon', 'user_id', or 'is_active' fields on create/update
+    // These are auto-generated or returned by the backend
+
+    return payload;
   }
 
   /**

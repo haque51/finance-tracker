@@ -104,6 +104,10 @@ class BudgetService {
       month: apiBudget.month,
       year: apiBudget.year,
       spent: apiBudget.spent,
+      userId: apiBudget.user_id,
+      user_id: apiBudget.user_id, // Keep both formats for compatibility
+      createdBy: apiBudget.created_by || apiBudget.user_id, // Fallback to user_id
+      created_by: apiBudget.created_by || apiBudget.user_id, // Fallback to user_id
       createdAt: apiBudget.created_at,
       updatedAt: apiBudget.updated_at,
       categoryName: apiBudget.category_name,

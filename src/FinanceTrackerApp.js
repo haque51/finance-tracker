@@ -1,3 +1,7 @@
+/**
+ * Lumina Finance - Main Application Component
+ * Light theme optimized for visibility and contrast
+ */
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -5,60 +9,16 @@ import { TrendingUp, TrendingDown, Wallet, Target, Settings, Receipt, Calendar, 
 import { useApp as useGlobalApp } from './context/AppContext';
 import { fetchExchangeRates } from './utils/exchangeRateApi';
 import { DEFAULT_CATEGORIES, getAutoIcon } from './data/defaultCategories';
+import { demoData, getEmptyState } from './data/demoData';
+import LoadingOverlay from './components/LoadingOverlay';
+import accountService from './services/accountService';
+import transactionService from './services/transactionService';
 const AppContext = createContext();
 
 const useApp = () => {
   const context = useContext(AppContext);
   if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
-};
-
-const initialState = {
-  user: {
-    id: 'user1',
-    name: 'Demo User',
-    email: 'demo@financetracker.com',
-    theme: 'light',
-    baseCurrency: 'EUR',
-    monthlyIncomeGoal: 5000,
-    monthlySavingsGoal: 1000
-  },
-  accounts: [
-    { id: 'acc1', name: 'Main Checking', type: 'checking', currency: 'EUR', institution: 'Bank A', openingBalance: 5000, currentBalance: 5000, isActive: true },
-    { id: 'acc2', name: 'Savings', type: 'savings', currency: 'EUR', institution: 'Bank A', openingBalance: 10000, currentBalance: 10000, isActive: true },
-    { id: 'acc3', name: 'Credit Card', type: 'credit_card', currency: 'EUR', institution: 'Bank B', openingBalance: 0, currentBalance: -1500, isActive: true },
-    { id: 'acc4', name: 'Car Loan', type: 'loan', currency: 'EUR', institution: 'Bank C', openingBalance: -15000, currentBalance: -12000, isActive: true, interestRate: 4.5 }
-  ],
-  transactions: [
-    { id: 'txn1', date: '2025-10-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4500, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn2', date: '2025-10-02', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -120, currency: 'EUR', memo: 'Groceries', isReconciled: false },
-    { id: 'txn3', date: '2025-10-03', type: 'expense', accountId: 'acc3', payee: 'Restaurant', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_2', amount: -85, currency: 'EUR', memo: 'Dinner', isReconciled: false },
-    { id: 'txn4', date: '2025-09-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn5', date: '2025-09-15', type: 'expense', accountId: 'acc1', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -150, currency: 'EUR', memo: 'Groceries', isReconciled: false },
-    { id: 'txn6', date: '2025-08-01', type: 'income', accountId: 'acc1', payee: 'Salary', categoryId: 'cat_income_1', subcategoryId: null, amount: 4200, currency: 'EUR', memo: 'Monthly salary', isReconciled: false },
-    { id: 'txn7', date: '2025-08-10', type: 'expense', accountId: 'acc1', payee: 'Shopping Mall', categoryId: 'cat_exp_shopping', subcategoryId: 'cat_exp_shopping_1', amount: -200, currency: 'EUR', memo: 'Shopping', isReconciled: false }
-  ],
-  categories: DEFAULT_CATEGORIES,
-  budgets: [
-    { id: 'bud1', month: '2025-10', categoryId: 'cat_exp_food', budgeted: 400 },
-    { id: 'bud2', month: '2025-10', categoryId: 'cat_exp_transport', budgeted: 300 }
-  ],
-  goals: [
-    { id: 'goal1', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 10000, targetDate: '2025-12-31' },
-    { id: 'goal2', name: 'Vacation', targetAmount: 3000, currentAmount: 500, targetDate: '2025-08-01' }
-  ],
-  recurringTransactions: [
-    { id: 'rec1', name: 'Monthly Rent', accountId: 'acc1', type: 'expense', payee: 'Landlord', categoryId: 'cat_exp_housing', subcategoryId: 'cat_exp_housing_1', amount: -1200, currency: 'EUR', frequency: 'monthly', interval: 1, startDate: '2025-01-01', endDate: null, isActive: true, lastProcessed: '2025-09-01' }
-  ],
-  templates: [
-    { id: 'tpl1', name: 'Grocery Shopping', accountId: 'acc1', type: 'expense', payee: 'Supermarket', categoryId: 'cat_exp_food', subcategoryId: 'cat_exp_food_1', amount: -100, currency: 'EUR', memo: 'Weekly groceries' }
-  ],
-  exchangeRates: { USD: 1.1, BDT: 0.0091, EUR: 1 },
-  debtPayoffPlans: [
-    { id: 'dpp1', name: 'Credit Card Payoff', strategy: 'avalanche', extraMonthlyPayment: 200, accountIds: ['acc3'], createdDate: '2025-10-01', isActive: true }
-  ],
-  alerts: [],
-  autoCategorization: []
 };
 
 export default function FinanceTrackerApp() {
@@ -70,10 +30,14 @@ export default function FinanceTrackerApp() {
   const isDemoMode = location.pathname === '/demo';
   const isAuthenticated = !isDemoMode && globalContext.isAuthenticated;
 
-  const [state, setState] = useState(initialState);
+  // Initialize state conditionally: demo data for demo mode, empty state for authenticated users
+  const [state, setState] = useState(() => {
+    return isDemoMode ? demoData : getEmptyState();
+  });
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  // Show loading only when authenticated and not in demo mode
+  const [isLoadingData, setIsLoadingData] = useState(isAuthenticated && !isDemoMode);
   const [isRefreshingRates, setIsRefreshingRates] = useState(false);
 
   const updateState = (updates) => {
@@ -107,7 +71,10 @@ export default function FinanceTrackerApp() {
   };
 
   // Use global user when authenticated, local state user when in demo mode
-  const currentUser = isAuthenticated ? globalContext.user : state.user;
+  // Initialize theme to 'light' if not present in user object
+  const currentUser = isAuthenticated
+    ? { ...globalContext.user, theme: globalContext.user?.theme || 'light' }
+    : state.user;
 
   // Load data from backend when authenticated
   useEffect(() => {
@@ -128,11 +95,23 @@ export default function FinanceTrackerApp() {
 
           // If backend has no categories, this is a new user - save defaults to backend
           let finalCategories = categoriesData;
+
+          console.log('=== CATEGORY LOADING DEBUG ===');
+          console.log('Categories from backend:', categoriesData?.length || 0);
+          if (categoriesData && categoriesData.length > 0) {
+            console.log('Sample backend category:', categoriesData[0]);
+          }
+
           if (!categoriesData || categoriesData.length === 0) {
-            console.log('🆕 New user detected - initializing default categories in backend...');
+            console.log('🆕 New user detected - initializing default categories (one-time setup, ~15 seconds)...');
             try {
-              // Save default categories to backend
+              // Save default categories to backend (with delays to avoid rate limiting)
+              // This takes ~15 seconds but only happens ONCE for new users
               const savedCategories = await globalContext.createCategoriesBulk(DEFAULT_CATEGORIES);
+              console.log('Saved categories from backend:', savedCategories?.length || 0);
+              if (savedCategories && savedCategories.length > 0) {
+                console.log('Sample saved category:', savedCategories[0]);
+              }
               finalCategories = savedCategories && savedCategories.length > 0 ? savedCategories : DEFAULT_CATEGORIES;
               console.log(`✅ Default categories saved to backend: ${finalCategories.length} categories`);
             } catch (err) {
@@ -140,6 +119,12 @@ export default function FinanceTrackerApp() {
               finalCategories = DEFAULT_CATEGORIES;
             }
           }
+
+          console.log('Final categories being used:', finalCategories?.length || 0);
+          if (finalCategories && finalCategories.length > 0) {
+            console.log('Sample final category:', finalCategories[0]);
+          }
+          console.log('==============================');
 
           // Update local state with backend data
           updateState({
@@ -162,12 +147,12 @@ export default function FinanceTrackerApp() {
   }, [isAuthenticated, isDemoMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (state.user.theme === 'dark') {
+    if (currentUser?.theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [state.user.theme]);
+  }, [currentUser?.theme]);
 
   // Fetch exchange rates on mount and when accounts change
   useEffect(() => {
@@ -278,9 +263,20 @@ export default function FinanceTrackerApp() {
     return () => clearInterval(interval);
   }, [state.recurringTransactions, state.accounts, state.transactions]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const setTheme = (newTheme) => {
+    if (isAuthenticated) {
+      // For authenticated users, update global context and persist to localStorage
+      const updatedUser = { ...globalContext.user, theme: newTheme };
+      globalContext.updateUser(updatedUser);
+    } else {
+      // For demo mode, update local state
+      updateState({ user: { ...state.user, theme: newTheme } });
+    }
+  };
+
   const toggleTheme = () => {
-    const newTheme = state.user.theme === 'light' ? 'dark' : 'light';
-    updateState({ user: { ...state.user, theme: newTheme } });
+    const newTheme = currentUser?.theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
   };
 
   const handleLogout = async () => {
@@ -296,20 +292,36 @@ export default function FinanceTrackerApp() {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      {/* Show loading overlay when fetching data for authenticated users */}
+      {isLoadingData && !isDemoMode && <LoadingOverlay text="Loading your financial data..." />}
+
+      <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors">
+        {/* Modern Header with Glassmorphism - Per Design Spec */}
+        <header className="sticky top-0 z-50 glass-card border-b border-gray-200/50 dark:border-gray-700/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <Wallet className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                <h1 className="ml-2 text-xl font-bold text-gray-900 dark:text-white">Lumina Finances</h1>
+            <div className="flex justify-between items-center h-20">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gradient-primary p-2 rounded-button shadow-card">
+                  <Wallet className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gradient">Lumina Finance</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Personal Finance Tracker</p>
+                </div>
               </div>
-              <div className="hidden md:flex items-center space-x-4">
-                <span className="text-sm text-gray-600 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
+              <div className="hidden md:flex items-center space-x-3">
+                <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-button shadow-sm">
+                  <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium text-sm">
+                      {(currentUser?.name || 'Guest').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-300">{currentUser?.name || 'Guest'}</span>
+                </div>
                 {isAuthenticated && (
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-error hover:bg-error-50 dark:hover:bg-error-900/20 rounded-button transition-all duration-hover hover:shadow-card"
                     title="Logout"
                   >
                     <LogOut className="w-4 h-4" />
@@ -318,12 +330,13 @@ export default function FinanceTrackerApp() {
                 )}
                 <button
                   onClick={toggleTheme}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-3 rounded-button hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-hover text-xl hover:scale-110"
+                  title="Toggle Theme"
                 >
-                  {state.user.theme === 'light' ? '🌙' : '☀️'}
+                  {currentUser?.theme === 'light' ? '🌙' : '☀️'}
                 </button>
               </div>
-              <button className="md:hidden p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <button className="md:hidden p-2 rounded-button hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-hover" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                 <Menu className="w-6 h-6 text-gray-900 dark:text-white" />
               </button>
             </div>
@@ -331,8 +344,9 @@ export default function FinanceTrackerApp() {
         </header>
 
         <div className="flex">
-          <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen`}>
-            <nav className="p-4 space-y-1">
+          {/* Modern Sidebar with Glassmorphism */}
+          <aside className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:block w-72 glass-card border-r border-gray-200/50 dark:border-gray-700/50 min-h-screen custom-scrollbar`}>
+            <nav className="p-6 space-y-2">
               <NavItem icon={<BarChart3 className="w-5 h-5" />} label="Dashboard" view="dashboard" />
               <NavItem icon={<Wallet className="w-5 h-5" />} label="Accounts" view="accounts" />
               <NavItem icon={<Receipt className="w-5 h-5" />} label="Transactions" view="transactions" />
@@ -341,30 +355,39 @@ export default function FinanceTrackerApp() {
               <NavItem icon={<DollarSign className="w-5 h-5" />} label="Budget" view="budget" />
               <NavItem icon={<Target className="w-5 h-5" />} label="Goals" view="goals" />
               <NavItem icon={<CreditCard className="w-5 h-5" />} label="Debt Payoff" view="debt" />
-<NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
-<NavItem icon={<BarChart3 className="w-5 h-5" />} label="Reports" view="reports" />
-<NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
+              <NavItem icon={<Brain className="w-5 h-5" />} label="Insights" view="insights" />
+              <NavItem icon={<BarChart3 className="w-5 h-5" />} label="Reports" view="reports" />
+              <NavItem icon={<Settings className="w-5 h-5" />} label="Settings" view="settings" />
             </nav>
           </aside>
 
-          <main className="flex-1 p-6 relative">
+          <main className="flex-1 p-8 relative bg-background-light dark:bg-background-dark">
             {isLoadingData && (
-              <div className="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="absolute inset-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-glass flex items-center justify-center z-50 animate-fade-in">
                 <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-                  <p className="mt-4 text-gray-700 dark:text-gray-300">Loading your data...</p>
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-200 dark:border-primary-800 border-t-primary shadow-card"></div>
+                  <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-300">Loading your financial data...</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">First login may take ~15 seconds (setting up default categories)</p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Future logins will be much faster!</p>
                 </div>
               </div>
             )}
             <div className="max-w-7xl mx-auto">
               {isAuthenticated && currentView === 'dashboard' && (
-                <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    Welcome back, {currentUser?.name || 'User'}! 👋
-                  </h3>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                    Here's your financial overview
-                  </p>
+                <div className="mb-8 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-card p-6 shadow-card animate-slide-down">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-gradient-success p-3 rounded-xl">
+                      <TrendingUp className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        Welcome back, {currentUser?.name || 'User'}! 👋
+                      </h3>
+                      <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">
+                        Here's your financial overview for today
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
               {currentView === 'dashboard' && <DashboardView />}
@@ -377,7 +400,7 @@ export default function FinanceTrackerApp() {
               {currentView === 'debt' && <DebtPayoffView />}
               {currentView === 'insights' && <InsightsView />}
               {currentView === 'reports' && <ReportsView />}
-              {currentView === 'settings' && <SettingsView />}
+              {currentView === 'settings' && <SettingsView setTheme={setTheme} currentUser={currentUser} />}
             </div>
           </main>
         </div>
@@ -393,9 +416,7 @@ function NavItem({ icon, label, view }) {
   return (
     <button
       onClick={() => setCurrentView(view)}
-      className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors ${
-        isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-      }`}
+      className={`nav-item w-full ${isActive ? 'active' : ''}`}
     >
       {icon}
       <span className="font-medium">{label}</span>
@@ -448,8 +469,8 @@ function DashboardView() {
 
   const previousMonth = getPreviousMonth(selectedMonth);
 
-  const currentMonthTxns = state.transactions.filter(t => t.date.startsWith(selectedMonth));
-  const previousMonthTxns = state.transactions.filter(t => t.date.startsWith(previousMonth));
+  const currentMonthTxns = state.transactions.filter(t => t.date && t.date.startsWith(selectedMonth));
+  const previousMonthTxns = state.transactions.filter(t => t.date && t.date.startsWith(previousMonth));
 
   const monthlyIncome = currentMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const previousIncome = previousMonthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -564,7 +585,7 @@ function DashboardView() {
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
           >
             {availableMonths.map(month => (
               <option key={month} value={month}>
@@ -576,26 +597,26 @@ function DashboardView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard 
-          title="Monthly Income" 
-          value={`€${monthlyIncome.toLocaleString()}`} 
-          icon={<TrendingUp className="w-6 h-6 text-green-600" />} 
+        <MetricCard
+          title="Monthly Income"
+          value={`€${monthlyIncome.toLocaleString()}`}
+          icon={<TrendingUp className="w-6 h-6 text-white" />}
           change={`€${incomeAbsChange.toLocaleString()}`}
           changePercent={`${incomeChange >= 0 ? '+' : ''}${incomeChange}%`}
           isPositive={incomeChange >= 0}
         />
-        <MetricCard 
-          title="Monthly Expenses" 
-          value={`€${monthlyExpenses.toLocaleString()}`} 
-          icon={<TrendingDown className="w-6 h-6 text-red-600" />} 
+        <MetricCard
+          title="Monthly Expenses"
+          value={`€${monthlyExpenses.toLocaleString()}`}
+          icon={<TrendingDown className="w-6 h-6 text-white" />}
           change={`€${expenseAbsChange.toLocaleString()}`}
           changePercent={`${expenseChange >= 0 ? '+' : ''}${expenseChange}%`}
           isPositive={expenseChange <= 0}
         />
-        <MetricCard 
-          title="Net Worth" 
-          value={`€${netWorth.toLocaleString()}`} 
-          icon={<Wallet className="w-6 h-6 text-blue-600" />} 
+        <MetricCard
+          title="Net Worth"
+          value={`€${netWorth.toLocaleString()}`}
+          icon={<Wallet className="w-6 h-6 text-white" />}
           change={`€${netWorthAbsChange.toLocaleString()}`}
           changePercent={`${netWorthChange >= 0 ? '+' : ''}${netWorthChange}%`}
           isPositive={netWorthChange >= 0}
@@ -603,7 +624,7 @@ function DashboardView() {
         <MetricCard
           title="Savings Rate"
           value={`${savingsRate}%`}
-          icon={<Target className="w-6 h-6 text-purple-600" />}
+          icon={<Target className="w-6 h-6 text-white" />}
           change={`€${savingsAmountChange.toLocaleString()}`}
           changePercent={`${savingsRateChange >= 0 ? '+' : ''}${savingsRateChange}% pts`}
           isPositive={savingsAmountChange >= 0}
@@ -611,8 +632,11 @@ function DashboardView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Spending by Category</h3>
+        <div className="chart-container">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+            <div className="w-1 h-6 bg-gradient-primary rounded-full"></div>
+            <span>Spending by Category</span>
+          </h3>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -630,22 +654,34 @@ function DashboardView() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Net Worth by Account</h3>
+        <div className="chart-container">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+            <div className="w-1 h-6 bg-gradient-accent rounded-full"></div>
+            <span>Net Worth by Account</span>
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={state.accounts}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="currentBalance" fill="#3B82F6" />
+              <Bar dataKey="currentBalance" fill="url(#colorGradient)" radius={[8, 8, 0, 0]} />
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563EB" stopOpacity={1}/>
+                  <stop offset="100%" stopColor="#7C3AED" stopOpacity={0.9}/>
+                </linearGradient>
+              </defs>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Account Balances</h3>
+      <div className="glass-card p-6 animate-fade-in">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+          <div className="w-1 h-6 bg-gradient-success rounded-full"></div>
+          <span>Account Balances</span>
+        </h3>
         <div className="space-y-3">
           {state.accounts.map(account => {
             // Convert account balance to base currency
@@ -656,13 +692,18 @@ function DashboardView() {
               ? account.currentBalance
               : account.currentBalance / (state.exchangeRates[accountCurrency] || 1);
             return (
-              <div key={account.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{account.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{account.type} • {account.institution}</p>
+              <div key={account.id} className="group glass-card p-4 flex justify-between items-center hover:shadow-glow transition-all duration-300">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-gradient-primary rounded-xl">
+                    <Wallet className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-white">{account.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{account.type} • {account.institution}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-lg font-semibold ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-xl font-bold ${account.currentBalance >= 0 ? 'text-success-600 dark:text-success-400' : 'text-red-600 dark:text-red-400'}`}>
                     {account.currency} {account.currentBalance.toLocaleString()}
                   </p>
                   {account.currency !== state.user.baseCurrency && (
@@ -682,16 +723,26 @@ function DashboardView() {
 
 function MetricCard({ title, value, icon, change, changePercent, isPositive }) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-          <p className={`text-sm mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {change} {changePercent && `(${changePercent})`} vs last month
-          </p>
+    <div className="stat-card animate-scale-in group hover:scale-105 transition-transform duration-300">
+      <div className="relative z-10">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">{title}</p>
+            <p className="text-3xl font-bold text-gradient mb-3">{value}</p>
+            <div className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${
+              isPositive
+                ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
+                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+            }`}>
+              {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              <span>{change} {changePercent && `(${changePercent})`}</span>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-500 mt-1">vs last month</p>
+          </div>
+          <div className="p-3 bg-gradient-primary rounded-xl shadow-glow">
+            {icon}
+          </div>
         </div>
-        {icon}
       </div>
     </div>
   );
@@ -701,26 +752,40 @@ function MetricCard({ title, value, icon, change, changePercent, isPositive }) {
 // I'll include them but keep them unchanged from the original
 
 function AccountsView() {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure? This will delete all associated transactions.')) {
-      updateState({
-        accounts: state.accounts.filter(a => a.id !== id),
-        transactions: state.transactions.filter(t => t.accountId !== id && t.transferAccountId !== id)
-      });
+      try {
+        // Call backend API if authenticated
+        if (isAuthenticated && !isDemoMode) {
+          await accountService.deleteAccount(id);
+        }
+
+        // Update local state
+        updateState({
+          accounts: state.accounts.filter(a => a.id !== id),
+          transactions: state.transactions.filter(t => t.accountId !== id && t.transferAccountId !== id)
+        });
+      } catch (error) {
+        console.error('Failed to delete account:', error);
+        alert('Failed to delete account. Please try again.');
+      }
     }
     setOpenMenuId(null);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts</h2>
-        <button onClick={() => { setShowForm(true); setEditingAccount(null); }} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Accounts</h2>
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Manage your financial accounts</p>
+        </div>
+        <button onClick={() => { setShowForm(true); setEditingAccount(null); }} className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
           <span>Add Account</span>
         </button>
@@ -728,7 +793,7 @@ function AccountsView() {
 
       {showForm && <AccountForm account={editingAccount} onClose={() => { setShowForm(false); setEditingAccount(null); }} />}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {state.accounts.map(account => {
           // Convert account balance to base currency
           // exchangeRates format: { USD: 1.08, BDT: 118.5 } means 1 EUR = 1.08 USD
@@ -747,39 +812,44 @@ function AccountsView() {
           const capitalizedType = account.type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
           return (
-            <div key={account.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative">
+            <div key={account.id} className="glass-card group relative animate-fade-in hover:scale-105 transition-all duration-card">
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{account.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{capitalizedType}</p>
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 bg-gradient-primary rounded-button">
+                    <Wallet className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{account.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{capitalizedType}</p>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 text-xs rounded ${!isNegative ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                  <span className={`badge-modern ${!isNegative ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300' : 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300'}`}>
                     {!isNegative ? 'Asset' : 'Debt'}
                   </span>
                   <div className="relative">
                     <button
                       onClick={() => setOpenMenuId(openMenuId === account.id ? null : account.id)}
-                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="btn-icon hover:shadow-card-hover"
                     >
                       <MoreVertical className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     </button>
                     {openMenuId === account.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                      <div className="absolute right-0 mt-2 w-48 glass-card shadow-card z-10 animate-scale-in">
                         <button
                           onClick={() => {
                             setEditingAccount(account);
                             setShowForm(true);
                             setOpenMenuId(null);
                           }}
-                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-t-button transition-all duration-hover"
                         >
                           <Edit2 className="w-4 h-4" />
                           <span>Edit</span>
                         </button>
                         <button
                           onClick={() => handleDelete(account.id)}
-                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                          className="w-full flex items-center space-x-2 px-4 py-2 text-left text-error hover:bg-error-50 dark:hover:bg-error-900/20 rounded-b-button transition-all duration-hover"
                         >
                           <Trash2 className="w-4 h-4" />
                           <span>Delete</span>
@@ -789,7 +859,7 @@ function AccountsView() {
                   </div>
                 </div>
               </div>
-              <p className={`text-2xl font-bold mb-2 ${!isNegative ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-3xl font-bold mb-3 ${!isNegative ? 'text-success dark:text-success-400' : 'text-error dark:text-error-400'}`}>
                 {account.currency} {displayBalance.toLocaleString()}
               </p>
               {account.currency !== state.user.baseCurrency && (
@@ -807,7 +877,7 @@ function AccountsView() {
 }
 
 function AccountForm({ account, onClose }) {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
   const isEditing = !!account;
 
   const [formData, setFormData] = useState(account ? {
@@ -828,62 +898,113 @@ function AccountForm({ account, onClose }) {
     interestRate: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isEditing) {
-      // When editing, keep the original opening balance, only update current balance and other fields
-      updateState({
-        accounts: state.accounts.map(a =>
-          a.id === account.id ? {
-            ...a,
-            name: formData.name,
-            type: formData.type,
-            currency: formData.currency,
-            institution: formData.institution,
-            currentBalance: parseFloat(formData.currentBalance) || 0,
-            interestRate: parseFloat(formData.interestRate) || 0
-          } : a
-        )
-      });
-    } else {
-      // When creating, set both opening and current balance to the same value
-      const openingBalance = parseFloat(formData.openingBalance) || 0;
-      const newAccount = {
-        ...formData,
-        id: 'acc' + Date.now(),
-        isActive: true,
-        openingBalance: openingBalance,
-        currentBalance: openingBalance,
-        interestRate: parseFloat(formData.interestRate) || 0
-      };
-      updateState({ accounts: [...state.accounts, newAccount] });
+
+    try {
+      if (isEditing) {
+        // When editing, keep the original opening balance, only update current balance and other fields
+        const updatedAccount = {
+          ...account,
+          name: formData.name,
+          type: formData.type,
+          currency: formData.currency,
+          institution: formData.institution,
+          currentBalance: parseFloat(formData.currentBalance) || 0,
+          interestRate: parseFloat(formData.interestRate) || 0
+        };
+
+        // Call backend API if authenticated
+        if (isAuthenticated && !isDemoMode) {
+          await accountService.updateAccount(account.id, updatedAccount);
+        }
+
+        // Update local state
+        updateState({
+          accounts: state.accounts.map(a =>
+            a.id === account.id ? updatedAccount : a
+          )
+        });
+      } else {
+        // When creating, set both opening and current balance to the same value
+        const openingBalance = parseFloat(formData.openingBalance) || 0;
+        const newAccountData = {
+          name: formData.name,
+          type: formData.type,
+          currency: formData.currency,
+          institution: formData.institution,
+          openingBalance: openingBalance,
+          currentBalance: openingBalance,
+          isActive: true,
+          interestRate: parseFloat(formData.interestRate) || 0
+        };
+
+        let newAccount;
+        // Call backend API if authenticated
+        if (isAuthenticated && !isDemoMode) {
+          newAccount = await accountService.createAccount(newAccountData);
+        } else {
+          // Demo mode: use temporary ID
+          newAccount = {
+            ...newAccountData,
+            id: 'acc' + Date.now()
+          };
+        }
+
+        // Update local state
+        updateState({ accounts: [...state.accounts, newAccount] });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save account:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Original error:', error.originalError);
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+
+      // Try to extract the most detailed error message
+      const errorData = error.originalError?.response?.data
+        || error.response?.data
+        || {};
+
+      const errorMessage = errorData.message
+        || errorData.error
+        || errorData.details
+        || error.message
+        || 'Unknown error occurred';
+
+      // If there are validation details, show them
+      let detailsText = '';
+      if (errorData.details && typeof errorData.details === 'object') {
+        detailsText = '\n\nDetails:\n' + JSON.stringify(errorData.details, null, 2);
+      }
+
+      alert(`Failed to save account: ${errorMessage}${detailsText}\n\nCheck browser console for full details.`);
     }
-    onClose();
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{account ? 'Edit Account' : 'Add New Account'}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="glass-card animate-fade-in">
+      <h3 className="text-2xl font-bold text-gradient mb-6">{account ? 'Edit Account' : 'Add New Account'}</h3>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Name *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Account Name *</label>
             <input
               type="text"
               placeholder="e.g., Main Checking"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Type</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Account Type</label>
             <select
               value={formData.type}
               onChange={e => setFormData({ ...formData, type: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
             >
               <option value="checking">Checking</option>
               <option value="savings">Savings</option>
@@ -895,11 +1016,11 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Currency</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Currency</label>
             <select
               value={formData.currency}
               onChange={e => setFormData({ ...formData, currency: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
             >
               <option value="EUR">EUR</option>
               <option value="USD">USD</option>
@@ -908,18 +1029,19 @@ function AccountForm({ account, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Institution</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Institution *</label>
             <input
               type="text"
               placeholder="e.g., Bank A"
               value={formData.institution}
               onChange={e => setFormData({ ...formData, institution: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
+              required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Opening Balance {!isEditing && '*'}
             </label>
             <input
@@ -929,13 +1051,13 @@ function AccountForm({ account, onClose }) {
               value={formData.openingBalance}
               onChange={e => setFormData({ ...formData, openingBalance: e.target.value })}
               disabled={isEditing}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+              className="input-modern disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               required={!isEditing}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Current Balance {isEditing && '*'}
             </label>
             <input
@@ -945,31 +1067,31 @@ function AccountForm({ account, onClose }) {
               value={formData.currentBalance}
               onChange={e => setFormData({ ...formData, currentBalance: e.target.value })}
               disabled={!isEditing}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+              className="input-modern disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               required={isEditing}
             />
           </div>
 
           {(formData.type === 'loan' || formData.type === 'credit_card') && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interest Rate (%)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Interest Rate (%)</label>
               <input
                 type="number"
                 step="0.01"
                 placeholder="e.g., 4.5"
                 value={formData.interestRate}
                 onChange={e => setFormData({ ...formData, interestRate: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="input-modern"
               />
             </div>
           )}
         </div>
 
-        <div className="flex space-x-2">
-          <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <div className="flex gap-4">
+          <button type="submit" className="btn-primary">
             {isEditing ? 'Update Account' : 'Create Account'}
           </button>
-          <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+          <button type="button" onClick={onClose} className="btn-secondary">
             Cancel
           </button>
         </div>
@@ -979,34 +1101,59 @@ function AccountForm({ account, onClose }) {
 }
 
 function TransactionsView() {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
+  const globalContext = useGlobalApp();
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredTransactions = state.transactions.filter(t => t.payee.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredTransactions = state.transactions.filter(t =>
+    (t.payee || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const txn = state.transactions.find(t => t.id === id);
     if (window.confirm('Delete this transaction?')) {
-      const updatedAccounts = state.accounts.map(acc => {
-        if (acc.id === txn.accountId) {
-          return { ...acc, currentBalance: acc.currentBalance - txn.amount };
+      try {
+        if (isAuthenticated && !isDemoMode) {
+          await transactionService.deleteTransaction(id);
+          // Reload data from backend to get updated balances
+          const [accountsData, transactionsData] = await Promise.all([
+            globalContext.loadAccounts(),
+            globalContext.loadTransactions()
+          ]);
+          updateState({
+            accounts: accountsData,
+            transactions: transactionsData?.transactions || transactionsData
+          });
+        } else {
+          // Demo mode: Update local state with balance calculations
+          const updatedAccounts = state.accounts.map(acc => {
+            if (acc.id === txn.accountId) {
+              return { ...acc, currentBalance: acc.currentBalance - txn.amount };
+            }
+            if (txn.type === 'transfer' && acc.id === txn.transferAccountId) {
+              return { ...acc, currentBalance: acc.currentBalance + txn.amount };
+            }
+            return acc;
+          });
+          updateState({ transactions: state.transactions.filter(t => t.id !== id), accounts: updatedAccounts });
         }
-        if (txn.type === 'transfer' && acc.id === txn.transferAccountId) {
-          return { ...acc, currentBalance: acc.currentBalance + txn.amount };
-        }
-        return acc;
-      });
-      updateState({ transactions: state.transactions.filter(t => t.id !== id), accounts: updatedAccounts });
+      } catch (error) {
+        console.error('Failed to delete transaction:', error);
+        alert('Failed to delete transaction. Please try again.');
+      }
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Transactions</h2>
-        <button onClick={() => { setShowForm(true); setEditingTransaction(null); }} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Transactions</h2>
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Track your income, expenses, and transfers</p>
+        </div>
+        <button onClick={() => { setShowForm(true); setEditingTransaction(null); }} className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
           <span>Add Transaction</span>
         </button>
@@ -1014,69 +1161,73 @@ function TransactionsView() {
 
       {showForm && <TransactionForm transaction={editingTransaction} onClose={() => { setShowForm(false); setEditingTransaction(null); }} />}
 
-      <div className="flex space-x-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-          <input type="text" placeholder="Search transactions..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600 dark:text-white" />
+      <div className="glass-card">
+        <div className="flex-1 relative mb-6">
+          <Search className="absolute left-4 top-4 w-5 h-5 text-gray-400" />
+          <input type="text" placeholder="Search transactions..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-modern pl-12" />
         </div>
-      </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Payee</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Category</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Amount</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredTransactions.map(txn => {
-              const category = state.categories.find(c => c.id === txn.categoryId);
-              const subcategory = txn.subcategoryId ? state.categories.find(c => c.id === txn.subcategoryId) : null;
-              return (
-                <tr key={txn.id}>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{txn.date}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      txn.type === 'income' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                      txn.type === 'expense' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                    }`}>
-                      {txn.type === 'transfer' ? <ArrowRightLeft className="w-3 h-3 inline" /> : txn.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{txn.payee}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {category ? `${category.icon} ${category.name}` : 'Uncategorized'}
-                    {subcategory && ` > ${subcategory.name}`}
-                  </td>
-                  <td className={`px-6 py-4 text-sm text-right font-semibold ${txn.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>{txn.currency} {txn.amount.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end space-x-2">
-                      <button onClick={() => { setEditingTransaction(txn); setShowForm(true); }} className="text-blue-600 hover:text-blue-800">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(txn.id)} className="text-red-600 hover:text-red-800">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+        <div className="overflow-x-auto">
+          <table className="table-modern">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Payee</th>
+                <th>Category</th>
+                <th className="text-right">Amount</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.map(txn => {
+                const category = state.categories.find(c => c.id === txn.categoryId);
+                const subcategory = txn.subcategoryId ? state.categories.find(c => c.id === txn.subcategoryId) : null;
+                return (
+                  <tr key={txn.id}>
+                    <td>{txn.date || 'N/A'}</td>
+                    <td>
+                      <span className={`badge-modern ${
+                        txn.type === 'income' ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300' :
+                        txn.type === 'expense' ? 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300' :
+                        'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                      }`}>
+                        {txn.type === 'transfer' ? <ArrowRightLeft className="w-3 h-3 inline mr-1" /> : null}
+                        {txn.type}
+                      </span>
+                    </td>
+                    <td className="font-medium">{txn.payee || 'N/A'}</td>
+                    <td>
+                      {category ? `${category.icon} ${category.name}` : 'Uncategorized'}
+                      {subcategory && ` > ${subcategory.name}`}
+                    </td>
+                    <td className={`text-right font-semibold ${txn.amount >= 0 ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
+                      {txn.currency} {txn.amount.toLocaleString()}
+                    </td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => { setEditingTransaction(txn); setShowForm(true); }} className="p-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-button transition-all duration-hover">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(txn.id)} className="p-2 text-error-600 hover:text-error-800 dark:text-error-400 dark:hover:text-error-300 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-button transition-all duration-hover">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }
 
 function TransactionForm({ transaction, onClose }) {
-  const { state, updateState } = useApp();
+  const { state, updateState, isDemoMode, isAuthenticated } = useApp();
+  const globalContext = useGlobalApp();
   const [formData, setFormData] = useState(transaction ? {
     date: transaction.date,
     type: transaction.type,
@@ -1091,7 +1242,7 @@ function TransactionForm({ transaction, onClose }) {
   } : {
     date: new Date().toISOString().split('T')[0],
     type: 'expense',
-    accountId: state.accounts[0]?.id || '',
+    accountId: '',
     transferAccountId: '',
     payee: '',
     categoryId: '',
@@ -1101,113 +1252,219 @@ function TransactionForm({ transaction, onClose }) {
     memo: ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (transaction) {
-      const oldTxn = state.transactions.find(t => t.id === transaction.id);
-      const updatedAccounts = state.accounts.map(acc => {
-        // Step 1: Reverse the old transaction's effect
-        if (acc.id === oldTxn.accountId) {
-          // Reverse old transaction from source account
-          if (oldTxn.type === 'transfer') {
-            acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(oldTxn.amount) }; // Add back what was transferred
-          } else {
-            acc = { ...acc, currentBalance: acc.currentBalance - oldTxn.amount }; // Reverse income/expense
-          }
-        }
-        if (oldTxn.type === 'transfer' && acc.id === oldTxn.transferAccountId) {
-          // Reverse old transaction from destination account
-          acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(oldTxn.amount) }; // Remove what was received
-        }
 
-        // Step 2: Apply the new transaction's effect
-        if (acc.id === formData.accountId) {
-          // Apply new transaction to source account
-          if (formData.type === 'transfer') {
-            acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(parseFloat(formData.amount)) }; // Subtract transfer
-          } else {
-            acc = { ...acc, currentBalance: acc.currentBalance + (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
-          }
-        }
-        if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
-          // Apply new transaction to destination account
-          acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(parseFloat(formData.amount)) }; // Add transfer amount
-        }
-        return acc;
-      });
-      
-      updateState({
-        transactions: state.transactions.map(t => t.id === transaction.id ? {
-          ...formData,
-          id: transaction.id,
-          amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
-          isReconciled: t.isReconciled
-        } : t),
-        accounts: updatedAccounts
-      });
-    } else {
-      const newTxn = {
-        ...formData,
-        id: 'txn' + Date.now(),
-        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
-        isReconciled: false
-      };
-      
-      const updatedAccounts = state.accounts.map(acc => {
-        if (acc.id === formData.accountId) {
-          // For transfers, subtract from source account (amount is positive)
-          // For income/expense, use the signed amount
-          if (formData.type === 'transfer') {
-            return { ...acc, currentBalance: acc.currentBalance - Math.abs(newTxn.amount) };
-          }
-          return { ...acc, currentBalance: acc.currentBalance + newTxn.amount };
-        }
-        if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
-          // Add to destination account
-          return { ...acc, currentBalance: acc.currentBalance + Math.abs(newTxn.amount) };
-        }
-        return acc;
-      });
-      
-      updateState({ transactions: [...state.transactions, newTxn], accounts: updatedAccounts });
+    // Validate required fields
+    if (!formData.accountId) {
+      alert('Please select an account');
+      return;
     }
-    onClose();
+
+    if (formData.type !== 'transfer' && !formData.categoryId) {
+      alert('Please select a category');
+      return;
+    }
+
+    if (formData.type === 'transfer' && !formData.transferAccountId) {
+      alert('Please select a transfer destination account');
+      return;
+    }
+
+    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+      alert('Please enter a valid amount greater than 0');
+      return;
+    }
+
+    try {
+      // Map form fields to backend format
+      const txnData = {
+        type: formData.type,
+        accountId: formData.accountId,
+        toAccountId: formData.transferAccountId || null, // Map transferAccountId to toAccountId
+        categoryId: formData.categoryId || null,
+        subcategoryId: formData.subcategoryId || null,
+        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
+        currency: formData.currency,
+        description: formData.payee || '', // Map payee to description (optional)
+        date: formData.date,
+        notes: formData.memo || null, // Map memo to notes
+        reconciled: false
+      };
+
+      if (transaction) {
+        // Update existing transaction
+        if (isAuthenticated && !isDemoMode) {
+          await transactionService.updateTransaction(transaction.id, txnData);
+          // Reload data from backend to get updated balances
+          const [accountsData, transactionsData] = await Promise.all([
+            globalContext.loadAccounts(),
+            globalContext.loadTransactions()
+          ]);
+          updateState({
+            accounts: accountsData,
+            transactions: transactionsData?.transactions || transactionsData
+          });
+        } else {
+          // Demo mode: Update local state with balance calculations
+          const oldTxn = state.transactions.find(t => t.id === transaction.id);
+          const updatedAccounts = state.accounts.map(acc => {
+            // Reverse old transaction
+            if (acc.id === oldTxn.accountId) {
+              if (oldTxn.type === 'transfer') {
+                acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(oldTxn.amount) };
+              } else {
+                acc = { ...acc, currentBalance: acc.currentBalance - oldTxn.amount };
+              }
+            }
+            if (oldTxn.type === 'transfer' && acc.id === oldTxn.transferAccountId) {
+              acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(oldTxn.amount) };
+            }
+
+            // Apply new transaction
+            if (acc.id === formData.accountId) {
+              if (formData.type === 'transfer') {
+                acc = { ...acc, currentBalance: acc.currentBalance - Math.abs(parseFloat(formData.amount)) };
+              } else {
+                acc = { ...acc, currentBalance: acc.currentBalance + (formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount))) };
+              }
+            }
+            if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
+              acc = { ...acc, currentBalance: acc.currentBalance + Math.abs(parseFloat(formData.amount)) };
+            }
+            return acc;
+          });
+
+          updateState({
+            transactions: state.transactions.map(t => t.id === transaction.id ? {
+              ...txnData,
+              id: transaction.id,
+              isReconciled: t.isReconciled
+            } : t),
+            accounts: updatedAccounts
+          });
+        }
+      } else {
+        // Create new transaction
+        let newTxn;
+        if (isAuthenticated && !isDemoMode) {
+          newTxn = await transactionService.createTransaction(txnData);
+          // Reload data from backend to get updated balances
+          const [accountsData, transactionsData] = await Promise.all([
+            globalContext.loadAccounts(),
+            globalContext.loadTransactions()
+          ]);
+          updateState({
+            accounts: accountsData,
+            transactions: transactionsData?.transactions || transactionsData
+          });
+        } else {
+          // Demo mode: Update local state with balance calculations
+          newTxn = {
+            ...txnData,
+            id: 'txn' + Date.now(),
+            isReconciled: false
+          };
+
+          const updatedAccounts = state.accounts.map(acc => {
+            if (acc.id === formData.accountId) {
+              if (formData.type === 'transfer') {
+                return { ...acc, currentBalance: acc.currentBalance - Math.abs(newTxn.amount) };
+              }
+              return { ...acc, currentBalance: acc.currentBalance + newTxn.amount };
+            }
+            if (formData.type === 'transfer' && acc.id === formData.transferAccountId) {
+              return { ...acc, currentBalance: acc.currentBalance + Math.abs(newTxn.amount) };
+            }
+            return acc;
+          });
+
+          updateState({ transactions: [...state.transactions, newTxn], accounts: updatedAccounts });
+        }
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save transaction:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Original error:', error.originalError);
+      console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+
+      // Try to extract the most detailed error message
+      const errorData = error.originalError?.response?.data
+        || error.response?.data
+        || {};
+
+      const errorMessage = errorData.message
+        || errorData.error
+        || errorData.details
+        || error.message
+        || 'Unknown error occurred';
+
+      // If there are validation details, show them
+      let detailsText = '';
+      if (errorData.details && typeof errorData.details === 'object') {
+        detailsText = '\n\nDetails:\n' + JSON.stringify(errorData.details, null, 2);
+      }
+
+      alert(`Failed to save transaction: ${errorMessage}${detailsText}\n\nCheck browser console for full details.`);
+    }
   };
 
   const filteredCategories = state.categories.filter(c => c.type === formData.type && !c.parentId);
   const subcategories = formData.categoryId ? state.categories.filter(c => c.parentId === formData.categoryId) : [];
 
+  // Debug: Log available categories
+  console.log('=== TRANSACTION FORM CATEGORIES DEBUG ===');
+  console.log('Total categories in state:', state.categories.length);
+  console.log('All categories:', state.categories);
+  console.log('Filtered categories for', formData.type, ':', filteredCategories);
+  console.log('Selected category ID:', formData.categoryId);
+  console.log('======================================');
+
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{transaction ? 'Edit Transaction' : 'Add Transaction'}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="glass-card animate-fade-in">
+      <h3 className="text-2xl font-bold text-gradient mb-6">{transaction ? 'Edit Transaction' : 'Add Transaction'}</h3>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date *</label>
-            <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Date *</label>
+            <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="input-modern" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value, categoryId: '', subcategoryId: '' })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Type *</label>
+            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value, categoryId: '', subcategoryId: '' })} className="input-modern">
               <option value="income">Income</option>
               <option value="expense">Expense</option>
               <option value="transfer">Transfer</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Account *</label>
-            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">From Account *</label>
+            <select
+              value={formData.accountId}
+              onChange={e => {
+                const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
+                setFormData({
+                  ...formData,
+                  accountId: e.target.value,
+                  currency: selectedAccount?.currency || 'EUR' // Set currency from selected account
+                });
+              }}
+              className="input-modern"
+              required
+            >
               <option value="">Select Account</option>
               {state.accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                <option key={acc.id} value={acc.id}>
+                  {acc.name}{acc.currency ? ` (${acc.currency})` : ''}
+                </option>
               ))}
             </select>
           </div>
           {formData.type === 'transfer' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Account *</label>
-              <select value={formData.transferAccountId} onChange={e => setFormData({ ...formData, transferAccountId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">To Account *</label>
+              <select value={formData.transferAccountId} onChange={e => setFormData({ ...formData, transferAccountId: e.target.value })} className="input-modern" required>
                 <option value="">To Account</option>
                 {state.accounts.filter(a => a.id !== formData.accountId).map(acc => (
                   <option key={acc.id} value={acc.id}>{acc.name}</option>
@@ -1216,14 +1473,14 @@ function TransactionForm({ transaction, onClose }) {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payee</label>
-            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Payee</label>
+            <input type="text" placeholder="e.g., Supermarket (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="input-modern" />
           </div>
           {formData.type !== 'transfer' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-                <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Category *</label>
+                <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })} className="input-modern" required>
                   <option value="">Select Category</option>
                   {filteredCategories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
@@ -1232,8 +1489,8 @@ function TransactionForm({ transaction, onClose }) {
               </div>
               {subcategories.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subcategory</label>
-                  <select value={formData.subcategoryId} onChange={e => setFormData({ ...formData, subcategoryId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Subcategory</label>
+                  <select value={formData.subcategoryId} onChange={e => setFormData({ ...formData, subcategoryId: e.target.value })} className="input-modern">
                     <option value="">Select Subcategory (Optional)</option>
                     {subcategories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
@@ -1244,17 +1501,17 @@ function TransactionForm({ transaction, onClose }) {
             </>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount *</label>
-            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Amount *</label>
+            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="input-modern" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Memo</label>
-            <input type="text" placeholder="Memo" value={formData.memo} onChange={e => setFormData({ ...formData, memo: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Memo</label>
+            <input type="text" placeholder="Memo" value={formData.memo} onChange={e => setFormData({ ...formData, memo: e.target.value })} className="input-modern" />
           </div>
         </div>
-        <div className="flex space-x-2">
-          <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{transaction ? 'Update' : 'Add'} Transaction</button>
-          <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+        <div className="flex gap-4">
+          <button type="submit" className="btn-primary">{transaction ? 'Update' : 'Add'} Transaction</button>
+          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
         </div>
       </form>
     </div>
@@ -1292,9 +1549,12 @@ function CategoriesView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Categories</h2>
-        <button onClick={() => { setShowForm(true); setEditingCategory(null); }} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Categories</h2>
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-1">Organize your transactions</p>
+        </div>
+        <button onClick={() => { setShowForm(true); setEditingCategory(null); }} className="btn-primary flex items-center space-x-2">
           <Plus className="w-4 h-4" />
           <span>Add Category</span>
         </button>
@@ -1303,12 +1563,14 @@ function CategoriesView() {
       {showForm && <CategoryForm category={editingCategory} onClose={() => { setShowForm(false); setEditingCategory(null); }} />}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-semibold mb-4 text-green-600">Income Categories</h3>
+        <div className="glass-card">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span className="text-success-600 dark:text-success-400">Income Categories</span>
+          </h3>
           <div className="space-y-2">
             {incomeCategories.map(cat => (
               <div key={cat.id}>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm">
                   <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
                   <div className="relative">
                     <button
@@ -1345,7 +1607,7 @@ function CategoriesView() {
                   </div>
                 </div>
                 {getSubcategories(cat.id).map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-100 dark:bg-gray-600 rounded-lg mt-1">
+                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-50 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg mt-1">
                     <span className="text-gray-900 dark:text-white text-sm">{sub.icon} {sub.name}</span>
                     <div className="relative">
                       <button
@@ -1387,12 +1649,14 @@ function CategoriesView() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-semibold mb-4 text-red-600">Expense Categories</h3>
+        <div className="glass-card">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span className="text-error-600 dark:text-error-400">Expense Categories</span>
+          </h3>
           <div className="space-y-2">
             {expenseCategories.map(cat => (
               <div key={cat.id}>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm">
                   <span className="text-gray-900 dark:text-white font-medium">{cat.icon} {cat.name}</span>
                   <div className="relative">
                     <button
@@ -1429,7 +1693,7 @@ function CategoriesView() {
                   </div>
                 </div>
                 {getSubcategories(cat.id).map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-100 dark:bg-gray-600 rounded-lg mt-1">
+                  <div key={sub.id} className="flex items-center justify-between p-2 pl-8 bg-gray-50 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg mt-1">
                     <span className="text-gray-900 dark:text-white text-sm">{sub.icon} {sub.name}</span>
                     <div className="relative">
                       <button
@@ -1522,27 +1786,27 @@ function CategoryForm({ category, onClose }) {
   const parentCategories = state.categories.filter(c => c.type === formData.type && !c.parentId && c.id !== category?.id);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{category ? 'Edit Category' : 'Add Category'}</h3>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="glass-card animate-fade-in">
+      <h3 className="text-2xl font-bold text-gradient mb-6">{category ? 'Edit Category' : 'Add Category'}</h3>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category Name *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Category Name *</label>
             <input
               type="text"
               placeholder="Category Name"
               value={formData.name}
               onChange={e => handleNameChange(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Type *</label>
             <select
               value={formData.type}
               onChange={e => setFormData({ ...formData, type: e.target.value, parentId: null, icon: getAutoIcon(formData.name, e.target.value) })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={!!category}
             >
               <option value="income">Income</option>
@@ -1550,11 +1814,11 @@ function CategoryForm({ category, onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parent Category</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Parent Category</label>
             <select
               value={formData.parentId || ''}
               onChange={e => setFormData({ ...formData, parentId: e.target.value || null })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
             >
               <option value="">No Parent (Main Category)</option>
               {parentCategories.map(cat => (
@@ -1563,13 +1827,13 @@ function CategoryForm({ category, onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon (Emoji)</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">Icon (Emoji)</label>
             <input
               type="text"
               placeholder="Icon (emoji) - auto-assigned"
               value={formData.icon}
               onChange={e => handleIconChange(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="input-modern"
               maxLength="2"
             />
           </div>
@@ -1577,9 +1841,9 @@ function CategoryForm({ category, onClose }) {
         <p className="text-xs text-gray-500 dark:text-gray-400">
           💡 Tip: Icon is automatically assigned based on category name. You can override it by typing your own emoji.
         </p>
-        <div className="flex space-x-2">
-          <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{category ? 'Update' : 'Add'} Category</button>
-          <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
+        <div className="flex gap-4">
+          <button type="submit" className="btn-primary">{category ? 'Update' : 'Add'} Category</button>
+          <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
         </div>
       </form>
     </div>
@@ -1642,12 +1906,15 @@ function RecurringView() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Recurring & Templates</h2>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gradient">Recurring & Templates</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Automate recurring transactions and save templates</p>
+      </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Recurring Transactions</h3>
-          <button onClick={() => setShowRecurringForm(true)} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">Recurring Transactions</h3>
+          <button onClick={() => setShowRecurringForm(true)} className="btn-primary flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Add Recurring</span>
           </button>
@@ -1655,12 +1922,12 @@ function RecurringView() {
 
         {showRecurringForm && <RecurringForm recurring={editingRecurring} onClose={() => { setShowRecurringForm(false); setEditingRecurring(null); }} />}
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {state.recurringTransactions.map(rec => {
             const account = state.accounts.find(a => a.id === rec.accountId);
             const category = state.categories.find(c => c.id === rec.categoryId);
             return (
-              <div key={rec.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div key={rec.id} className="glass-card animate-fade-in hover:shadow-card-hover transition-all duration-card">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{rec.name}</h3>
@@ -1668,11 +1935,11 @@ function RecurringView() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">Every {rec.interval} {rec.frequency}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Last processed: {rec.lastProcessed || 'Never'}</p>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <p className={`text-lg font-semibold ${rec.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className="flex items-center gap-4">
+                    <p className={`text-lg font-semibold ${rec.amount >= 0 ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
                       {rec.currency} {rec.amount.toLocaleString()}
                     </p>
-                    <button onClick={() => processRecurring(rec.id)} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                    <button onClick={() => processRecurring(rec.id)} className="px-4 py-2 bg-success-600 hover:bg-success-700 text-white rounded-button font-medium shadow-card transition-all duration-hover active:scale-95 text-sm">
                       Process Now
                     </button>
                     <div className="relative">
@@ -1716,10 +1983,10 @@ function RecurringView() {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6 mt-8">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Templates</h3>
-          <button onClick={() => setShowTemplateForm(true)} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">Templates</h3>
+          <button onClick={() => setShowTemplateForm(true)} className="btn-primary flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Add Template</span>
           </button>
@@ -1727,11 +1994,11 @@ function RecurringView() {
 
         {showTemplateForm && <TemplateForm template={editingTemplate} onClose={() => { setShowTemplateForm(false); setEditingTemplate(null); }} />}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {state.templates.map(tpl => {
             const category = state.categories.find(c => c.id === tpl.categoryId);
             return (
-              <div key={tpl.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div key={tpl.id} className="glass-card animate-fade-in hover:shadow-card-hover transition-all duration-card">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tpl.name}</h3>
                   <div className="relative">
@@ -1847,39 +2114,39 @@ function RecurringForm({ recurring, onClose }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
-            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="income">Income</option>
               <option value="expense">Expense</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account *</label>
-            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               {state.accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payee</label>
-            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               <option value="">Select Category</option>
               {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount *</label>
-            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency *</label>
-            <select value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -1888,7 +2155,7 @@ function RecurringForm({ recurring, onClose }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interval *</label>
-            <input type="number" placeholder="Interval" value={formData.interval} onChange={e => setFormData({ ...formData, interval: parseInt(e.target.value) })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="number" placeholder="Interval" value={formData.interval} onChange={e => setFormData({ ...formData, interval: parseInt(e.target.value) })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
         </div>
         <div className="flex space-x-2">
@@ -1958,35 +2225,35 @@ function TemplateForm({ template, onClose }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Template Name *</label>
-            <input type="text" placeholder="Template Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="text" placeholder="Template Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
-            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
               <option value="income">Income</option>
               <option value="expense">Expense</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account *</label>
-            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.accountId} onChange={e => setFormData({ ...formData, accountId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               {state.accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payee</label>
-            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            <input type="text" placeholder="Payee (Optional)" value={formData.payee} onChange={e => setFormData({ ...formData, payee: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category *</label>
-            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+            <select value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required>
               <option value="">Select Category</option>
               {filteredCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount *</label>
-            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            <input type="number" step="0.01" placeholder="Amount" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary" required />
           </div>
         </div>
         <div className="flex space-x-2">
@@ -2056,12 +2323,15 @@ function BudgetView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Budget</h2>
-        <div className="flex items-center space-x-4">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Budget</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Track spending against your monthly budgets</p>
+        </div>
+        <div className="flex items-center gap-4">
           <button
             onClick={() => changeMonth(-1)}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="btn-icon bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             <ChevronLeft className="w-5 h-5 text-gray-900 dark:text-white" />
           </button>
@@ -2070,13 +2340,13 @@ function BudgetView() {
           </span>
           <button
             onClick={() => changeMonth(1)}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="btn-icon bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             <ChevronRight className="w-5 h-5 text-gray-900 dark:text-white" />
           </button>
           <button
             onClick={() => { setShowForm(true); setEditingBudget(null); }}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="btn-primary flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
             <span>Add Budget</span>
@@ -2092,52 +2362,58 @@ function BudgetView() {
         />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="stat-card">
+          <div className="flex items-center justify-between relative z-10">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Budgeted</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 €{totalBudgeted.toLocaleString()}
               </p>
             </div>
-            <TrendingUp className="w-8 h-8 text-blue-600" />
+            <div className="bg-gradient-primary p-3 rounded-button">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
+        <div className="stat-card">
+          <div className="flex items-center justify-between relative z-10">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Spent</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 €{totalSpent.toLocaleString()}
               </p>
             </div>
-            <TrendingDown className="w-8 h-8 text-red-600" />
+            <div className="bg-error-600 p-3 rounded-button">
+              <TrendingDown className="w-6 h-6 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
+        <div className="stat-card">
+          <div className="flex items-center justify-between relative z-10">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                 {totalRemaining >= 0 ? 'Remaining' : 'Overspent'}
               </p>
-              <p className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
                 €{Math.abs(totalRemaining).toLocaleString()}
               </p>
             </div>
-            {totalRemaining >= 0 ? (
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            ) : (
-              <AlertCircle className="w-8 h-8 text-red-600" />
-            )}
+            <div className={`p-3 rounded-button ${totalRemaining >= 0 ? 'bg-success-600' : 'bg-error-600'}`}>
+              {totalRemaining >= 0 ? (
+                <CheckCircle className="w-6 h-6 text-white" />
+              ) : (
+                <AlertCircle className="w-6 h-6 text-white" />
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {monthBudgets.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-center">
+        <div className="glass-card p-12 text-center animate-fade-in">
           <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             No Budgets for {formatMonthDisplay(selectedMonth)}
@@ -2147,38 +2423,26 @@ function BudgetView() {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="btn-primary"
           >
             Create Your First Budget
           </button>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+            <table className="table-modern">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Budgeted
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Spent
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Remaining
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Progress
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                    Actions
-                  </th>
+                  <th>Category</th>
+                  <th className="text-right">Budgeted</th>
+                  <th className="text-right">Spent</th>
+                  <th className="text-right">Remaining</th>
+                  <th>Progress</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody>
                 {monthBudgets.map(budget => {
                   const category = expenseCategories.find(c => c.id === budget.categoryId);
                   if (!category) return null;
@@ -2189,60 +2453,54 @@ function BudgetView() {
                   const isOverBudget = remaining < 0;
 
                   return (
-                    <tr key={budget.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
+                    <tr key={budget.id}>
+                      <td>
+                        <div className="flex items-center gap-2">
                           <span className="text-2xl">{category.icon}</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {category.name}
-                          </span>
+                          <span className="font-medium">{category.name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          €{budget.budgeted.toLocaleString()}
-                        </span>
+                      <td className="text-right font-semibold">
+                        €{budget.budgeted.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          €{spent.toLocaleString()}
-                        </span>
+                      <td className="text-right font-semibold">
+                        €{spent.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className={`text-sm font-semibold ${
-                          isOverBudget ? 'text-red-600' : 'text-green-600'
+                      <td className="text-right">
+                        <span className={`font-semibold ${
+                          isOverBudget ? 'text-error-600 dark:text-error-400' : 'text-success-600 dark:text-success-400'
                         }`}>
                           {isOverBudget && '-'}€{Math.abs(remaining).toLocaleString()}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
+                      <td>
+                        <div className="flex items-center gap-3">
                           <div className="flex-1">
                             <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                               <div
-                                className={`h-2 rounded-full transition-all ${
+                                className={`h-2 rounded-full transition-all duration-chart ${
                                   isOverBudget
-                                    ? 'bg-red-600'
+                                    ? 'bg-error-600'
                                     : percentSpent > 80
-                                    ? 'bg-yellow-500'
-                                    : 'bg-green-600'
+                                    ? 'bg-warning-500'
+                                    : 'bg-success-600'
                                 }`}
                                 style={{ width: `${Math.min(percentSpent, 100)}%` }}
                               />
                             </div>
                           </div>
-                          <span className={`text-xs font-medium ${
+                          <span className={`text-xs font-medium min-w-[3rem] text-right ${
                             isOverBudget
-                              ? 'text-red-600'
+                              ? 'text-error-600 dark:text-error-400'
                               : percentSpent > 80
-                              ? 'text-yellow-600'
-                              : 'text-green-600'
+                              ? 'text-warning-600 dark:text-warning-400'
+                              : 'text-success-600 dark:text-success-400'
                           }`}>
                             {percentSpent.toFixed(0)}%
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="text-right">
                         <div className="relative inline-block">
                           <button
                             onClick={() => setOpenMenuId(openMenuId === budget.id ? null : budget.id)}
@@ -2355,7 +2613,7 @@ function BudgetForm({ budget, month, onClose }) {
             <select
               value={formData.categoryId}
               onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
               disabled={!!budget} // Disable changing category when editing
             >
@@ -2378,7 +2636,7 @@ function BudgetForm({ budget, month, onClose }) {
               value={formData.budgeted}
               onChange={e => setFormData({ ...formData, budgeted: e.target.value })}
               placeholder="1000"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -2437,11 +2695,14 @@ function GoalsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Goals</h2>
-        <button 
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Financial Goals</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Track progress towards your savings goals</p>
+        </div>
+        <button
           onClick={() => { setShowForm(true); setEditingGoal(null); }}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="btn-primary flex items-center space-x-2"
         >
           <Plus className="w-4 h-4" />
           <span>Add Goal</span>
@@ -2449,14 +2710,14 @@ function GoalsView() {
       </div>
 
       {showForm && (
-        <GoalForm 
-          goal={editingGoal} 
-          onClose={() => { setShowForm(false); setEditingGoal(null); }} 
+        <GoalForm
+          goal={editingGoal}
+          onClose={() => { setShowForm(false); setEditingGoal(null); }}
         />
       )}
 
       {goalsWithLinkedAccounts.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-center">
+        <div className="glass-card p-12 text-center animate-fade-in">
           <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             No Goals Yet
@@ -2464,9 +2725,9 @@ function GoalsView() {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Start by creating your first financial goal
           </p>
-          <button 
+          <button
             onClick={() => setShowForm(true)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="btn-primary"
           >
             Create Your First Goal
           </button>
@@ -2479,15 +2740,15 @@ function GoalsView() {
             const daysUntilTarget = Math.ceil((new Date(goal.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
             const isOverdue = daysUntilTarget < 0;
             const isCompleted = goal.currentAmount >= goal.targetAmount;
-            
-            const linkedAccount = goal.linkedAccountId 
+
+            const linkedAccount = goal.linkedAccountId
               ? state.accounts.find(a => a.id === goal.linkedAccountId)
               : null;
 
             return (
-              <div 
-                key={goal.id} 
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+              <div
+                key={goal.id}
+                className="glass-card overflow-hidden animate-fade-in hover:shadow-card-hover transition-all duration-card"
               >
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex justify-between items-start mb-4">
@@ -2686,13 +2947,13 @@ function GoalForm({ goal, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Emergency Fund, Vacation, New Car"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Target Amount (€)
             </label>
             <input
@@ -2701,19 +2962,19 @@ function GoalForm({ goal, onClose }) {
               value={formData.targetAmount}
               onChange={e => setFormData({ ...formData, targetAmount: e.target.value })}
               placeholder="10000"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Target Date
             </label>
             <input
               type="date"
               value={formData.targetDate}
               onChange={e => setFormData({ ...formData, targetDate: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -2725,7 +2986,7 @@ function GoalForm({ goal, onClose }) {
           <select
             value={formData.linkedAccountId || ''}
             onChange={e => setFormData({ ...formData, linkedAccountId: e.target.value })}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">No Account Link</option>
             {savingsAccounts.map(acc => (
@@ -2741,7 +3002,7 @@ function GoalForm({ goal, onClose }) {
 
         {!goal && !formData.linkedAccountId && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Initial Amount (€)
             </label>
             <input
@@ -2750,7 +3011,7 @@ function GoalForm({ goal, onClose }) {
               value={formData.currentAmount}
               onChange={e => setFormData({ ...formData, currentAmount: e.target.value })}
               placeholder="Enter initial amount"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         )}
@@ -2892,11 +3153,14 @@ function DebtPayoffView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Debt Payoff</h2>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Debt Payoff</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Create strategies to pay off your debts faster</p>
+        </div>
         <button
           onClick={() => { setShowPlanForm(true); setEditingPlan(null); }}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="btn-primary flex items-center space-x-2"
         >
           <Plus className="w-4 h-4" />
           <span>Create Plan</span>
@@ -3126,20 +3390,20 @@ function DebtPayoffPlanForm({ plan, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Credit Card Payoff 2025"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Payoff Strategy
             </label>
             <select
               value={formData.strategy}
               onChange={e => setFormData({ ...formData, strategy: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="avalanche">Avalanche (Highest Interest First)</option>
               <option value="snowball">Snowball (Smallest Balance First)</option>
@@ -3147,7 +3411,7 @@ function DebtPayoffPlanForm({ plan, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Extra Monthly Payment (€)
             </label>
             <input
@@ -3156,7 +3420,7 @@ function DebtPayoffPlanForm({ plan, onClose }) {
               value={formData.extraMonthlyPayment}
               onChange={e => setFormData({ ...formData, extraMonthlyPayment: e.target.value })}
               placeholder="200"
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -3229,35 +3493,38 @@ function InsightsView() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Insights</h2>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gradient">Financial Insights</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analyze your spending patterns and trends</p>
+      </div>
 
-      <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setActiveTab('spending')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-3 font-medium transition-all duration-hover ${
             activeTab === 'spending'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
+              ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
           Spending Analysis
         </button>
         <button
           onClick={() => setActiveTab('comparison')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-3 font-medium transition-all duration-hover ${
             activeTab === 'comparison'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
+              ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
           Period Comparison
         </button>
         <button
           onClick={() => setActiveTab('alerts')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-3 font-medium transition-all duration-hover ${
             activeTab === 'alerts'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
+              ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600'
+              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
           Smart Alerts
@@ -3686,20 +3953,20 @@ function AlertForm({ alert, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Food Budget Alert"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Alert Type
             </label>
             <select
               value={formData.type}
               onChange={e => setFormData({ ...formData, type: e.target.value, categoryId: '', accountId: '' })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="budget">Budget Alert</option>
               <option value="balance">Balance Alert</option>
@@ -3708,13 +3975,13 @@ function AlertForm({ alert, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Condition
             </label>
             <select
               value={formData.condition}
               onChange={e => setFormData({ ...formData, condition: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="exceeds">Exceeds</option>
               <option value="below">Falls Below</option>
@@ -3733,20 +4000,20 @@ function AlertForm({ alert, onClose }) {
             value={formData.threshold}
             onChange={e => setFormData({ ...formData, threshold: e.target.value })}
             placeholder="500"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         {formData.type === 'budget' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Category
             </label>
             <select
               value={formData.categoryId}
               onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Select Category</option>
               {state.categories.filter(c => c.type === 'expense' && !c.parentId).map(cat => (
@@ -3758,13 +4025,13 @@ function AlertForm({ alert, onClose }) {
 
         {formData.type === 'balance' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Account
             </label>
             <select
               value={formData.accountId}
               onChange={e => setFormData({ ...formData, accountId: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Select Account</option>
               {state.accounts.map(acc => (
@@ -4117,20 +4384,20 @@ function AutoCatRule({ rule, onClose }) {
             value={formData.name}
             onChange={e => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Supermarket Auto-Cat"
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Match Field
             </label>
             <select
               value={formData.matchField}
               onChange={e => setFormData({ ...formData, matchField: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="payee">Payee</option>
               <option value="memo">Memo</option>
@@ -4139,7 +4406,7 @@ function AutoCatRule({ rule, onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Match Value
             </label>
             <input
@@ -4147,7 +4414,7 @@ function AutoCatRule({ rule, onClose }) {
               value={formData.matchValue}
               onChange={e => setFormData({ ...formData, matchValue: e.target.value })}
               placeholder={formData.matchField === 'amount' ? '50.00' : 'Search text'}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
           </div>
@@ -4155,13 +4422,13 @@ function AutoCatRule({ rule, onClose }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Category
             </label>
             <select
               value={formData.categoryId}
               onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               required
             >
               <option value="">Select Category</option>
@@ -4173,13 +4440,13 @@ function AutoCatRule({ rule, onClose }) {
 
           {subcategories.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                 Subcategory (Optional)
               </label>
               <select
                 value={formData.subcategoryId}
                 onChange={e => setFormData({ ...formData, subcategoryId: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None</option>
                 {subcategories.map(cat => (
@@ -4199,7 +4466,7 @@ function AutoCatRule({ rule, onClose }) {
             min="1"
             value={formData.priority}
             onChange={e => setFormData({ ...formData, priority: e.target.value })}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
@@ -4284,8 +4551,11 @@ function ReportsView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Reports</h2>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gradient">Financial Reports</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Generate detailed reports and export your data</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -4302,36 +4572,36 @@ function ReportsView() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Start Date
             </label>
             <input
               type="date"
               value={filters.startDate}
               onChange={e => setFilters({ ...filters, startDate: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               End Date
             </label>
             <input
               type="date"
               value={filters.endDate}
               onChange={e => setFilters({ ...filters, endDate: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Accounts ({filters.accountIds.length} selected)
             </label>
             <div className="relative">
               <select
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                 onChange={e => toggleAccountFilter(e.target.value)}
                 value=""
               >
@@ -4346,12 +4616,12 @@ function ReportsView() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
               Categories ({filters.categoryIds.length} selected)
             </label>
             <div className="relative">
               <select
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                 onChange={e => toggleCategoryFilter(e.target.value)}
                 value=""
               >
@@ -4928,11 +5198,15 @@ function CustomReportBuilder({ transactions, filters }) {
     </div>
   );
 }
-function SettingsView() {
-  const { state, updateState } = useApp();
+function SettingsView({ setTheme, currentUser }) {
+  const { state, updateState, isDemoMode } = useApp();
+  const globalContext = useGlobalApp();
   const [activeTab, setActiveTab] = useState('profile');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetInput, setResetInput] = useState('');
+  const [showResetCategoriesConfirm, setShowResetCategoriesConfirm] = useState(false);
+  const [isResettingCategories, setIsResettingCategories] = useState(false);
+  const [resetCategoriesResult, setResetCategoriesResult] = useState(null);
 
   const refreshExchangeRates = () => {
     // Simulating exchange rate refresh - in production, this would call an API
@@ -4947,30 +5221,65 @@ function SettingsView() {
 
   const handleStartOver = () => {
     if (resetInput === 'DELETE ALL DATA') {
-      // Reset to initial state
+      // Reset to demo data in demo mode, or empty state in authenticated mode
+      const resetData = isDemoMode ? demoData : getEmptyState();
       updateState({
-        accounts: initialState.accounts,
-        transactions: initialState.transactions,
-        categories: initialState.categories,
-        budgets: initialState.budgets,
-        goals: initialState.goals,
-        recurringTransactions: initialState.recurringTransactions,
-        templates: initialState.templates,
-        debtPayoffPlans: initialState.debtPayoffPlans,
-        alerts: initialState.alerts,
-        autoCategorization: initialState.autoCategorization
+        accounts: resetData.accounts,
+        transactions: resetData.transactions,
+        categories: resetData.categories,
+        budgets: resetData.budgets,
+        goals: resetData.goals,
+        recurringTransactions: resetData.recurringTransactions,
+        templates: resetData.templates,
+        debtPayoffPlans: resetData.debtPayoffPlans,
+        alerts: resetData.alerts,
+        autoCategorization: resetData.autoCategorization
       });
       setShowResetConfirm(false);
       setResetInput('');
-      alert('All data has been reset to defaults!');
+      alert(isDemoMode ? 'All data has been reset to demo defaults!' : 'All data has been cleared!');
     } else {
       alert('Please type "DELETE ALL DATA" exactly to confirm.');
     }
   };
 
+  const handleResetCategories = async () => {
+    try {
+      setIsResettingCategories(true);
+      setResetCategoriesResult(null);
+
+      console.log('🔄 Starting category reset...');
+      const newCategories = await globalContext.resetCategories();
+
+      // Update local state with new categories
+      updateState({ categories: newCategories });
+
+      setResetCategoriesResult({
+        success: true,
+        message: `Successfully reset ${newCategories.length} categories!`,
+        count: newCategories.length
+      });
+
+      console.log('✅ Category reset complete!');
+    } catch (error) {
+      console.error('❌ Category reset failed:', error);
+      setResetCategoriesResult({
+        success: false,
+        message: error.message || 'Failed to reset categories. Please try again.',
+        error: error
+      });
+    } finally {
+      setIsResettingCategories(false);
+      setShowResetCategoriesConfirm(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h2>
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gradient">Settings</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage your preferences and account settings</p>
+      </div>
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
@@ -5043,33 +5352,33 @@ function SettingsView() {
             <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">User Profile</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={state.user.name}
                   onChange={e => updateState({ user: { ...state.user, name: e.target.value }})}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter your name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <input
                   type="email"
                   value={state.user.email}
                   onChange={e => updateState({ user: { ...state.user, email: e.target.value }})}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="your.email@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   User ID
                 </label>
                 <input
@@ -5089,14 +5398,14 @@ function SettingsView() {
             <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Appearance</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Theme
                 </label>
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => updateState({ user: { ...state.user, theme: 'light' }})}
+                    onClick={() => setTheme('light')}
                     className={`flex-1 p-4 border-2 rounded-lg transition-all ${
-                      state.user.theme === 'light'
+                      currentUser?.theme === 'light'
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-blue-400'
                     }`}
@@ -5107,9 +5416,9 @@ function SettingsView() {
                     </div>
                   </button>
                   <button
-                    onClick={() => updateState({ user: { ...state.user, theme: 'dark' }})}
+                    onClick={() => setTheme('dark')}
                     className={`flex-1 p-4 border-2 rounded-lg transition-all ${
-                      state.user.theme === 'dark'
+                      currentUser?.theme === 'dark'
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-blue-400'
                     }`}
@@ -5121,7 +5430,7 @@ function SettingsView() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Current theme: <span className="font-semibold capitalize">{state.user.theme}</span>
+                  Current theme: <span className="font-semibold capitalize">{currentUser?.theme}</span>
                 </p>
               </div>
             </div>
@@ -5137,13 +5446,13 @@ function SettingsView() {
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Base Currency</h3>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                 Select your primary currency
               </label>
               <select
                 value={state.user.baseCurrency}
                 onChange={e => updateState({ user: { ...state.user, baseCurrency: e.target.value }})}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="EUR">EUR - Euro (€)</option>
                 <option value="USD">USD - US Dollar ($)</option>
@@ -5213,7 +5522,7 @@ function SettingsView() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Monthly Income Goal (€)
                 </label>
                 <input
@@ -5223,7 +5532,7 @@ function SettingsView() {
                   onChange={e => updateState({ 
                     user: { ...state.user, monthlyIncomeGoal: parseFloat(e.target.value) || 0 }
                   })}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="5000"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -5232,7 +5541,7 @@ function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                   Monthly Savings Goal (€)
                 </label>
                 <input
@@ -5242,7 +5551,7 @@ function SettingsView() {
                   onChange={e => updateState({ 
                     user: { ...state.user, monthlySavingsGoal: parseFloat(e.target.value) || 0 }
                   })}
-                  className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="1000"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -5286,7 +5595,7 @@ function SettingsView() {
               Select which account should be pre-selected when adding new transactions
             </p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-300 mb-2">
                 Default Account
               </label>
               <select
@@ -5294,7 +5603,7 @@ function SettingsView() {
                 onChange={e => updateState({ 
                   user: { ...state.user, defaultAccountId: e.target.value }
                 })}
-                className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">None (Always ask)</option>
                 {state.accounts.map(acc => (
@@ -5436,6 +5745,105 @@ function SettingsView() {
                 <p className="text-2xl font-bold text-orange-600">{state.goals.length}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Goals</p>
               </div>
+            </div>
+          </div>
+
+          {/* Reset Categories Section */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+              Category Management
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Reset your categories to default settings. This will delete all custom categories and restore the original category structure.
+            </p>
+
+            {/* Show result message if exists */}
+            {resetCategoriesResult && (
+              <div className={`mb-4 p-4 rounded-lg ${
+                resetCategoriesResult.success
+                  ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                  : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  {resetCategoriesResult.success ? (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                  )}
+                  <p className={`text-sm font-medium ${
+                    resetCategoriesResult.success ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
+                  }`}>
+                    {resetCategoriesResult.message}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowResetCategoriesConfirm(true)}
+              disabled={isResettingCategories}
+              className="w-full flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors border border-orange-200 dark:border-orange-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-center space-x-3">
+                <RefreshCw className={`w-5 h-5 text-orange-600 ${isResettingCategories ? 'animate-spin' : ''}`} />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {isResettingCategories ? 'Resetting Categories...' : 'Reset Categories to Defaults'}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Delete all categories and restore default category structure
+                  </p>
+                </div>
+              </div>
+              <span className="text-gray-400">→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Categories Confirmation Dialog */}
+      {showResetCategoriesConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-start space-x-3 mb-4">
+              <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Reset Categories?
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This will delete all your current categories and restore the default category structure.
+                  This action cannot be undone.
+                </p>
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                    ⚠️ <strong>Warning:</strong> Any transactions using custom categories may lose their category associations.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowResetCategoriesConfirm(false)}
+                disabled={isResettingCategories}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetCategories}
+                disabled={isResettingCategories}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isResettingCategories ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <span>Reset Categories</span>
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -14,6 +14,7 @@ import recurringService from '../services/recurringService';
 import analyticsService from '../services/analyticsService';
 import currencyService from '../services/currencyService';
 import tokenManager from '../services/tokenManager';
+import { DEFAULT_CATEGORIES } from '../data/defaultCategories';
 
 export const AppContext = createContext();
 
@@ -45,6 +46,13 @@ export function AppProvider({ children }) {
         setUser(savedUser);
         setIsAuthenticated(true);
         console.log('✅ Auth restored from localStorage:', savedUser.email);
+
+        // Load categories once on auth restore (shared across all pages)
+        try {
+          await loadCategories();
+        } catch (error) {
+          console.error('Failed to load categories on auth init:', error);
+        }
       } else {
         console.log('❌ No auth found in localStorage');
       }
@@ -88,11 +96,14 @@ export function AppProvider({ children }) {
    */
   const loadCategories = async (filters = {}) => {
     try {
-      const data = await categoryService.getCategoriesTree();
+      console.log('📂 Loading categories from backend...');
+      const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
+      console.log(`📂 Loaded ${data.length} categories from backend`);
       setCategories(data);
       return data;
     } catch (error) {
       console.error('Failed to load categories:', error);
+      console.error('Error details:', error.response?.data || error.message);
       throw error;
     }
   };
@@ -106,6 +117,44 @@ export function AppProvider({ children }) {
       return data;
     } catch (error) {
       console.error('Failed to create categories in bulk:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Reset categories - Delete all existing categories and recreate defaults
+   * Useful for fixing broken category data with wrong parent IDs
+   */
+  const resetCategories = async () => {
+    try {
+      console.log('🔄 Resetting categories...');
+
+      // Load all existing categories
+      const existingCategories = await categoryService.getCategories();
+      console.log(`📋 Found ${existingCategories.length} existing categories`);
+
+      // Delete all existing categories
+      console.log('🗑️ Deleting existing categories...');
+      for (const category of existingCategories) {
+        try {
+          await categoryService.deleteCategory(category.id);
+          console.log(`✅ Deleted: ${category.name}`);
+        } catch (err) {
+          console.warn(`Failed to delete category ${category.name}:`, err);
+        }
+      }
+
+      // Create fresh default categories with proper ID mapping
+      console.log('📦 Creating fresh default categories...');
+      const newCategories = await categoryService.createCategoriesBulk(DEFAULT_CATEGORIES);
+
+      // Update local state
+      setCategories(newCategories);
+
+      console.log(`✅ Categories reset complete! Created ${newCategories.length} categories`);
+      return newCategories;
+    } catch (error) {
+      console.error('Failed to reset categories:', error);
       throw error;
     }
   };
@@ -221,6 +270,15 @@ export function AppProvider({ children }) {
         console.error('⚠️ WARNING: Tokens or user not stored in localStorage!');
       }
 
+      // Load categories once after login (shared across all pages)
+      try {
+        await loadCategories();
+        console.log('✅ Categories loaded and cached');
+      } catch (error) {
+        console.error('⚠️ Failed to load categories after login:', error);
+        // Don't throw - let user proceed even if categories fail to load
+      }
+
       return response.user;
     } catch (error) {
       console.error('❌ Login failed:', error);
@@ -277,8 +335,9 @@ export function AppProvider({ children }) {
   const updateUser = (updates) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
-    // Note: This only updates local state
-    // Backend profile update will be added in Settings integration
+    // Persist to localStorage so theme and other preferences are saved
+    tokenManager.setUser(updatedUser);
+    // Note: Backend profile update for other fields will be added in Settings integration
   };
 
   /**
@@ -329,6 +388,7 @@ export function AppProvider({ children }) {
     loadTransactions,
     loadCategories,
     createCategoriesBulk,
+    resetCategories,
     initializeAppData,
 
     // Phase 4 loading functions

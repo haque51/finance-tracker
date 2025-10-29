@@ -13,7 +13,9 @@ class RecurringService {
   async getRecurringTransactions() {
     try {
       const response = await api.get(API_ENDPOINTS.RECURRING);
-      return response.data.map(this._mapRecurringFromAPI);
+      // Backend returns: { status: "success", data: [...] }
+      const data = response.data.data || response.data || [];
+      return Array.isArray(data) ? data.map(this._mapRecurringFromAPI) : [];
     } catch (error) {
       console.error('Get recurring transactions error:', error);
       throw error;
@@ -28,7 +30,8 @@ class RecurringService {
   async getRecurringTransaction(id) {
     try {
       const response = await api.get(`${API_ENDPOINTS.RECURRING}/${id}`);
-      return this._mapRecurringFromAPI(response.data);
+      const data = response.data.data || response.data;
+      return this._mapRecurringFromAPI(data);
     } catch (error) {
       console.error('Get recurring transaction error:', error);
       throw error;
@@ -44,7 +47,8 @@ class RecurringService {
     try {
       const apiData = this._mapRecurringToAPI(recurringData);
       const response = await api.post(API_ENDPOINTS.RECURRING, apiData);
-      return this._mapRecurringFromAPI(response.data);
+      const data = response.data.data || response.data;
+      return this._mapRecurringFromAPI(data);
     } catch (error) {
       console.error('Create recurring transaction error:', error);
       throw error;
@@ -61,7 +65,8 @@ class RecurringService {
     try {
       const apiData = this._mapRecurringToAPI(recurringData);
       const response = await api.put(`${API_ENDPOINTS.RECURRING}/${id}`, apiData);
-      return this._mapRecurringFromAPI(response.data);
+      const data = response.data.data || response.data;
+      return this._mapRecurringFromAPI(data);
     } catch (error) {
       console.error('Update recurring transaction error:', error);
       throw error;
@@ -114,6 +119,10 @@ class RecurringService {
       endDate: apiRecurring.end_date,
       nextOccurrence: apiRecurring.next_occurrence,
       isActive: apiRecurring.is_active,
+      userId: apiRecurring.user_id,
+      user_id: apiRecurring.user_id, // Keep both formats for compatibility
+      createdBy: apiRecurring.created_by || apiRecurring.user_id, // Fallback to user_id
+      created_by: apiRecurring.created_by || apiRecurring.user_id, // Fallback to user_id
       createdAt: apiRecurring.created_at,
       updatedAt: apiRecurring.updated_at,
       accountName: apiRecurring.account_name,

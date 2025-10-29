@@ -107,7 +107,16 @@ class ApiService {
       error.response = {
         status: response.status,
         data: data,
+        statusText: response.statusText,
       };
+
+      console.error('API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        data: data
+      });
+
       throw error;
     }
 
