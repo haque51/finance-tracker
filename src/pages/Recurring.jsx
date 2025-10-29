@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { User, RecurrentTransaction, TransactionTemplate, Account, Category } from "@/api/entities";
+import { User, RecurrentTransaction, TransactionTemplate, Account } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Repeat, FileText } from "lucide-react";
 import RecurrentTransactionList from "../components/recurring/RecurrentTransactionList";
 import TransactionTemplateList from "../components/recurring/TransactionTemplateList";
+import { useApp } from "../context/AppContext";
 
 export default function RecurringPage() {
+    const { categories } = useApp();
     const [recurrentTransactions, setRecurrentTransactions] = useState([]);
     const [transactionTemplates, setTransactionTemplates] = useState([]);
     const [accounts, setAccounts] = useState([]);
-    const [categories, setCategories] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -20,17 +21,15 @@ export default function RecurringPage() {
             const user = await User.me();
             setCurrentUser(user);
 
-            const [recTrans, tempTrans, accData, catData] = await Promise.all([
+            const [recTrans, tempTrans, accData] = await Promise.all([
                 RecurrentTransaction.filter({}),
                 TransactionTemplate.filter({}),
-                Account.filter({}),
-                Category.filter({})
+                Account.filter({})
             ]);
 
             setRecurrentTransactions(recTrans);
             setTransactionTemplates(tempTrans);
             setAccounts(accData);
-            setCategories(catData);
         } catch (error) {
             console.error("Error loading recurring data:", error);
         }

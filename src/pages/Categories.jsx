@@ -4,6 +4,7 @@ import { Category, Transaction, User } from "@/api/entities"; // Removed Recurre
 import { GenerateImage } from "@/api/integrations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApp } from "../context/AppContext";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,7 @@ const DEFAULT_CATEGORIES = {
 };
 
 export default function CategoriesPage() {
+  const { categories: sharedCategories, loadCategories } = useApp();
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -43,6 +45,11 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [activeTab, setActiveTab] = useState("expense");
   const [isSettingUp, setIsSettingUp] = useState(false);
+
+  // Sync with shared categories from AppContext
+  useEffect(() => {
+    setCategories(sharedCategories);
+  }, [sharedCategories]);
 
   const setupDefaultCategories = useCallback(async (user) => {
     setIsSettingUp(true);
@@ -85,26 +92,24 @@ export default function CategoriesPage() {
       setCurrentUser(user);
 
       const [categoriesData, transactionsData] = await Promise.all([
-        Category.filter({}, '-created_date'),
+        loadCategories(), // Use AppContext's loadCategories
         Transaction.filter({}, '-created_date')
       ]);
 
-      setCategories(categoriesData);
       setTransactions(transactionsData);
 
       // If no categories exist for the user, set up defaults
       if (categoriesData.length === 0 && user) {
         await setupDefaultCategories(user);
         // After setup, reload data again to show the newly created categories
-        const reloadedCategoriesData = await Category.filter({}, '-created_date');
-        setCategories(reloadedCategoriesData);
+        await loadCategories(); // Use AppContext's loadCategories
       }
 
     } catch (error) {
       console.error('Error loading data:', error);
     }
     setIsLoading(false);
-  }, [setupDefaultCategories]); // Added setupDefaultCategories to dependencies
+  }, [setupDefaultCategories, loadCategories]); // Added loadCategories to dependencies
 
   useEffect(() => {
     loadData();
