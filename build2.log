@@ -1,0 +1,10 @@
+
+> finance-tracker@1.0.0 build
+> craco build
+
+Creating an optimized production build...
+Failed to compile.
+
+Module not found: Error: Can't resolve 'react-markdown' in '/home/user/finance-tracker/src/components/insights'
+
+
