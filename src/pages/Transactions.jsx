@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Account, Transaction, Category, User, TransactionTemplate } from "@/api/entities";
+import { Account, Transaction, User, TransactionTemplate } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
+import { useApp } from '../context/AppContext';  // Import useApp to access shared categories
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,9 +23,9 @@ import TransactionFilters from "../components/transactions/TransactionFilters";
 import { formatCurrency } from "../components/utils/CurrencyFormatter";
 
 export default function TransactionsPage() {
+  const { categories: sharedCategories } = useApp(); // Get categories from shared context
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -33,6 +34,9 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [exchangeRates, setExchangeRates] = useState({ USD: 0.92, BDT: 0.0084, EUR: 1 });
   const [netWorth, setNetWorth] = useState(0);
+
+  // Use shared categories from context
+  const categories = sharedCategories || [];
   
   const [filters, setFilters] = useState({
     search: "",
@@ -75,16 +79,15 @@ export default function TransactionsPage() {
       const user = await User.me();
       setCurrentUser(user);
 
-      const [transactionsData, accountsData, categoriesData, templatesData] = await Promise.all([
+      const [transactionsData, accountsData, templatesData] = await Promise.all([
         Transaction.filter({}, '-date'),
         Account.filter({}), // Fetch all accounts to avoid issues
-        Category.filter({}), // Fetch all categories (backend handles filtering)
         TransactionTemplate.filter({}),
       ]);
-      
+      // Categories come from shared context - no need to fetch again
+
       setTransactions(transactionsData);
       setAccounts(accountsData);
-      setCategories(categoriesData);
       setTemplates(templatesData);
     } catch (error) {
       console.error('Error loading data:', error);
