@@ -1,18 +1,19 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { User, Account, Category, Transaction } from '@/api/entities';
+import { User, Account, Transaction } from '@/api/entities';
 import { FilePieChart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReportFilters from '../components/reports/ReportFilters';
 import ReportDisplay from '../components/reports/ReportDisplay';
 import CustomReportBuilder from '../components/reports/CustomReportBuilder';
+import { useApp } from '../context/AppContext';
 
 import { startOfMonth, endOfMonth } from 'date-fns';
 
 export default function ReportsPage() {
+  const { categories } = useApp();
   const [currentUser, setCurrentUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,13 +29,11 @@ export default function ReportsPage() {
   const loadData = useCallback(async (user) => {
     setIsLoading(true);
     try {
-      const [accountsData, categoriesData, transactionsData] = await Promise.all([
+      const [accountsData, transactionsData] = await Promise.all([
         Account.filter({}),
-        Category.filter({}),
         Transaction.filter({}, '-date'),
       ]);
       setAccounts(accountsData);
-      setCategories(categoriesData);
       setTransactions(transactionsData);
     } catch (error) {
       console.error("Error loading report data:", error);

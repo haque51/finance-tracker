@@ -1,27 +1,32 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { User, Category, Transaction, Budget } from '@/api/entities';
+import { User, Transaction, Budget } from '@/api/entities';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subMonths, addMonths } from 'date-fns';
 import { PiggyBank, ArrowLeft, ArrowRight } from 'lucide-react';
 import BudgetCategoryRow from '../components/budget/BudgetCategoryRow';
 import BudgetSummary from '../components/budget/BudgetSummary';
 import { Button } from '@/components/ui/button';
+import { useApp } from '../context/AppContext';
 
 export default function BudgetPage() {
+  const { categories: sharedCategories } = useApp();
   const [currentUser, setCurrentUser] = useState(null);
-  const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filter categories for budget page (expense type only, parent categories only)
+  const categories = useMemo(() => {
+    return sharedCategories.filter(c => c.type === 'expense' && !c.parent_id);
+  }, [sharedCategories]);
 
   const monthString = useMemo(() => format(currentMonth, 'yyyy-MM'), [currentMonth]);
 
   const loadData = useCallback(async (user, month) => {
     setIsLoading(true);
     try {
-      const [categoriesData, transactionsData, budgetsData] = await Promise.all([
-        Category.filter({ type: 'expense', is_active: true }),
+      const [transactionsData, budgetsData] = await Promise.all([
         Transaction.filter({
           user_id: user.id,
           type: 'expense',
@@ -31,7 +36,6 @@ export default function BudgetPage() {
         Budget.filter({ month: format(month, 'yyyy-MM') })
       ]);
 
-      setCategories(categoriesData.filter(c => !c.parent_id));
       setTransactions(transactionsData);
       setBudgets(budgetsData);
     } catch (error) {

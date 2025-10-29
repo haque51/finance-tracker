@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { User, Transaction, Category, Account, SpendingAlert, CategorizationRule } from "@/api/entities";
+import { User, Transaction, Account, SpendingAlert, CategorizationRule } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
 import { Zap, TrendingUp, AlertTriangle, Brain, Lightbulb, Target, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApp } from "../context/AppContext";
 
 import SpendingInsights from "../components/insights/SpendingInsights";
 import SmartAlerts from "../components/insights/SmartAlerts";
@@ -12,13 +13,16 @@ import AutoCategorizationRules from "../components/insights/AutoCategorizationRu
 import PeriodComparison from "../components/insights/PeriodComparison";
 
 export default function InsightsPage() {
+  const { categories: sharedCategories } = useApp();
   const [currentUser, setCurrentUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [spendingAlerts, setSpendingAlerts] = useState([]);
   const [categorizationRules, setCategorizationRules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Use shared categories from AppContext
+  const categories = sharedCategories;
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -26,16 +30,14 @@ export default function InsightsPage() {
       const user = await User.me();
       setCurrentUser(user);
 
-      const [transactionsData, categoriesData, accountsData, alertsData, rulesData] = await Promise.all([
+      const [transactionsData, accountsData, alertsData, rulesData] = await Promise.all([
         Transaction.filter({}, '-date'),
-        Category.filter({ is_active: true }),
         Account.filter({ is_active: true }),
         SpendingAlert.filter({}),
         CategorizationRule.filter({})
       ]);
 
       setTransactions(transactionsData);
-      setCategories(categoriesData);
       setAccounts(accountsData);
       setSpendingAlerts(alertsData);
       setCategorizationRules(rulesData);
