@@ -132,13 +132,30 @@ export default function TransactionForm({
     setIsSubmitting(false);
   };
 
+  // Helper function to remove duplicates by ID
+  const deduplicateById = (items) => {
+    const seen = new Set();
+    return items.filter(item => {
+      if (seen.has(item.id)) {
+        return false;
+      }
+      seen.add(item.id);
+      return true;
+    });
+  };
+
   // Renamed from availableCategories to parentCategories for clarity as per outline's usage
-  const parentCategories = categories.filter(c => 
-    !c.parent_id && (c.type === formData.type || formData.type === 'transfer')
+  const parentCategories = deduplicateById(
+    categories.filter(c =>
+      !c.parent_id && (c.type === formData.type || formData.type === 'transfer')
+    )
   );
+
   // This definition is correct for subcategories based on the selected parent category
-  const availableSubcategories = categories.filter(c => 
-    c.parent_id === formData.category_id
+  const availableSubcategories = deduplicateById(
+    categories.filter(c =>
+      c.parent_id === formData.category_id
+    )
   );
 
   return (
