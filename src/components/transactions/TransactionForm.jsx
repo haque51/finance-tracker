@@ -122,12 +122,25 @@ export default function TransactionForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    // Validate required fields
+    if (!formData.account_id && formData.type !== 'transfer') {
+      alert('Please select an account');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (formData.type === 'transfer' && (!formData.account_id || !formData.to_account_id)) {
+      alert('Please select both from and to accounts for transfers');
+      setIsSubmitting(false);
+      return;
+    }
+
     const dataToSubmit = {
       ...formData,
       amount: Number(formData.amount) || 0 // Convert amount to number for submission
     };
-    
+
     await onSubmit(dataToSubmit);
     setIsSubmitting(false);
   };
