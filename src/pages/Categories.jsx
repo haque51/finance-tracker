@@ -43,56 +43,36 @@ export default function CategoriesPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [activeTab, setActiveTab] = useState("expense");
   const [isSettingUp, setIsSettingUp] = useState(false);
-  const [diagnosticInfo, setDiagnosticInfo] = useState(null);
 
   const setupDefaultCategories = useCallback(async (user) => {
     setIsSettingUp(true);
     try {
-        console.log('=== STARTING DEFAULT CATEGORY SETUP ===');
-        console.log('User:', user);
-        console.log('DEFAULT_CATEGORIES:', DEFAULT_CATEGORIES);
-
         for (const type in DEFAULT_CATEGORIES) {
-            console.log(`\n--- Processing ${type} categories ---`);
             for (const cat of DEFAULT_CATEGORIES[type]) {
-                console.log(`\nCreating parent category: ${cat.name}`);
-                console.log('Has subcategories:', cat.sub ? cat.sub.length : 0);
-
                 const parentCategory = await Category.create({
                     name: cat.name,
                     type: type,
                     // user_id removed - backend gets it from JWT token
                 });
 
-                console.log('Parent category created:', parentCategory);
-                console.log('Parent category ID:', parentCategory?.id);
-
                 if (parentCategory && cat.sub) {
-                    console.log(`Creating ${cat.sub.length} subcategories for ${cat.name}...`);
                     for (const subName of cat.sub) {
                         try {
-                            console.log(`  - Creating subcategory: ${subName} with parent_id: ${parentCategory.id}`);
-                            const subcategory = await Category.create({
+                            await Category.create({
                                 name: subName,
                                 type: type,
                                 parent_id: parentCategory.id,
                                 // user_id removed - backend gets it from JWT token
                             });
-                            console.log(`  ✓ Subcategory created:`, subcategory);
                         } catch (subError) {
-                            console.error(`  ✗ Failed to create subcategory ${subName}:`, subError);
+                            console.error(`Failed to create subcategory ${subName}:`, subError);
                         }
                     }
-                    console.log(`Finished creating subcategories for ${cat.name}`);
-                } else {
-                    console.log(`No subcategories to create for ${cat.name}`);
                 }
             }
         }
-        console.log('\n=== FINISHED DEFAULT CATEGORY SETUP ===');
     } catch(e) {
         console.error("Failed to set up default categories", e);
-        console.error("Error stack:", e.stack);
     } finally {
         setIsSettingUp(false);
     }
@@ -108,26 +88,6 @@ export default function CategoriesPage() {
         Category.filter({}, '-created_date'),
         Transaction.filter({}, '-created_date')
       ]);
-
-      // Diagnostic information
-      const parentCats = categoriesData.filter(c => !c.parent_id && !c.parentId);
-      const subCats = categoriesData.filter(c => c.parent_id || c.parentId);
-
-      console.log('=== CATEGORIES DATA DEBUG ===');
-      console.log('Total categories:', categoriesData.length);
-      console.log('Parent categories:', parentCats.length);
-      console.log('Subcategories:', subCats.length);
-      console.log('Sample parent:', parentCats[0]);
-      console.log('Sample subcategory:', subCats[0]);
-      console.log('All categories:', categoriesData);
-      console.log('=== END DEBUG ===');
-
-      setDiagnosticInfo({
-        total: categoriesData.length,
-        parents: parentCats.length,
-        subcategories: subCats.length,
-        sampleSubcategory: subCats[0],
-      });
 
       setCategories(categoriesData);
       setTransactions(transactionsData);
@@ -337,39 +297,6 @@ export default function CategoriesPage() {
         <div className="text-center p-8 bg-blue-50 rounded-lg">
             <p className="font-semibold text-blue-700">One moment... we're setting up some smart categories for you!</p>
             <p className="text-sm text-blue-600">This only happens once.</p>
-        </div>
-      )}
-
-      {diagnosticInfo && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="font-semibold text-yellow-900 mb-2">Debug Information:</p>
-          <div className="text-sm text-yellow-800 space-y-1">
-            <p>Total categories: {diagnosticInfo.total}</p>
-            <p>Parent categories: {diagnosticInfo.parents}</p>
-            <p>Subcategories: {diagnosticInfo.subcategories}</p>
-            {diagnosticInfo.sampleSubcategory && (
-              <p>Sample subcategory: {JSON.stringify(diagnosticInfo.sampleSubcategory)}</p>
-            )}
-            <p className="mt-2 text-yellow-900 font-medium">
-              {diagnosticInfo.subcategories === 0
-                ? "⚠️ No subcategories found in database. They may need to be recreated."
-                : "✓ Subcategories exist in database"}
-            </p>
-          </div>
-          {diagnosticInfo.subcategories === 0 && (
-            <div className="mt-4">
-              <Button
-                onClick={handleResetCategories}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                disabled={isSettingUp}
-              >
-                {isSettingUp ? 'Resetting...' : 'Reset Categories & Create Subcategories'}
-              </Button>
-              <p className="text-xs text-yellow-700 mt-2">
-                This will delete all existing categories and recreate them with subcategories.
-              </p>
-            </div>
-          )}
         </div>
       )}
 

@@ -170,6 +170,7 @@ class TransactionService {
       categoryId: apiTxn.category_id,
       category_id: apiTxn.category_id, // Keep both formats for compatibility
       subcategoryId: apiTxn.subcategory_id,
+      subcategory_id: apiTxn.subcategory_id, // Keep both formats for compatibility
       amount: absoluteAmount, // Use absolute value for frontend
       amountEur: calculatedAmountEur,
       amount_eur: calculatedAmountEur, // Calculated from amount * exchange_rate if not provided
@@ -182,6 +183,7 @@ class TransactionService {
       reconciled: apiTxn.is_reconciled,
       notes: apiTxn.notes,
       memo: apiTxn.notes, // Alias for frontend compatibility
+      receipt_url: apiTxn.receipt_url, // Include receipt URL
       userId: apiTxn.user_id,
       user_id: apiTxn.user_id, // Keep both formats for compatibility
       createdBy: apiTxn.created_by || apiTxn.user_id, // Fallback to user_id
@@ -222,12 +224,34 @@ class TransactionService {
       payload.category_id = categoryId;
     }
 
-    // Note: Backend does NOT accept these fields:
-    // - subcategory_id (not supported)
-    // - description (not supported)
-    // - notes (not supported)
-    // - is_reconciled (not supported on create/update)
-    // - transaction_date (use "date" instead)
+    // Include subcategory_id if provided (for income/expense only)
+    const subcategoryId = txn.subcategoryId || txn.subcategory_id;
+    if (subcategoryId && txn.type !== 'transfer') {
+      payload.subcategory_id = subcategoryId;
+    }
+
+    // Include payee/description if provided
+    if (txn.payee) {
+      payload.description = txn.payee;
+    }
+
+    // Include memo/notes if provided
+    if (txn.memo) {
+      payload.notes = txn.memo;
+    }
+
+    // Include receipt_url if provided
+    if (txn.receipt_url) {
+      payload.receipt_url = txn.receipt_url;
+    }
+
+    // Include exchange rate and amount_eur if provided (calculated in frontend)
+    if (txn.exchange_rate) {
+      payload.exchange_rate = txn.exchange_rate;
+    }
+    if (txn.amount_eur) {
+      payload.amount_eur = txn.amount_eur;
+    }
 
     return payload;
   }
