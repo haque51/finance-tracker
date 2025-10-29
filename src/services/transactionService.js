@@ -260,6 +260,9 @@ class TransactionService {
       memo: txn.memo || txn.notes || '',
     };
 
+    // Note: type, account_id, currency cannot be updated after creation
+    // These fields are immutable once a transaction is created
+
     // If subcategory is selected, use it as category_id (subcategories are just categories with parent_id)
     // Otherwise use the parent category_id
     const categoryId = txn.subcategory_id || txn.categoryId || txn.category_id;
