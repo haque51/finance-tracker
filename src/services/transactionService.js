@@ -92,11 +92,21 @@ class TransactionService {
    */
   async updateTransaction(id, transactionData) {
     try {
+      console.log('=== TRANSACTION UPDATE DEBUG ===');
+      console.log('Transaction ID:', id);
+      console.log('Frontend data (before mapping):', transactionData);
+
       const apiData = this._mapTransactionToAPI(transactionData);
+
+      console.log('Mapped API payload:', apiData);
+      console.log('Payload JSON:', JSON.stringify(apiData, null, 2));
+      console.log('================================');
+
       const response = await api.put(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, apiData);
       return this._mapTransactionFromAPI(response.data.data);
     } catch (error) {
       console.error('Update transaction error:', error);
+      console.error('Error response:', error.response?.data);
       throw error;
     }
   }
@@ -203,22 +213,22 @@ class TransactionService {
    * @private
    */
   _mapTransactionToAPI(txn) {
-    // Build payload - only include fields backend accepts
+    // Build payload - include all fields backend accepts
     const payload = {
       type: txn.type,
       account_id: txn.accountId || txn.account_id,
       amount: txn.amount,
       currency: txn.currency || 'EUR',
-      date: txn.date || txn.transaction_date, // Backend expects "date" not "transaction_date"
+      date: txn.date || txn.transaction_date,
     };
 
-    // Only include to_account_id for transfers (omit null)
+    // Only include to_account_id for transfers
     const toAccountId = txn.toAccountId || txn.to_account_id;
     if (toAccountId && txn.type === 'transfer') {
       payload.to_account_id = toAccountId;
     }
 
-    // Only include category_id for income/expense (not for transfers, omit null)
+    // Only include category_id for income/expense (not for transfers)
     const categoryId = txn.categoryId || txn.category_id;
     if (categoryId && txn.type !== 'transfer') {
       payload.category_id = categoryId;
@@ -230,26 +240,26 @@ class TransactionService {
       payload.subcategory_id = subcategoryId;
     }
 
-    // Include payee/description if provided
-    if (txn.payee) {
+    // Include payee/description (allow empty string to clear field)
+    if (txn.payee !== undefined && txn.payee !== null) {
       payload.description = txn.payee;
     }
 
-    // Include memo/notes if provided
-    if (txn.memo) {
+    // Include memo/notes (allow empty string to clear field)
+    if (txn.memo !== undefined && txn.memo !== null) {
       payload.notes = txn.memo;
     }
 
-    // Include receipt_url if provided
-    if (txn.receipt_url) {
+    // Include receipt_url (allow empty string to clear field)
+    if (txn.receipt_url !== undefined) {
       payload.receipt_url = txn.receipt_url;
     }
 
     // Include exchange rate and amount_eur if provided (calculated in frontend)
-    if (txn.exchange_rate) {
+    if (txn.exchange_rate !== undefined) {
       payload.exchange_rate = txn.exchange_rate;
     }
-    if (txn.amount_eur) {
+    if (txn.amount_eur !== undefined) {
       payload.amount_eur = txn.amount_eur;
     }
 
