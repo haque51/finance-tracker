@@ -267,12 +267,25 @@ export default function CategoriesPage() {
     setIsFormOpen(true);
   };
 
+  // Deduplicate categories by ID to prevent display issues
+  const deduplicateById = (categories) => {
+    const unique = categories.filter((cat, index, self) =>
+      index === self.findIndex((c) => c.id === cat.id)
+    );
+    if (categories.length !== unique.length) {
+      console.warn('Duplicate categories detected and removed:', categories.length - unique.length);
+    }
+    return unique;
+  };
+
   const getCategoriesByType = (type) => {
-    return categories.filter(c => c.type === type && !c.parent_id);
+    const filtered = categories.filter(c => c.type === type && !c.parent_id);
+    return deduplicateById(filtered);
   };
 
   const getSubcategories = (parentId) => {
-    return categories.filter(c => c.parent_id === parentId);
+    const filtered = categories.filter(c => c.parent_id === parentId);
+    return deduplicateById(filtered);
   };
 
   const getCategoryTransactionCount = (categoryId) => {
