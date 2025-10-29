@@ -46,6 +46,13 @@ export function AppProvider({ children }) {
         setUser(savedUser);
         setIsAuthenticated(true);
         console.log('✅ Auth restored from localStorage:', savedUser.email);
+
+        // Load categories once on auth restore (shared across all pages)
+        try {
+          await loadCategories();
+        } catch (error) {
+          console.error('Failed to load categories on auth init:', error);
+        }
       } else {
         console.log('❌ No auth found in localStorage');
       }
@@ -261,6 +268,15 @@ export function AppProvider({ children }) {
 
       if (!storedToken || !storedUser) {
         console.error('⚠️ WARNING: Tokens or user not stored in localStorage!');
+      }
+
+      // Load categories once after login (shared across all pages)
+      try {
+        await loadCategories();
+        console.log('✅ Categories loaded and cached');
+      } catch (error) {
+        console.error('⚠️ Failed to load categories after login:', error);
+        // Don't throw - let user proceed even if categories fail to load
       }
 
       return response.user;

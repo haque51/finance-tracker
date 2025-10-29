@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Account, Transaction, Category, User, RecurrentTransaction } from "@/api/entities";
+import { Account, Transaction, User, RecurrentTransaction } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
+import { useApp } from '../context/AppContext';  // Import useApp to access shared categories
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,15 +30,18 @@ import BreakdownDialog from "../components/dashboard/BreakdownDialog";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function Dashboard() {
+  const { categories: sharedCategories } = useApp(); // Get categories from shared context
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [isLoading, setIsLoading] = useState(true);
   const [exchangeRates, setExchangeRates] = useState({ USD: 0.92, BDT: 0.0084, EUR: 1 }); // Default rates, EUR is 1
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [breakdownData, setBreakdownData] = useState({ title: '', data: [], total: 0, notes: '' });
+
+  // Use shared categories from context
+  const categories = sharedCategories || [];
 
   // This function now accepts 'rates' as an argument and handles batching of updates
   const processRecurringTransactions = async (user, rates) => {
@@ -258,18 +262,14 @@ export default function Dashboard() {
   // Effect for initial load (fetch rates, load all data including recurring processing)
   useEffect(() => {
     let isMounted = true; // Flag to prevent state updates on unmounted components
-    
+
     const init = async () => {
       setIsLoading(true);
       try {
-        // Add initial delay to prevent immediate burst of requests on page load
-        await delay(1000);
-        
         const user = await User.me();
         if (!isMounted) return;
         setCurrentUser(user);
 
-        await delay(500); // Delay before fetching exchange rates
         const rates = await fetchExchangeRates(); // Fetch rates
         if (!isMounted) return;
         setExchangeRates(rates); // Update state with fetched rates
@@ -278,17 +278,11 @@ export default function Dashboard() {
         await processRecurringTransactions(user, rates);
         if (!isMounted) return;
 
-        // Filter all data by current user concurrently, but with delays between different entity fetches
-        await delay(500); // Delay before fetching accounts
-        const accountsData = await Account.filter({}, '-updated_date');
-        if (!isMounted) return;
-        
-        await delay(500); // Delay before fetching transactions
-        const transactionsData = await Transaction.filter({}, '-date');
-        if (!isMounted) return;
-        
-        await delay(500); // Delay before fetching categories
-        const categoriesData = await Category.filter({}, '-created_date');
+        // Load accounts and transactions in parallel (categories come from context)
+        const [accountsData, transactionsData] = await Promise.all([
+          Account.filter({}, '-updated_date'),
+          Transaction.filter({}, '-date')
+        ]);
         if (!isMounted) return;
 
         // Calculate balance_eur for each account if not provided by backend
@@ -302,7 +296,6 @@ export default function Dashboard() {
 
         setAccounts(accountsWithEurBalance);
         setTransactions(transactionsData);
-        setCategories(categoriesData);
       } catch (error) {
         console.error('Error loading initial data:', error);
         // Implement rate limiting retry logic
