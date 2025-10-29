@@ -53,12 +53,29 @@ export default function TransactionList({
 
   const getCategoryName = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
-    return category ? category.name : 'Uncategorized';
+    if (!category) return 'Uncategorized';
+
+    // If this is a subcategory (has parent_id), return the parent's name
+    if (category.parent_id) {
+      const parentCategory = categories.find(c => c.id === category.parent_id);
+      return parentCategory ? parentCategory.name : category.name;
+    }
+
+    // Otherwise return the category's own name
+    return category.name;
   };
 
-  const getSubcategoryName = (subcategoryId) => {
-    const category = categories.find(c => c.id === subcategoryId); // Assuming subcategories are also listed in the categories array
-    return category ? category.name : '';
+  const getSubcategoryName = (categoryId) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return '';
+
+    // If this is a subcategory (has parent_id), return its name
+    if (category.parent_id) {
+      return category.name;
+    }
+
+    // If it's a parent category, return empty
+    return '';
   };
 
   if (isLoading) {
@@ -165,7 +182,7 @@ export default function TransactionList({
                       <p className="text-sm font-medium text-slate-900">{getCategoryName(transaction.category_id)}</p>
                     </TableCell>
                     <TableCell>
-                      <p className="text-xs text-slate-500">{getSubcategoryName(transaction.subcategory_id) || '-'}</p>
+                      <p className="text-xs text-slate-500">{getSubcategoryName(transaction.category_id) || '-'}</p>
                     </TableCell>
                     <TableCell>
                       <div className="text-right">
