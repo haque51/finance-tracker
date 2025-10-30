@@ -3,15 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { FolderTree } from "lucide-react";
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
+// Design System Colors
+const COLORS = ['#2563EB', '#6366F1', '#8B5CF6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#84cc16'];
 
 export default function CategorySpendingChart({ transactions, categories, isLoading }) {
   const expenseTransactions = transactions.filter(t => t.type === 'expense');
-  
+
   const categorySpending = expenseTransactions.reduce((acc, transaction) => {
     const category = categories.find(c => c.id === transaction.category_id);
     const categoryName = category ? category.name : 'Uncategorized';
-    
+
     acc[categoryName] = (acc[categoryName] || 0) + (transaction.amount_eur || 0);
     return acc;
   }, {});
@@ -25,9 +26,9 @@ export default function CategorySpendingChart({ transactions, categories, isLoad
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
-        <div className="bg-white p-3 border-0 rounded-lg shadow-lg border border-gray-100">
-          <p className="font-medium text-gray-900">{data.name}</p>
-          <p className="text-lg font-bold text-red-500">
+        <div className="chart-tooltip">
+          <p className="font-medium">{data.name}</p>
+          <p className="text-lg font-bold chart-value" style={{ color: data.payload.fill }}>
             €{data.value.toFixed(2)}
           </p>
         </div>
@@ -37,10 +38,10 @@ export default function CategorySpendingChart({ transactions, categories, isLoad
   };
 
   return (
-    <Card className="border-0 shadow-sm bg-white">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-gray-900 font-semibold">
-          <FolderTree className="w-5 h-5 text-gray-600" />
+    <Card className="chart-container border-0 premium-shadow">
+      <CardHeader className="pb-2">
+        <CardTitle className="chart-title flex items-center gap-2">
+          <FolderTree className="w-5 h-5" />
           Spending by Category
         </CardTitle>
       </CardHeader>
@@ -48,26 +49,45 @@ export default function CategorySpendingChart({ transactions, categories, isLoad
         {!isLoading && data.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
+              <defs>
+                {data.map((entry, index) => (
+                  <linearGradient key={`gradient-${index}`} id={`categoryGradient${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.9} />
+                    <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.7} />
+                  </linearGradient>
+                ))}
+              </defs>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
+                innerRadius={80}
                 outerRadius={110}
+                paddingAngle={2}
                 dataKey="value"
                 strokeWidth={0}
+                animationBegin={0}
+                animationDuration={400}
+                animationEasing="ease-in-out"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={`url(#categoryGradient${index})`} />
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
+              <Legend
+                wrapperStyle={{
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                  paddingTop: '16px'
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-[300px] text-gray-500">
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
             <div className="text-center">
-              <FolderTree className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <FolderTree className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p className="font-medium">No expense data for this month</p>
             </div>
           </div>
