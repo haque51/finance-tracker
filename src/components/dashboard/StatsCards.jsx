@@ -21,15 +21,15 @@ export default function StatsCards({ title, value, icon: Icon, bgColor, trendVal
       <CardContent className="p-6">
         <div className="flex justify-between items-start">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
-            <p className="text-2xl font-bold text-gray-900 mb-4">
+            <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
+            <p className="text-2xl currency-large text-foreground mb-4">
               {value}
             </p>
             {trendValue && (
               <div className="flex items-center text-sm">
                 <TrendIcon className={`w-4 h-4 mr-1 ${trendColor}`} />
-                <span className="font-semibold text-gray-900">{trendValue}</span>
-                {trendText && <span className="text-gray-500 ml-1">{trendText}</span>}
+                <span className="font-semibold currency text-foreground">{trendValue}</span>
+                {trendText && <span className="text-muted-foreground ml-1">{trendText}</span>}
               </div>
             )}
           </div>

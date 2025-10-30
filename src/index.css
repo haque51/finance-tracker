@@ -275,6 +275,35 @@
     font-weight: 500;
   }
 
+  /* Global Numeral Styling - Apply to all currency and numeric values */
+  .currency,
+  .amount,
+  .balance,
+  .number-value {
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Pro Display', 'Roboto Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  /* Bold numerals for emphasis */
+  .currency-bold,
+  .amount-bold,
+  .balance-bold {
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Pro Display', 'Roboto Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* Large currency displays (like dashboard stats) */
+  .currency-large {
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Pro Display', 'Roboto Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
   /* Gridlines - Minimal */
   .recharts-cartesian-grid-horizontal line,
   .recharts-cartesian-grid-vertical line {
