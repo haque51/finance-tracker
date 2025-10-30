@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Wallet } from "lucide-react";
 
 export default function NetWorthChart({ accounts, isLoading }) {
@@ -31,9 +31,9 @@ export default function NetWorthChart({ accounts, isLoading }) {
     if (active && payload && payload.length) {
       const value = payload[0].value;
       return (
-        <div className="bg-white p-3 border rounded-lg shadow-sm">
+        <div className="chart-tooltip">
           <p className="font-medium">{label}</p>
-          <p className={`text-lg font-bold ${value >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+          <p className={`text-lg font-bold chart-value ${value >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
             €{Math.abs(value).toFixed(2)}
           </p>
         </div>
@@ -43,10 +43,10 @@ export default function NetWorthChart({ accounts, isLoading }) {
   };
 
   return (
-    <Card className="shadow-sm border-slate-200 bg-white/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-slate-600" />
+    <Card className="chart-container border-0 premium-shadow">
+      <CardHeader className="pb-2">
+        <CardTitle className="chart-title flex items-center gap-2">
+          <Wallet className="w-5 h-5" />
           Net Worth by Account Type
         </CardTitle>
       </CardHeader>
@@ -54,22 +54,52 @@ export default function NetWorthChart({ accounts, isLoading }) {
         {!isLoading && data.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="type" fontSize={12} />
-              <YAxis fontSize={12} />
+              <defs>
+                <linearGradient id="positiveBarGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563EB" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#6366F1" stopOpacity={0.6} />
+                </linearGradient>
+                <linearGradient id="negativeBarGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#dc2626" stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis
+                dataKey="type"
+                fontSize={12}
+                fontFamily="Inter, sans-serif"
+                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
+              <YAxis
+                fontSize={12}
+                fontFamily="Inter, sans-serif"
+                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="balance"
-                fill="#3b82f6"
-                radius={[4, 4, 0, 0]}
-              />
+                fill="url(#positiveBarGradient)"
+                radius={[8, 8, 0, 0]}
+                animationDuration={300}
+                animationEasing="ease-out"
+              >
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.balance >= 0 ? 'url(#positiveBarGradient)' : 'url(#negativeBarGradient)'}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-[300px] text-slate-500">
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
             <div className="text-center">
-              <Wallet className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-              <p>No account data available</p>
+              <Wallet className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="font-medium">No account data available</p>
             </div>
           </div>
         )}
