@@ -4,10 +4,21 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['Inter', 'Space Grotesk', 'system-ui', 'sans-serif'],
+  			mono: ['SF Pro Display', 'Roboto Mono', 'monospace'],
+  		},
+  		spacing: {
+  			'grid': '8px', /* 8px baseline grid */
+  		},
+  		maxWidth: {
+  			'content': '1200px', /* Max content width from design system */
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			'card': '1rem', /* 16px for cards */
   		},
   		colors: {
   			background: 'hsl(var(--background))',
@@ -77,11 +88,26 @@ module.exports = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'card-lift': {
+  				'0%': { transform: 'translateY(0)' },
+  				'100%': { transform: 'translateY(-4px)' }
+  			},
+  			'fade-in': {
+  				'0%': { opacity: '0', transform: 'translateY(10px)' },
+  				'100%': { opacity: '1', transform: 'translateY(0)' }
+  			},
+  			'chart-entry': {
+  				'0%': { transform: 'scaleY(0)', transformOrigin: 'bottom' },
+  				'100%': { transform: 'scaleY(1)', transformOrigin: 'bottom' }
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'card-lift': 'card-lift 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  			'fade-in': 'fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  			'chart-entry': 'chart-entry 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
   		}
   	}
   },
