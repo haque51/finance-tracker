@@ -86,7 +86,7 @@ export default function SpendingInsights({ transactions, categories, accounts, i
             <CardTitle className="text-sm font-medium text-slate-600">This Month's Spending</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-slate-900">
+            <p className="text-2xl font-bold text-slate-900 currency-large">
               {formatCurrency(insights.currentTotal, 'EUR')}
             </p>
             <div className="flex items-center gap-2 mt-2">
@@ -108,7 +108,7 @@ export default function SpendingInsights({ transactions, categories, accounts, i
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-slate-900">{insights.transactionCount}</p>
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-slate-500 mt-2 currency">
               Avg: {insights.transactionCount > 0 ? formatCurrency(insights.currentTotal / insights.transactionCount, 'EUR') : '€0'}
             </p>
           </CardContent>
@@ -151,7 +151,7 @@ export default function SpendingInsights({ transactions, categories, accounts, i
                     <span className="font-medium text-slate-800">
                       #{index + 1} {category.name}
                     </span>
-                    <span className="text-slate-600">{formatCurrency(category.amount, 'EUR')}</span>
+                    <span className="text-slate-600 currency">{formatCurrency(category.amount, 'EUR')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Progress value={percentage} className="flex-1" />
@@ -188,7 +188,7 @@ export default function SpendingInsights({ transactions, categories, accounts, i
                         </div>
                         <p className="text-sm text-slate-500">{format(new Date(transaction.date), 'MMM d')}</p>
                       </div>
-                      <Badge variant="outline" className="text-red-600 border-red-200">
+                      <Badge variant="outline" className="text-red-600 border-red-200 currency">
                         {formatCurrency(transaction.amount_eur, 'EUR')}
                       </Badge>
                     </div>

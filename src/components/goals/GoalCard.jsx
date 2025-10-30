@@ -42,13 +42,13 @@ export default function GoalCard({ goal, accounts, onEdit, onDelete }) {
             <span className="text-sm font-medium text-slate-500">Target</span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-2xl font-bold text-emerald-600">{formatCurrency(goal.current_amount, 'EUR')}</span>
-            <span className="text-lg font-semibold text-slate-500">{formatCurrency(goal.target_amount, 'EUR')}</span>
+            <span className="text-2xl font-bold text-emerald-600 currency-large">{formatCurrency(goal.current_amount, 'EUR')}</span>
+            <span className="text-lg font-semibold text-slate-500 currency-large">{formatCurrency(goal.target_amount, 'EUR')}</span>
           </div>
           <Progress value={progress} className="mt-2" />
           <div className="flex justify-between text-xs text-slate-500 mt-1">
             <span>{progress.toFixed(1)}% funded</span>
-            <span>{formatCurrency(amountNeeded, 'EUR')} left</span>
+            <span className="currency">{formatCurrency(amountNeeded, 'EUR')} left</span>
           </div>
         </div>
 
@@ -56,7 +56,7 @@ export default function GoalCard({ goal, accounts, onEdit, onDelete }) {
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 flex items-center gap-3">
             <Banknote className="w-5 h-5 text-blue-600" />
             <div>
-              <p className="font-semibold text-blue-800">{formatCurrency(monthlyContribution, 'EUR')}</p>
+              <p className="font-semibold text-blue-800 currency">{formatCurrency(monthlyContribution, 'EUR')}</p>
               <p className="text-xs text-blue-600">Suggested monthly contribution</p>
             </div>
           </div>

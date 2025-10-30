@@ -40,7 +40,7 @@ export default function DebtOverview({ debtAccounts, isLoading }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(totalDebt, 'EUR')}</p>
+          <p className="text-2xl font-bold text-red-600 currency-large">{formatCurrency(totalDebt, 'EUR')}</p>
           <p className="text-sm text-slate-500 mt-1">{debtAccounts.length} active accounts</p>
         </CardContent>
       </Card>
@@ -53,7 +53,7 @@ export default function DebtOverview({ debtAccounts, isLoading }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-slate-900">
+          <p className="text-2xl font-bold text-slate-900 currency-large">
             {formatCurrency(highestDebt.balance_eur || 0, 'EUR')}
           </p>
           <p className="text-sm text-slate-500 mt-1 truncate">{highestDebt.name || 'N/A'}</p>
@@ -81,7 +81,7 @@ export default function DebtOverview({ debtAccounts, isLoading }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-slate-900">
+          <p className="text-2xl font-bold text-slate-900 currency-large">
             {formatCurrency(totalMinimumPayments, 'EUR')}
           </p>
           <p className="text-sm text-slate-500 mt-1">Monthly total</p>

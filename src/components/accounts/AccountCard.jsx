@@ -81,11 +81,11 @@ const AccountCard = ({ account, onEdit, onDelete }) => {
       <CardContent>
         <div className="space-y-1">
           <p className="text-xs text-slate-500">Current Balance</p>
-          <p className={`text-3xl font-bold ${balanceShouldBeRed ? "text-red-600" : "text-slate-800"}`}>
+          <p className={`text-3xl font-bold currency-large ${balanceShouldBeRed ? "text-red-600" : "text-slate-800"}`}>
             {formatCurrency(account.balance || 0, account.currency, true, false)}
           </p>
           {account.currency !== 'EUR' && (
-             <p className="text-sm text-slate-500">
+             <p className="text-sm text-slate-500 currency">
                ≈ {formatCurrency(account.balance_eur || 0, 'EUR', true, true)}
              </p>
           )}
