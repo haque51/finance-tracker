@@ -186,9 +186,9 @@ export default function TransactionList({
                     </TableCell>
                     <TableCell>
                       <div className="text-right">
-                        <p className={`font-bold ${
-                          transaction.type === 'income' 
-                            ? 'text-emerald-600' 
+                        <p className={`font-bold currency-bold ${
+                          transaction.type === 'income'
+                            ? 'text-emerald-600'
                             : transaction.type === 'expense'
                             ? 'text-red-600'
                             : 'text-blue-600'
@@ -196,7 +196,7 @@ export default function TransactionList({
                           {formatCurrency(transaction.amount || 0, transaction.currency, true, true)}
                         </p>
                         {transaction.currency !== 'EUR' && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground currency">
                             ≈ {formatCurrency(transaction.amount_eur || 0, 'EUR', true, true)}
                           </p>
                         )}
