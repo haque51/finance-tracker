@@ -26,8 +26,12 @@ export default function UserMenu({ onThemeChange }) {
       try {
         const user = await User.me();
         setCurrentUser(user);
-        if (onThemeChange) {
-            onThemeChange(user.theme || 'system');
+
+        // Only sync theme from backend if localStorage doesn't have one
+        if (onThemeChange && !localStorage.getItem('app-theme')) {
+          const userTheme = user.theme || 'system';
+          localStorage.setItem('app-theme', userTheme);
+          onThemeChange(userTheme);
         }
       } catch (error) {
         console.error("Error loading user:", error);
@@ -58,14 +62,21 @@ export default function UserMenu({ onThemeChange }) {
 
   const handleThemeChange = async (newTheme) => {
     if (!currentUser) return;
+
+    // Immediately update localStorage and trigger UI change
+    localStorage.setItem('app-theme', newTheme);
+    if (onThemeChange) {
+      onThemeChange(newTheme);
+    }
+
+    // Update user state for display
+    setCurrentUser(prev => ({ ...prev, theme: newTheme }));
+
+    // Save to backend in background (non-blocking)
     try {
       await User.updateMyUserData({ theme: newTheme });
-      setCurrentUser(prev => ({ ...prev, theme: newTheme }));
-      if (onThemeChange) {
-        onThemeChange(newTheme);
-      }
     } catch (error) {
-      console.error("Failed to update theme", error);
+      console.error("Failed to save theme to backend", error);
     }
   };
 
