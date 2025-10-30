@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { User } from "@/api/entities";
 import { 
   LayoutDashboard, 
   CreditCard, 
@@ -108,25 +107,17 @@ const navigationItems = [
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
-  const [theme, setTheme] = useState('system');
+  const [theme, setTheme] = useState(() => {
+    // Initialize from localStorage first, fallback to system
+    const savedTheme = localStorage.getItem('app-theme');
+    return savedTheme || 'system';
+  });
 
   const handleThemeChange = (newTheme) => {
     setTheme(newTheme);
+    // Save to localStorage for immediate persistence
+    localStorage.setItem('app-theme', newTheme);
   };
-
-  useEffect(() => {
-    const loadUserTheme = async () => {
-      try {
-        const user = await User.me();
-        if (user && user.theme) {
-          setTheme(user.theme);
-        }
-      } catch (error) {
-        console.warn("Could not load user theme, using system default.");
-      }
-    };
-    loadUserTheme();
-  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
