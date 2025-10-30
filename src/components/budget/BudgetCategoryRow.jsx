@@ -36,18 +36,18 @@ export default function BudgetCategoryRow({ name, budgeted, spent, remaining, on
           />
         ) : (
           <div onClick={() => setIsEditing(true)} className="cursor-pointer p-2 rounded-md hover:bg-slate-100 text-right md:text-left">
-            <span className="text-slate-600">{formatCurrency(budgeted, 'EUR', true)}</span>
+            <span className="text-slate-600 currency">{formatCurrency(budgeted, 'EUR', true)}</span>
           </div>
         )}
       </div>
 
       <div className="md:col-span-1 text-right md:text-left">
-        <span className="text-slate-600">{formatCurrency(spent, 'EUR', true)}</span>
+        <span className="text-slate-600 currency">{formatCurrency(spent, 'EUR', true)}</span>
       </div>
 
       <div className="md:col-span-1">
         <div className="flex justify-between items-center mb-1">
-            <span className={`font-medium ${isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
+            <span className={`font-medium currency ${isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
                 {formatCurrency(remaining, 'EUR', true)}
             </span>
             <span className="text-xs text-slate-500">{progress.toFixed(0)}%</span>

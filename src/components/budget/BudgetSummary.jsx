@@ -19,7 +19,7 @@ export default function BudgetSummary({ totalBudgeted, totalSpent }) {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-600">Total Budgeted</p>
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalBudgeted, 'EUR')}</p>
+              <p className="text-2xl font-bold text-slate-900 currency-large">{formatCurrency(totalBudgeted, 'EUR')}</p>
             </div>
           </div>
         </CardContent>
@@ -33,7 +33,7 @@ export default function BudgetSummary({ totalBudgeted, totalSpent }) {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-600">Total Spent</p>
-              <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalSpent, 'EUR')}</p>
+              <p className="text-2xl font-bold text-slate-900 currency-large">{formatCurrency(totalSpent, 'EUR')}</p>
             </div>
           </div>
         </CardContent>
@@ -47,7 +47,7 @@ export default function BudgetSummary({ totalBudgeted, totalSpent }) {
             </div>
             <div>
                 <p className="text-sm font-medium text-slate-600">Remaining</p>
-                <p className={`text-2xl font-bold ${isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>{formatCurrency(totalRemaining, 'EUR')}</p>
+                <p className={`text-2xl font-bold currency-large ${isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>{formatCurrency(totalRemaining, 'EUR')}</p>
             </div>
           </div>
         </CardContent>

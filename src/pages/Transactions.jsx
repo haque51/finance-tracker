@@ -367,7 +367,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Total Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-bold text-emerald-600 currency-large">
               {formatCurrency(totalIncome, 'EUR', true, true)}
             </p>
           </CardContent>
@@ -377,7 +377,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-600">
+            <p className="text-2xl font-bold text-red-600 currency-large">
               {formatCurrency(totalExpenses, 'EUR', true, true)}
             </p>
           </CardContent>
@@ -387,7 +387,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Net Amount</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${netAmount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-2xl font-bold currency-large ${netAmount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
               {formatCurrency(netAmount, 'EUR', true, true)}
             </p>
           </CardContent>
@@ -397,7 +397,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Net Worth</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${netWorth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-2xl font-bold currency-large ${netWorth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
               {formatCurrency(netWorth, 'EUR', true, true)}
             </p>
           </CardContent>

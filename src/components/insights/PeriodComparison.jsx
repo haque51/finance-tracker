@@ -149,13 +149,13 @@ export default function PeriodComparison({ transactions, categories, accounts })
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Current {comparisonData.periodLabel}</span>
-                <span className="font-semibold text-emerald-600">
+                <span className="font-semibold text-emerald-600 currency">
                   {formatCurrency(comparisonData.current.income, 'EUR')}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Previous {comparisonData.periodLabel}</span>
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-slate-700 currency">
                   {formatCurrency(comparisonData.previous.income, 'EUR')}
                 </span>
               </div>
@@ -181,13 +181,13 @@ export default function PeriodComparison({ transactions, categories, accounts })
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Current {comparisonData.periodLabel}</span>
-                <span className="font-semibold text-red-600">
+                <span className="font-semibold text-red-600 currency">
                   {formatCurrency(comparisonData.current.expenses, 'EUR')}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Previous {comparisonData.periodLabel}</span>
-                <span className="font-semibold text-slate-700">
+                <span className="font-semibold text-slate-700 currency">
                   {formatCurrency(comparisonData.previous.expenses, 'EUR')}
                 </span>
               </div>
@@ -213,7 +213,7 @@ export default function PeriodComparison({ transactions, categories, accounts })
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Current {comparisonData.periodLabel}</span>
-                <span className={`font-semibold ${
+                <span className={`font-semibold currency ${
                   comparisonData.current.savings >= 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}>
                   {formatCurrency(comparisonData.current.savings, 'EUR')}
@@ -221,7 +221,7 @@ export default function PeriodComparison({ transactions, categories, accounts })
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Previous {comparisonData.periodLabel}</span>
-                <span className={`font-semibold ${
+                <span className={`font-semibold currency ${
                   comparisonData.previous.savings >= 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}>
                   {formatCurrency(comparisonData.previous.savings, 'EUR')}
@@ -249,7 +249,7 @@ export default function PeriodComparison({ transactions, categories, accounts })
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Current</span>
-                <span className={`font-semibold ${
+                <span className={`font-semibold currency ${
                   comparisonData.currentNetWorth >= 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}>
                   {formatCurrency(comparisonData.currentNetWorth, 'EUR')}
@@ -257,7 +257,7 @@ export default function PeriodComparison({ transactions, categories, accounts })
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">End of Previous {comparisonData.periodLabel}</span>
-                <span className={`font-semibold ${
+                <span className={`font-semibold currency ${
                   comparisonData.previousNetWorth >= 0 ? 'text-emerald-600' : 'text-red-600'
                 }`}>
                   {formatCurrency(comparisonData.previousNetWorth, 'EUR')}
