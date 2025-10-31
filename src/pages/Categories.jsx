@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Category, Transaction, User } from "@/api/entities"; // Removed RecurrentTransaction, TransactionTemplate as they are not used here
 import { GenerateImage } from "@/api/integrations";
 import { Button } from "@/components/ui/button";
@@ -46,14 +46,27 @@ export default function CategoriesPage() {
   const [activeTab, setActiveTab] = useState("expense");
   const [isSettingUp, setIsSettingUp] = useState(false);
 
+  // Use ref to prevent multiple simultaneous setup attempts
+  const isSettingUpRef = useRef(false);
+  const hasLoadedOnce = useRef(false);
+
   // Sync with shared categories from AppContext
   useEffect(() => {
     setCategories(sharedCategories);
   }, [sharedCategories]);
 
   const setupDefaultCategories = useCallback(async (user) => {
+    // Prevent multiple simultaneous setup attempts
+    if (isSettingUpRef.current) {
+      console.log('⚠️ Category setup already in progress, skipping...');
+      return;
+    }
+
+    isSettingUpRef.current = true;
     setIsSettingUp(true);
+
     try {
+        console.log('🏗️ Setting up default categories...');
         for (const type in DEFAULT_CATEGORIES) {
             for (const cat of DEFAULT_CATEGORIES[type]) {
                 const parentCategory = await Category.create({
@@ -78,42 +91,52 @@ export default function CategoriesPage() {
                 }
             }
         }
+        console.log('✅ Default categories setup complete');
     } catch(e) {
-        console.error("Failed to set up default categories", e);
+        console.error("❌ Failed to set up default categories", e);
     } finally {
         setIsSettingUp(false);
+        isSettingUpRef.current = false;
     }
   }, []); // Empty dependency array as it only depends on fixed data and async calls
 
   const loadData = useCallback(async () => {
+    // Prevent multiple loads
+    if (hasLoadedOnce.current) {
+      console.log('📋 Data already loaded, skipping...');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const user = await User.me();
       setCurrentUser(user);
 
       const [categoriesData, transactionsData] = await Promise.all([
-        loadCategories(), // Use AppContext's loadCategories
+        loadCategories(), // Use AppContext's loadCategories (now memoized)
         Transaction.filter({}, '-created_date')
       ]);
 
       setTransactions(transactionsData);
 
-      // If no categories exist for the user, set up defaults
-      if (categoriesData.length === 0 && user) {
+      // If no categories exist for the user, set up defaults ONLY ONCE
+      if (categoriesData.length === 0 && user && !isSettingUpRef.current) {
+        console.log('📦 No categories found, setting up defaults...');
         await setupDefaultCategories(user);
-        // After setup, reload data again to show the newly created categories
-        await loadCategories(); // Use AppContext's loadCategories
+        // After setup, reload categories to show the newly created ones
+        await loadCategories();
       }
 
+      hasLoadedOnce.current = true;
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading data:', error);
     }
     setIsLoading(false);
-  }, [setupDefaultCategories, loadCategories]); // Added loadCategories to dependencies
+  }, [setupDefaultCategories, loadCategories]); // loadCategories is now stable
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []); // Only run once on mount
 
   const handleResetCategories = async () => {
     if (!window.confirm('This will delete ALL categories and recreate them with subcategories. Any custom categories you created will be lost. Continue?')) {
