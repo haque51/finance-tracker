@@ -4,7 +4,7 @@
  */
 
 // Get API URL from environment variable or use default
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://lumina-finance-api-dev.onrender.com';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://lumina-finance-backend-production.up.railway.app';
 
 // Debug mode
 export const DEBUG_MODE = process.env.REACT_APP_DEBUG === 'true';
