@@ -111,7 +111,11 @@ export default function TransactionsPage() {
     }
 
     if (filters.account !== "all") {
-        filtered = filtered.filter(t => t.account_id === filters.account || t.to_account_id === filters.account);
+        filtered = filtered.filter(t =>
+          t.account_id === filters.account ||
+          t.from_account_id === filters.account ||
+          t.to_account_id === filters.account
+        );
     }
 
     if (filters.type !== "all") {
@@ -169,7 +173,12 @@ export default function TransactionsPage() {
   };
 
   const handleEdit = (transaction) => {
-    setEditingTransaction(transaction);
+    // For transfers, convert from_account_id back to account_id for the form
+    const transactionForForm = { ...transaction };
+    if (transaction.type === 'transfer' && transaction.from_account_id) {
+      transactionForForm.account_id = transaction.from_account_id;
+    }
+    setEditingTransaction(transactionForForm);
     setIsFormOpen(true);
   };
 
@@ -300,6 +309,12 @@ export default function TransactionsPage() {
         exchange_rate: rate,
         user_id: currentUser.id,
       };
+
+      // For transfers, backend expects from_account_id instead of account_id
+      if (formData.type === 'transfer') {
+        dataToSave.from_account_id = formData.account_id;
+        delete dataToSave.account_id;
+      }
 
       console.log('Data to save:', dataToSave);
       console.log('Is update?', !!editingTransaction);
