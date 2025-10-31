@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Transaction, Account, RecurrentTransaction, TransactionTemplate } from "@/api/entities";
+import { Transaction, Account, RecurrentTransaction, TransactionTemplate, Category, Budget, FinancialGoal, NetWorthSnapshot, DebtPayoffPlan, SpendingAlert, CategorizationRule } from "@/api/entities";
 import api from '../../services/api'; // Import API directly for balance updates
 import { API_ENDPOINTS } from '../../config/api.config';
 import {
@@ -26,7 +26,7 @@ export default function StartOver({ user, onComplete }) {
       return;
     }
 
-    if (!window.confirm("This will permanently delete ALL your financial data including transactions, recurring transactions, and templates. Account structures will remain. This action CANNOT be undone. Are you absolutely sure?")) {
+    if (!window.confirm("This will permanently delete EVERYTHING - all accounts, transactions, budgets, goals, categories, and settings. You will start completely fresh with an empty account. This action CANNOT be undone. Are you absolutely sure?")) {
       return;
     }
 
@@ -67,64 +67,161 @@ export default function StartOver({ user, onComplete }) {
       await delay(500);
 
       // Delete all transaction templates (backend auto-filters by authenticated user)
-      // Note: TransactionTemplate.filter may not be implemented, so we'll catch any errors
       console.log('📝 Fetching transaction templates...');
       try {
         const templates = await TransactionTemplate.filter({});
         console.log(`🗑️ Deleting ${templates.length} templates...`);
         for (let i = 0; i < templates.length; i++) {
           await TransactionTemplate.delete(templates[i].id);
-          // Add delay every 5 deletions to prevent rate limiting
-          if ((i + 1) % 5 === 0) {
-            await delay(300);
-          }
+          if ((i + 1) % 5 === 0) await delay(300);
         }
         console.log('✅ All templates deleted');
       } catch (error) {
         console.log('⚠️ Template deletion skipped (feature may not be implemented)');
       }
 
-      // Small delay before resetting account balances
+      // Small delay before next batch
       await delay(500);
 
-      // Reset all account balances to opening balance
-      // Backend doesn't auto-recalculate when transactions are deleted, so we must do it manually
-      console.log('💰 Fetching accounts to reset balances...');
-      const accounts = await Account.filter({});
-      console.log(`🔄 Resetting ${accounts.length} account balances to opening balance...`);
+      // Delete all budgets
+      console.log('💰 Fetching budgets...');
+      try {
+        const budgets = await Budget.filter({});
+        console.log(`🗑️ Deleting ${budgets.length} budgets...`);
+        for (let i = 0; i < budgets.length; i++) {
+          await Budget.delete(budgets[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All budgets deleted');
+      } catch (error) {
+        console.log('⚠️ Budget deletion skipped:', error.message);
+      }
 
+      // Small delay before next batch
+      await delay(500);
+
+      // Delete all financial goals
+      console.log('🎯 Fetching financial goals...');
+      try {
+        const goals = await FinancialGoal.filter({});
+        console.log(`🗑️ Deleting ${goals.length} financial goals...`);
+        for (let i = 0; i < goals.length; i++) {
+          await FinancialGoal.delete(goals[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All financial goals deleted');
+      } catch (error) {
+        console.log('⚠️ Financial goal deletion skipped:', error.message);
+      }
+
+      // Small delay before next batch
+      await delay(500);
+
+      // Delete all debt payoff plans
+      console.log('💳 Fetching debt payoff plans...');
+      try {
+        const debtPlans = await DebtPayoffPlan.filter({});
+        console.log(`🗑️ Deleting ${debtPlans.length} debt payoff plans...`);
+        for (let i = 0; i < debtPlans.length; i++) {
+          await DebtPayoffPlan.delete(debtPlans[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All debt payoff plans deleted');
+      } catch (error) {
+        console.log('⚠️ Debt payoff plan deletion skipped:', error.message);
+      }
+
+      // Small delay before next batch
+      await delay(500);
+
+      // Delete all spending alerts
+      console.log('🔔 Fetching spending alerts...');
+      try {
+        const alerts = await SpendingAlert.filter({});
+        console.log(`🗑️ Deleting ${alerts.length} spending alerts...`);
+        for (let i = 0; i < alerts.length; i++) {
+          await SpendingAlert.delete(alerts[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All spending alerts deleted');
+      } catch (error) {
+        console.log('⚠️ Spending alert deletion skipped:', error.message);
+      }
+
+      // Small delay before next batch
+      await delay(500);
+
+      // Delete all categorization rules
+      console.log('📋 Fetching categorization rules...');
+      try {
+        const rules = await CategorizationRule.filter({});
+        console.log(`🗑️ Deleting ${rules.length} categorization rules...`);
+        for (let i = 0; i < rules.length; i++) {
+          await CategorizationRule.delete(rules[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All categorization rules deleted');
+      } catch (error) {
+        console.log('⚠️ Categorization rule deletion skipped:', error.message);
+      }
+
+      // Small delay before next batch
+      await delay(500);
+
+      // Delete all net worth snapshots
+      console.log('📊 Fetching net worth snapshots...');
+      try {
+        const snapshots = await NetWorthSnapshot.filter({});
+        console.log(`🗑️ Deleting ${snapshots.length} net worth snapshots...`);
+        for (let i = 0; i < snapshots.length; i++) {
+          await NetWorthSnapshot.delete(snapshots[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All net worth snapshots deleted');
+      } catch (error) {
+        console.log('⚠️ Net worth snapshot deletion skipped:', error.message);
+      }
+
+      // Small delay before next batch
+      await delay(500);
+
+      // Delete all categories
+      console.log('📂 Fetching categories...');
+      try {
+        const categories = await Category.filter({});
+        console.log(`🗑️ Deleting ${categories.length} categories...`);
+        for (let i = 0; i < categories.length; i++) {
+          await Category.delete(categories[i].id);
+          if ((i + 1) % 5 === 0) await delay(300);
+        }
+        console.log('✅ All categories deleted');
+      } catch (error) {
+        console.log('⚠️ Category deletion skipped:', error.message);
+      }
+
+      // Small delay before final batch
+      await delay(500);
+
+      // Delete all accounts (LAST - since transactions reference accounts)
+      console.log('🏦 Fetching accounts...');
+      const accounts = await Account.filter({});
+      console.log(`🗑️ Deleting ${accounts.length} accounts...`);
       for (let i = 0; i < accounts.length; i++) {
         const account = accounts[i];
-        const openingBalance = account.opening_balance || account.openingBalance || 0;
-
-        console.log(`  Resetting ${account.name}: opening_balance=${openingBalance}, current=${account.balance}`);
-
-        // Bypass accountService and call API directly
-        // accountService._mapAccountToAPI strips out balance fields, so we use direct API call
+        console.log(`  Deleting ${account.name}...`);
         try {
-          const response = await api.put(`${API_ENDPOINTS.ACCOUNTS}/${account.id}`, {
-            current_balance: openingBalance
-          });
-          console.log(`    ✅ ${account.name} reset successfully to ${openingBalance}`);
-          console.log(`       Response:`, response.data);
+          await Account.delete(account.id);
+          console.log(`    ✅ ${account.name} deleted successfully`);
         } catch (error) {
-          console.error(`    ❌ Failed to reset ${account.name}:`);
-          console.error(`       Error:`, error);
-          console.error(`       Error response:`, error.response?.data);
-          console.error(`       Error status:`, error.response?.status);
-          // Continue with other accounts even if one fails
+          console.error(`    ❌ Failed to delete ${account.name}:`, error);
         }
-
-        // Add delay every 3 updates to prevent rate limiting
-        if ((i + 1) % 3 === 0) {
-          await delay(400);
-        }
+        if ((i + 1) % 3 === 0) await delay(400);
       }
-      console.log('✅ All account balances reset to opening balance');
+      console.log('✅ All accounts deleted');
 
       console.log('✅ Data reset complete!');
 
-      alert("All data has been successfully deleted and account balances have been reset to opening balances.");
+      alert("All data has been successfully deleted. You now have a completely fresh start!");
       
       // Notify parent component to refresh data
       if (onComplete) {
@@ -150,14 +247,18 @@ export default function StartOver({ user, onComplete }) {
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800">
-            <strong>Warning:</strong> This action will permanently delete ALL your financial data:
+            <strong>Warning:</strong> This action will permanently delete EVERYTHING:
             <ul className="mt-2 list-disc list-inside space-y-1">
+              <li>All accounts</li>
               <li>All transactions (income, expenses, transfers)</li>
-              <li>All recurring transactions</li>
-              <li>All transaction templates</li>
-              <li>Account balances will be reset to opening balances</li>
+              <li>All recurring transactions and templates</li>
+              <li>All budgets and financial goals</li>
+              <li>All categories</li>
+              <li>All debt payoff plans</li>
+              <li>All spending alerts and rules</li>
+              <li>All net worth history</li>
             </ul>
-            <p className="mt-2 font-semibold">This action CANNOT be undone!</p>
+            <p className="mt-2 font-semibold text-red-900">You will start completely fresh with an empty account. This action CANNOT be undone!</p>
           </AlertDescription>
         </Alert>
 
