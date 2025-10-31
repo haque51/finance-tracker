@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { User, Transaction, Budget } from '@/api/entities';
+import { Transaction, Budget } from '@/api/entities';
+import { useCurrentUser } from '../hooks/useCurrentUser'; // Use custom hook instead of User.me()
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subMonths, addMonths } from 'date-fns';
 import { PiggyBank, ArrowLeft, ArrowRight } from 'lucide-react';
@@ -10,7 +11,7 @@ import { useApp } from '../context/AppContext';
 
 export default function BudgetPage() {
   const { categories: sharedCategories } = useApp();
-  const [currentUser, setCurrentUser] = useState(null);
+  const { user: currentUser } = useCurrentUser(); // Get user from AppContext
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -46,16 +47,20 @@ export default function BudgetPage() {
 
   useEffect(() => {
     const init = async () => {
+      // Wait for user to be available from AppContext
+      if (!currentUser) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const user = await User.me();
-        setCurrentUser(user);
-        await loadData(user, currentMonth);
+        await loadData(currentUser, currentMonth);
       } catch (e) {
         setIsLoading(false);
       }
     };
     init();
-  }, [currentMonth, loadData]);
+  }, [currentMonth, loadData, currentUser]); // Add currentUser as dependency
 
   const handleBudgetUpdate = async (categoryId, newAmount) => {
     const existingBudget = budgets.find(b => b.category_id === categoryId && b.month === monthString);

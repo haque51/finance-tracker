@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Account, Transaction, User } from "@/api/entities"; // Added User import
+import { Account, Transaction } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
+import { useCurrentUser } from '../hooks/useCurrentUser'; // Use custom hook instead of User.me()
 import { Button } from "@/components/ui/button";
 import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import {
@@ -16,8 +17,8 @@ import AccountCard from "../components/accounts/AccountCard";
 import AccountForm from "../components/accounts/AccountForm";
 
 export default function AccountsPage() {
+  const { user: currentUser } = useCurrentUser(); // Get user from AppContext
   const [accounts, setAccounts] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null); // New state for current user
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
@@ -49,28 +50,30 @@ export default function AccountsPage() {
   }, []);
 
   const loadAccounts = useCallback(async () => {
+    // Wait for user to be available from AppContext
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Get current user first
-      const user = await User.me();
-      setCurrentUser(user);
-
       // Filter accounts by current user ID
       const accountsData = await Account.filter({}, "-created_date");
       setAccounts(accountsData);
     } catch (error) {
       console.error("Error loading accounts:", error);
-      // Handle cases where user might not be logged in or other errors
-      setCurrentUser(null);
       setAccounts([]);
     }
     setIsLoading(false);
-  }, []);
+  }, [currentUser]); // Add currentUser as dependency
 
   useEffect(() => {
-    fetchExchangeRates();
-    loadAccounts();
-  }, [fetchExchangeRates, loadAccounts]);
+    if (currentUser) {
+      fetchExchangeRates();
+      loadAccounts();
+    }
+  }, [currentUser]); // Only run when currentUser becomes available, call functions directly
 
   const handleAddNew = () => {
     setEditingAccount(null);

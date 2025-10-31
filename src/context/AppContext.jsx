@@ -32,6 +32,23 @@ export function AppProvider({ children }) {
   const [recurringTransactions, setRecurringTransactions] = useState([]);
   const [exchangeRates, setExchangeRates] = useState({});
 
+  /**
+   * Load categories from API
+   */
+  const loadCategories = useCallback(async (filters = {}) => {
+    try {
+      console.log('📂 Loading categories from backend...');
+      const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
+      console.log(`📂 Loaded ${data.length} categories from backend`);
+      setCategories(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      throw error;
+    }
+  }, []); // No dependencies - function is stable
+
   // Check if user is logged in on mount
   useEffect(() => {
     const initAuth = async () => {
@@ -61,7 +78,7 @@ export function AppProvider({ children }) {
     };
 
     initAuth();
-  }, []);
+  }, [loadCategories]); // Add loadCategories to dependencies
 
   /**
    * Load accounts from API
@@ -90,23 +107,6 @@ export function AppProvider({ children }) {
       throw error;
     }
   }, []);
-
-  /**
-   * Load categories from API
-   */
-  const loadCategories = useCallback(async (filters = {}) => {
-    try {
-      console.log('📂 Loading categories from backend...');
-      const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
-      console.log(`📂 Loaded ${data.length} categories from backend`);
-      setCategories(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      throw error;
-    }
-  }, []); // No dependencies - function is stable
 
   /**
    * Create multiple categories in bulk (for new users)
