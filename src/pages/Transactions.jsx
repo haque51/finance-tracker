@@ -150,14 +150,18 @@ export default function TransactionsPage() {
     }
   }, [accounts]);
 
+  // Load data when currentUser becomes available (run once on mount)
   useEffect(() => {
-    loadData();
-    fetchExchangeRates();
-  }, [loadData, fetchExchangeRates]);
+    if (currentUser) {
+      loadData();
+      fetchExchangeRates();
+    }
+  }, [currentUser]); // Only run when currentUser becomes available, call functions directly
 
+  // Apply filters when transactions or filters change
   useEffect(() => {
     applyFilters();
-  }, [applyFilters]);
+  }, [transactions, filters]); // Depend on data directly, not the function reference
 
   const handleAddNew = () => {
     setEditingTransaction(null);

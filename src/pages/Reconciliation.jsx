@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Account, Transaction, User } from "@/api/entities"; // Added User import
+import { Account, Transaction } from "@/api/entities";
+import { useCurrentUser } from '../hooks/useCurrentUser'; // Use custom hook instead of User.me()
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,10 +13,10 @@ import { ClipboardCheck, Wallet, Milestone, Scale } from "lucide-react";
 import { format, startOfMonth } from "date-fns";
 
 export default function ReconciliationPage() {
+    const { user: currentUser } = useCurrentUser(); // Get user from AppContext
     const [accounts, setAccounts] = useState([]);
     const [selectedAccountId, setSelectedAccountId] = useState("");
     const [transactions, setTransactions] = useState([]);
-    const [currentUser, setCurrentUser] = useState(null); // Added currentUser state
     const [isLoading, setIsLoading] = useState(true);
     const [statementDate, setStatementDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [statementBalance, setStatementBalance] = useState("");
@@ -23,16 +24,17 @@ export default function ReconciliationPage() {
 
     useEffect(() => {
         const loadAccounts = async () => {
+            // Wait for user to be available from AppContext
+            if (!currentUser) {
+                setIsLoading(false);
+                return;
+            }
+
             setIsLoading(true);
             try {
-                // Get current user first
-                const user = await User.me();
-                setCurrentUser(user);
-
                 // Filter accounts by current user
-                const accountsData = await Account.filter({ 
-                    
-                    is_active: true 
+                const accountsData = await Account.filter({
+                    is_active: true
                 });
                 setAccounts(accountsData);
             } catch (error) {
@@ -41,7 +43,7 @@ export default function ReconciliationPage() {
             setIsLoading(false);
         };
         loadAccounts();
-    }, []);
+    }, [currentUser]); // Only run when currentUser becomes available
 
     useEffect(() => {
         if (!selectedAccountId || !currentUser) { // Added currentUser check
