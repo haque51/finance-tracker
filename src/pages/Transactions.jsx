@@ -266,7 +266,15 @@ export default function TransactionsPage() {
   const handleDelete = async (transactionId) => {
     if (window.confirm("Are you sure you want to delete this transaction?")) {
       try {
-        // Backend automatically handles account balance updates
+        // Find the transaction to get its details before deleting
+        const transactionToDelete = transactions.find(t => t.id === transactionId);
+
+        if (transactionToDelete) {
+          // Revert the transaction's effect on account balances
+          await updateAccountBalances(transactionToDelete, 'revert');
+        }
+
+        // Delete the transaction
         await Transaction.delete(transactionId);
 
         // Reload data after successful deletion
@@ -290,8 +298,13 @@ export default function TransactionsPage() {
       console.log('memo:', formData.memo);
       console.log('========================');
 
+      // --- REVERT OLD TRANSACTION BALANCE IF EDITING ---
+      if (editingTransaction) {
+        // First, revert the old transaction's effect on account balances
+        await updateAccountBalances(editingTransaction, 'revert');
+      }
+
       // --- SAVE TRANSACTION DATA ---
-      // Backend automatically handles account balance updates
       const rate = exchangeRates[formData.currency] || 1;
       const amountEur = formData.amount * rate;
       const dataToSave = {
@@ -304,11 +317,17 @@ export default function TransactionsPage() {
       console.log('Data to save:', dataToSave);
       console.log('Is update?', !!editingTransaction);
 
+      let savedTransaction;
       if (editingTransaction) {
-        await Transaction.update(editingTransaction.id, dataToSave);
+        savedTransaction = await Transaction.update(editingTransaction.id, dataToSave);
       } else {
-        await Transaction.create(dataToSave);
+        savedTransaction = await Transaction.create(dataToSave);
       }
+
+      // --- APPLY NEW TRANSACTION BALANCE ---
+      // Use the saved transaction data to apply balance changes with correct loan logic
+      const transactionToApply = { ...dataToSave, id: savedTransaction?.id || editingTransaction?.id };
+      await updateAccountBalances(transactionToApply, 'apply');
 
       setIsFormOpen(false);
       setEditingTransaction(null);
