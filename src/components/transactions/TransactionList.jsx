@@ -157,7 +157,12 @@ export default function TransactionList({
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-slate-900">{getAccountName(transaction.account_id)}</p>
+                        <p className="font-medium text-slate-900">
+                          {transaction.type === 'transfer'
+                            ? getAccountName(transaction.from_account_id)
+                            : getAccountName(transaction.account_id)
+                          }
+                        </p>
                         {transaction.type === 'transfer' && transaction.to_account_id && (
                           <p className="text-xs text-slate-500">
                             → {getAccountName(transaction.to_account_id)}

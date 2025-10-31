@@ -530,6 +530,7 @@ export default function Dashboard() {
             <SelectContent>
               {Array.from({ length: 12 }, (_, i) => {
                 const date = new Date();
+                date.setDate(1); // Set to first day to avoid month overflow issues
                 date.setMonth(date.getMonth() - i);
                 const value = format(date, 'yyyy-MM');
                 return (
