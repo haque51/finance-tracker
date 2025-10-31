@@ -60,13 +60,26 @@ export default function AccountsPage() {
     try {
       // Filter accounts by current user ID
       const accountsData = await Account.filter({}, "-created_date");
-      setAccounts(accountsData);
+
+      // Calculate balance_eur for each account if not already present
+      const accountsWithEur = accountsData.map(account => {
+        if (!account.balance_eur && account.balance !== undefined) {
+          const rate = exchangeRates[account.currency] || 1;
+          return {
+            ...account,
+            balance_eur: account.balance * rate
+          };
+        }
+        return account;
+      });
+
+      setAccounts(accountsWithEur);
     } catch (error) {
       console.error("Error loading accounts:", error);
       setAccounts([]);
     }
     setIsLoading(false);
-  }, [currentUser]); // Add currentUser as dependency
+  }, [currentUser, exchangeRates]); // Add exchangeRates as dependency
 
   useEffect(() => {
     if (currentUser) {
