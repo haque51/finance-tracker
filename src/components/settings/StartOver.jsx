@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Transaction, Account, RecurrentTransaction, TransactionTemplate } from "@/api/entities";
-import { 
-  AlertTriangle, 
+import api from '../../services/api'; // Import API directly for balance updates
+import { API_ENDPOINTS } from '../../config/api.config';
+import {
+  AlertTriangle,
   RefreshCw,
   Trash2
 } from "lucide-react";
@@ -82,10 +84,43 @@ export default function StartOver({ user, onComplete }) {
         console.log('⚠️ Template deletion skipped (feature may not be implemented)');
       }
 
-      console.log('✅ Data reset complete!');
-      console.log('ℹ️ Account balances will be recalculated automatically based on remaining transactions');
+      // Small delay before resetting account balances
+      await delay(500);
 
-      alert("All data has been successfully deleted. Account balances will be recalculated automatically.");
+      // Reset all account balances to opening balance
+      // Backend doesn't auto-recalculate when transactions are deleted, so we must do it manually
+      console.log('💰 Fetching accounts to reset balances...');
+      const accounts = await Account.filter({});
+      console.log(`🔄 Resetting ${accounts.length} account balances to opening balance...`);
+
+      for (let i = 0; i < accounts.length; i++) {
+        const account = accounts[i];
+        const openingBalance = account.opening_balance || account.openingBalance || 0;
+
+        console.log(`  Resetting ${account.name}: opening_balance=${openingBalance}, current=${account.balance}`);
+
+        // Bypass accountService and call API directly
+        // accountService._mapAccountToAPI strips out balance fields, so we use direct API call
+        try {
+          await api.put(`${API_ENDPOINTS.ACCOUNTS}/${account.id}`, {
+            current_balance: openingBalance
+          });
+          console.log(`    ✅ ${account.name} reset successfully`);
+        } catch (error) {
+          console.error(`    ❌ Failed to reset ${account.name}:`, error);
+          // Continue with other accounts even if one fails
+        }
+
+        // Add delay every 3 updates to prevent rate limiting
+        if ((i + 1) % 3 === 0) {
+          await delay(400);
+        }
+      }
+      console.log('✅ All account balances reset to opening balance');
+
+      console.log('✅ Data reset complete!');
+
+      alert("All data has been successfully deleted and account balances have been reset to opening balances.");
       
       // Notify parent component to refresh data
       if (onComplete) {
@@ -116,7 +151,7 @@ export default function StartOver({ user, onComplete }) {
               <li>All transactions (income, expenses, transfers)</li>
               <li>All recurring transactions</li>
               <li>All transaction templates</li>
-              <li>Account structures will remain but balances will be recalculated</li>
+              <li>Account balances will be reset to opening balances</li>
             </ul>
             <p className="mt-2 font-semibold">This action CANNOT be undone!</p>
           </AlertDescription>
