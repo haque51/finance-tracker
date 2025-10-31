@@ -102,12 +102,16 @@ export default function StartOver({ user, onComplete }) {
         // Bypass accountService and call API directly
         // accountService._mapAccountToAPI strips out balance fields, so we use direct API call
         try {
-          await api.put(`${API_ENDPOINTS.ACCOUNTS}/${account.id}`, {
+          const response = await api.put(`${API_ENDPOINTS.ACCOUNTS}/${account.id}`, {
             current_balance: openingBalance
           });
-          console.log(`    ✅ ${account.name} reset successfully`);
+          console.log(`    ✅ ${account.name} reset successfully to ${openingBalance}`);
+          console.log(`       Response:`, response.data);
         } catch (error) {
-          console.error(`    ❌ Failed to reset ${account.name}:`, error);
+          console.error(`    ❌ Failed to reset ${account.name}:`);
+          console.error(`       Error:`, error);
+          console.error(`       Error response:`, error.response?.data);
+          console.error(`       Error status:`, error.response?.status);
           // Continue with other accounts even if one fails
         }
 
