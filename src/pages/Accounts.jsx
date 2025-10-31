@@ -81,12 +81,19 @@ export default function AccountsPage() {
     setIsLoading(false);
   }, [currentUser, exchangeRates]); // Add exchangeRates as dependency
 
+  // Fetch exchange rates when user is available
   useEffect(() => {
     if (currentUser) {
       fetchExchangeRates();
+    }
+  }, [currentUser, fetchExchangeRates]);
+
+  // Load accounts when exchange rates are available
+  useEffect(() => {
+    if (currentUser && exchangeRates) {
       loadAccounts();
     }
-  }, [currentUser]); // Only run when currentUser becomes available, call functions directly
+  }, [currentUser, exchangeRates, loadAccounts]);
 
   const handleAddNew = () => {
     setEditingAccount(null);
