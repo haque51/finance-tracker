@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { User, Account } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
+import { useApp } from '../context/AppContext'; // Import AppContext
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +35,7 @@ import DataManagement from "../components/settings/DataManagement";
 import StartOver from "../components/settings/StartOver";
 
 export default function SettingsPage() {
+  const { setAccounts: setGlobalAccounts, setTransactions, setCategories } = useApp(); // Get context setters
   const [currentUser, setCurrentUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [exchangeRates, setExchangeRates] = useState({ USD: 0.92, BDT: 0.0084, EUR: 1 });
@@ -106,8 +108,19 @@ export default function SettingsPage() {
   };
 
   const handleStartOverComplete = () => {
-    // Reload data after start over
-    loadData();
+    console.log('🔄 Clearing all cached data and reloading...');
+
+    // Clear all AppContext state immediately
+    setGlobalAccounts([]);
+    setTransactions([]);
+    setCategories([]);
+
+    // Clear local state
+    setAccounts([]);
+
+    // Force a full page reload to ensure all components get fresh data
+    // This is the most reliable way to ensure a clean slate
+    window.location.reload();
   };
 
   if (isLoading) {
