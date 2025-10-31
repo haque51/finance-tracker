@@ -15,6 +15,9 @@ export default function StartOver({ user, onComplete }) {
   const [confirmText, setConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
 
+  // Helper function to add delay between API calls
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   const handleStartOver = async () => {
     if (confirmText !== "DELETE ALL DATA") {
       alert('Please type "DELETE ALL DATA" exactly to confirm.');
@@ -27,27 +30,62 @@ export default function StartOver({ user, onComplete }) {
 
     setIsResetting(true);
     try {
+      console.log('🗑️ Starting data reset process...');
+
       // Delete all transactions (backend auto-filters by authenticated user)
+      console.log('📋 Fetching transactions...');
       const transactions = await Transaction.filter({});
-      for (const transaction of transactions) {
-        await Transaction.delete(transaction.id);
+      console.log(`🗑️ Deleting ${transactions.length} transactions...`);
+      for (let i = 0; i < transactions.length; i++) {
+        await Transaction.delete(transactions[i].id);
+        // Add delay every 5 deletions to prevent rate limiting
+        if ((i + 1) % 5 === 0) {
+          await delay(300);
+        }
       }
+      console.log('✅ All transactions deleted');
+
+      // Small delay before next batch
+      await delay(500);
 
       // Delete all recurring transactions (backend auto-filters by authenticated user)
+      console.log('🔄 Fetching recurring transactions...');
       const recurringTransactions = await RecurrentTransaction.filter({});
-      for (const recurring of recurringTransactions) {
-        await RecurrentTransaction.delete(recurring.id);
+      console.log(`🗑️ Deleting ${recurringTransactions.length} recurring transactions...`);
+      for (let i = 0; i < recurringTransactions.length; i++) {
+        await RecurrentTransaction.delete(recurringTransactions[i].id);
+        // Add delay every 5 deletions to prevent rate limiting
+        if ((i + 1) % 5 === 0) {
+          await delay(300);
+        }
       }
+      console.log('✅ All recurring transactions deleted');
+
+      // Small delay before next batch
+      await delay(500);
 
       // Delete all transaction templates (backend auto-filters by authenticated user)
+      console.log('📝 Fetching transaction templates...');
       const templates = await TransactionTemplate.filter({});
-      for (const template of templates) {
-        await TransactionTemplate.delete(template.id);
+      console.log(`🗑️ Deleting ${templates.length} templates...`);
+      for (let i = 0; i < templates.length; i++) {
+        await TransactionTemplate.delete(templates[i].id);
+        // Add delay every 5 deletions to prevent rate limiting
+        if ((i + 1) % 5 === 0) {
+          await delay(300);
+        }
       }
+      console.log('✅ All templates deleted');
+
+      // Small delay before next batch
+      await delay(500);
 
       // Reset all account balances to their opening balance (backend auto-filters by authenticated user)
+      console.log('💰 Fetching accounts...');
       const accounts = await Account.filter({});
-      for (const account of accounts) {
+      console.log(`🔄 Resetting ${accounts.length} account balances...`);
+      for (let i = 0; i < accounts.length; i++) {
+        const account = accounts[i];
         const openingBalance = account.opening_balance || 0;
         await Account.update(account.id, {
           balance: openingBalance,
@@ -55,7 +93,12 @@ export default function StartOver({ user, onComplete }) {
           last_reconciled_date: null,
           last_reconciled_balance: null
         });
+        // Add delay every 5 updates to prevent rate limiting
+        if ((i + 1) % 5 === 0) {
+          await delay(300);
+        }
       }
+      console.log('✅ All account balances reset');
 
       alert("All data has been successfully deleted and accounts have been reset to their opening balances.");
       
