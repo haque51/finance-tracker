@@ -3,7 +3,7 @@
  * Global application state management for authentication and data
  */
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
 import accountService from '../services/accountService';
 import transactionService from '../services/transactionService';
@@ -66,7 +66,7 @@ export function AppProvider({ children }) {
   /**
    * Load accounts from API
    */
-  const loadAccounts = async (filters = {}) => {
+  const loadAccounts = useCallback(async (filters = {}) => {
     try {
       const data = await accountService.getAccounts(filters);
       setAccounts(data);
@@ -75,12 +75,12 @@ export function AppProvider({ children }) {
       console.error('Failed to load accounts:', error);
       throw error;
     }
-  };
+  }, []);
 
   /**
    * Load transactions from API
    */
-  const loadTransactions = async (filters = {}, page = 1, limit = 50) => {
+  const loadTransactions = useCallback(async (filters = {}, page = 1, limit = 50) => {
     try {
       const data = await transactionService.getTransactions(filters, page, limit);
       setTransactions(data.transactions);
@@ -89,12 +89,12 @@ export function AppProvider({ children }) {
       console.error('Failed to load transactions:', error);
       throw error;
     }
-  };
+  }, []);
 
   /**
    * Load categories from API
    */
-  const loadCategories = async (filters = {}) => {
+  const loadCategories = useCallback(async (filters = {}) => {
     try {
       console.log('📂 Loading categories from backend...');
       const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
@@ -106,7 +106,7 @@ export function AppProvider({ children }) {
       console.error('Error details:', error.response?.data || error.message);
       throw error;
     }
-  };
+  }, []); // No dependencies - function is stable
 
   /**
    * Create multiple categories in bulk (for new users)
