@@ -181,6 +181,15 @@ class AccountService {
       apiData.interest_rate = account.interest_rate;
     }
 
+    // Allow manual balance adjustments (for reconciliation)
+    if (account.balance !== undefined) {
+      apiData.balance = account.balance;
+    }
+
+    if (account.balance_eur !== undefined) {
+      apiData.balance_eur = account.balance_eur;
+    }
+
     return apiData;
   }
 }
