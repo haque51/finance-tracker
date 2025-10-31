@@ -179,6 +179,8 @@ class TransactionService {
       type: apiTxn.type,
       accountId: apiTxn.account_id,
       account_id: apiTxn.account_id, // Keep both formats for compatibility
+      fromAccountId: apiTxn.from_account_id, // Add from_account_id for transfers
+      from_account_id: apiTxn.from_account_id, // Keep both formats for compatibility
       toAccountId: apiTxn.to_account_id,
       to_account_id: apiTxn.to_account_id, // Keep both formats for compatibility
       transferAccountId: apiTxn.to_account_id, // Alias for frontend compatibility
