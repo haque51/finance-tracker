@@ -295,6 +295,10 @@ export default function TransactionsPage() {
     try {
       console.log('=== HANDLE SAVE DEBUG ===');
       console.log('Form data received:', formData);
+      console.log('Currency:', formData.currency);
+      console.log('Amount:', formData.amount);
+      console.log('Exchange rates:', exchangeRates);
+      console.log('Rate for currency:', exchangeRates[formData.currency]);
       console.log('payee:', formData.payee);
       console.log('memo:', formData.memo);
       console.log('========================');
@@ -303,6 +307,11 @@ export default function TransactionsPage() {
       // Backend automatically handles account balance updates
       const rate = exchangeRates[formData.currency] || 1;
       const amountEur = formData.amount * rate;
+
+      console.log('=== CURRENCY CONVERSION ===');
+      console.log('Final rate used:', rate);
+      console.log('Amount EUR calculated:', amountEur);
+      console.log('============================');
       const dataToSave = {
         ...formData,
         amount_eur: amountEur,
