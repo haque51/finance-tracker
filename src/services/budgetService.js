@@ -120,12 +120,16 @@ class BudgetService {
    * @private
    */
   _mapBudgetToAPI(budget) {
-    return {
+    const payload = {
       category_id: budget.categoryId || budget.category_id,
-      amount: budget.amount,
+      budgeted: budget.budgeted || budget.amount, // Backend expects 'budgeted' not 'amount'
       month: budget.month,
-      year: budget.year,
     };
+
+    // Don't send user_id - backend gets it from JWT token
+    // Don't send year - backend only uses month in YYYY-MM format
+
+    return payload;
   }
 }
 
