@@ -343,6 +343,74 @@ function AccountsView() {
   const { state, updateState } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  // Helper function to calculate historical balance for an account at the end of selected month
+  const calculateHistoricalBalance = (account, month) => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // If current month, return live balance
+    if (month === currentMonth) {
+      return account.currentBalance;
+    }
+
+    // Calculate historical balance at end of selected month
+    const monthEndDate = new Date(month + '-01');
+    monthEndDate.setMonth(monthEndDate.getMonth() + 1);
+    monthEndDate.setDate(0); // Last day of the month
+    monthEndDate.setHours(23, 59, 59, 999);
+
+    // Start with opening balance
+    let balance = account.openingBalance || 0;
+
+    // Apply all transactions up to the end of the selected month
+    const relevantTransactions = state.transactions.filter(t => {
+      const txDate = new Date(t.date);
+      return txDate <= monthEndDate;
+    });
+
+    relevantTransactions.forEach(txn => {
+      if (txn.type === 'income' && txn.accountId === account.id) {
+        balance += txn.amount;
+      } else if (txn.type === 'expense' && txn.accountId === account.id) {
+        balance += txn.amount; // amount is already negative for expenses
+      } else if (txn.type === 'transfer') {
+        if (txn.transferAccountId && txn.accountId === account.id) {
+          balance += txn.amount; // amount is negative for outgoing transfer
+        } else if (txn.transferAccountId === account.id) {
+          balance += Math.abs(txn.amount); // receiving transfer
+        }
+      }
+    });
+
+    return balance;
+  };
+
+  // Helper function to format month for display
+  const formatMonthDisplay = (monthStr) => {
+    const date = new Date(monthStr + '-01');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  // Generate array of last 12 months
+  const generateMonthOptions = () => {
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months.push({ value: monthStr, label: formatMonthDisplay(monthStr) });
+    }
+    return months;
+  };
+
+  const monthOptions = generateMonthOptions();
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure? This will delete all associated transactions.')) {
@@ -356,7 +424,20 @@ function AccountsView() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts</h2>
+        <div className="flex items-center space-x-4">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Accounts</h2>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+          >
+            {monthOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <button onClick={() => { setShowForm(true); setEditingAccount(null); }} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           <Plus className="w-4 h-4" />
           <span>Add Account</span>
@@ -367,20 +448,30 @@ function AccountsView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {state.accounts.map(account => {
-          const balanceInBase = account.currentBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+          const displayBalance = calculateHistoricalBalance(account, selectedMonth);
+          const balanceInBase = displayBalance * (state.exchangeRates[account.currency] || 1) / state.exchangeRates[state.user.baseCurrency];
+          const now = new Date();
+          const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+          const isHistorical = selectedMonth !== currentMonth;
+
           return (
             <div key={account.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{account.name}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{account.type}</p>
+                  {isHistorical && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      Historical ({formatMonthDisplay(selectedMonth)})
+                    </p>
+                  )}
                 </div>
-                <span className={`px-2 py-1 text-xs rounded ${account.currentBalance >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
-                  {account.currentBalance >= 0 ? 'Asset' : 'Debt'}
+                <span className={`px-2 py-1 text-xs rounded ${displayBalance >= 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                  {displayBalance >= 0 ? 'Asset' : 'Debt'}
                 </span>
               </div>
-              <p className={`text-2xl font-bold mb-2 ${account.currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {account.currency} {account.currentBalance.toLocaleString()}
+              <p className={`text-2xl font-bold mb-2 ${displayBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {account.currency} {displayBalance.toLocaleString()}
               </p>
               {account.currency !== state.user.baseCurrency && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
