@@ -50,6 +50,7 @@ export default function TransactionsPage() {
 
   const fetchExchangeRates = useCallback(async () => {
     try {
+      console.log('🔄 Fetching exchange rates from LLM...');
       const result = await InvokeLLM({
         prompt: "Get current exchange rates for USD to EUR and BDT to EUR.",
         add_context_from_internet: true,
@@ -61,16 +62,22 @@ export default function TransactionsPage() {
           }
         }
       });
-      
+
+      console.log('📊 LLM Response:', result);
+
       if (result.USD_to_EUR && result.BDT_to_EUR) {
-        setExchangeRates({
+        const rates = {
           USD: result.USD_to_EUR,
           BDT: result.BDT_to_EUR,
           EUR: 1
-        });
+        };
+        console.log('✅ Exchange rates set:', rates);
+        setExchangeRates(rates);
+      } else {
+        console.warn('⚠️ LLM response missing required fields:', result);
       }
     } catch (error) {
-      console.warn("Could not fetch live rates, using defaults");
+      console.error("❌ Could not fetch live rates, using defaults:", error);
     }
   }, []);
 
@@ -295,6 +302,10 @@ export default function TransactionsPage() {
     try {
       console.log('=== HANDLE SAVE DEBUG ===');
       console.log('Form data received:', formData);
+      console.log('Currency:', formData.currency);
+      console.log('Amount:', formData.amount);
+      console.log('Exchange rates:', exchangeRates);
+      console.log('Rate for currency:', exchangeRates[formData.currency]);
       console.log('payee:', formData.payee);
       console.log('memo:', formData.memo);
       console.log('========================');
@@ -303,6 +314,11 @@ export default function TransactionsPage() {
       // Backend automatically handles account balance updates
       const rate = exchangeRates[formData.currency] || 1;
       const amountEur = formData.amount * rate;
+
+      console.log('=== CURRENCY CONVERSION ===');
+      console.log('Final rate used:', rate);
+      console.log('Amount EUR calculated:', amountEur);
+      console.log('============================');
       const dataToSave = {
         ...formData,
         amount_eur: amountEur,
