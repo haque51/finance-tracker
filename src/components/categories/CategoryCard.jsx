@@ -211,13 +211,8 @@ const CategoryCard = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 text-sm text-slate-600">
             <Receipt className="w-4 h-4" />
-            <span>{transactionCount} transactions</span>
+            <span>{transactionCount !== null ? `${transactionCount} transactions` : 'Category'}</span>
           </div>
-          {category.budget_amount && (
-            <div className="text-xs text-slate-500">
-              Budget: €{category.budget_amount}
-            </div>
-          )}
         </div>
 
         {subcategories.length > 0 && (
