@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Category, Transaction, User } from "@/api/entities"; // Removed RecurrentTransaction, TransactionTemplate as they are not used here
+import { Category, User } from "@/api/entities"; // Removed Transaction for performance optimization
 import { GenerateImage } from "@/api/integrations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,7 +38,6 @@ const DEFAULT_CATEGORIES = {
 export default function CategoriesPage() {
   const { categories: sharedCategories, loadCategories } = useApp();
   const [categories, setCategories] = useState([]);
-  const [transactions, setTransactions] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -112,12 +111,11 @@ export default function CategoriesPage() {
       const user = await User.me();
       setCurrentUser(user);
 
-      const [categoriesData, transactionsData] = await Promise.all([
-        loadCategories(), // Use AppContext's loadCategories (now memoized)
-        Transaction.filter({}, '-created_date')
-      ]);
+      // Only load categories - removed transaction loading for performance
+      const categoriesData = await loadCategories();
 
-      setTransactions(transactionsData);
+      // Transactions are no longer needed for category display
+      // Transaction counts can be added later via a backend API endpoint if needed
 
       // If no categories exist for the user, set up defaults ONLY ONCE
       if (categoriesData.length === 0 && user && !isSettingUpRef.current) {
@@ -177,27 +175,21 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (categoryId) => {
-    // Check if category has transactions
-    const categoryTransactions = transactions.filter(t => 
-      t.category_id === categoryId || t.subcategory_id === categoryId
-    );
-    
-    if (categoryTransactions.length > 0) {
-      if (!window.confirm(`This category has ${categoryTransactions.length} transactions. Deleting it will remove the category from these transactions. Continue?`)) {
-        return;
-      }
-    }
-
     // Check if category has subcategories
     const subcategories = categories.filter(c => c.parent_id === categoryId);
     if (subcategories.length > 0) {
       if (!window.confirm(`This category has ${subcategories.length} subcategories. Deleting it will also delete all subcategories. Continue?`)) {
         return;
       }
-      
+
       // Delete subcategories first
       for (const subcategory of subcategories) {
         await Category.delete(subcategory.id);
+      }
+    } else {
+      // Simple confirmation for categories without subcategories
+      if (!window.confirm('Are you sure you want to delete this category?')) {
+        return;
       }
     }
 
@@ -277,9 +269,8 @@ export default function CategoriesPage() {
   };
 
   const getCategoryTransactionCount = (categoryId) => {
-    return transactions.filter(t => 
-      t.category_id === categoryId || t.subcategory_id === categoryId
-    ).length;
+    // Transaction counts removed for performance - can be added back via backend API
+    return null; // Return null to hide counts in UI
   };
 
   return (
@@ -315,9 +306,9 @@ export default function CategoriesPage() {
         </Dialog>
       </div>
 
-      <CategoryStats 
-        categories={categories} 
-        transactions={transactions}
+      <CategoryStats
+        categories={categories}
+        transactions={[]} // Empty array for performance - stats will show category counts only
         isLoading={isLoading}
       />
       
