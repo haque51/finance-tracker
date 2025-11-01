@@ -11,6 +11,7 @@ import SmartAlerts from "../components/insights/SmartAlerts";
 import AIInsights from "../components/insights/AIInsights";
 import AutoCategorizationRules from "../components/insights/AutoCategorizationRules";
 import PeriodComparison from "../components/insights/PeriodComparison";
+import HistoricalData from "../components/insights/HistoricalData";
 
 export default function InsightsPage() {
   const { categories: sharedCategories } = useApp();
@@ -64,7 +65,7 @@ export default function InsightsPage() {
       </div>
 
       <Tabs defaultValue="spending" className="space-y-6">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 w-full">
           <TabsTrigger value="spending" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Spending</span>
@@ -72,6 +73,10 @@ export default function InsightsPage() {
           <TabsTrigger value="comparison" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             <span className="hidden sm:inline">Compare</span>
+          </TabsTrigger>
+          <TabsTrigger value="historical" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            <span className="hidden sm:inline">Historical</span>
           </TabsTrigger>
           <TabsTrigger value="alerts" className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
@@ -101,6 +106,15 @@ export default function InsightsPage() {
             transactions={transactions}
             categories={categories}
             accounts={accounts}
+          />
+        </TabsContent>
+
+        <TabsContent value="historical">
+          <HistoricalData
+            transactions={transactions}
+            categories={categories}
+            accounts={accounts}
+            isLoading={isLoading}
           />
         </TabsContent>
 
