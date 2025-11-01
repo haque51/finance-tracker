@@ -22,9 +22,12 @@ export default function DebtOverview({ debtAccounts, isLoading }) {
     );
   }
 
-  const totalDebt = debtAccounts.reduce((sum, acc) => sum + (acc.balance_eur || 0), 0);
-  const highestDebt = debtAccounts.reduce((max, acc) => 
-    (acc.balance_eur || 0) > (max.balance_eur || 0) ? acc : max, debtAccounts[0] || {});
+  const totalDebt = debtAccounts.reduce((sum, acc) => sum + (acc.balance_eur || acc.balance || acc.currentBalance || 0), 0);
+  const highestDebt = debtAccounts.reduce((max, acc) => {
+    const accDebt = acc.balance_eur || acc.balance || acc.currentBalance || 0;
+    const maxDebt = max.balance_eur || max.balance || max.currentBalance || 0;
+    return accDebt > maxDebt ? acc : max;
+  }, debtAccounts[0] || {});
   const averageInterestRate = debtAccounts.length > 0 
     ? debtAccounts.reduce((sum, acc) => sum + (acc.interest_rate || 0), 0) / debtAccounts.length
     : 0;
@@ -54,7 +57,7 @@ export default function DebtOverview({ debtAccounts, isLoading }) {
         </CardHeader>
         <CardContent>
           <p className="text-2xl font-bold text-slate-900 currency-large">
-            {formatCurrency(highestDebt.balance_eur || 0, 'EUR')}
+            {formatCurrency(highestDebt.balance_eur || highestDebt.balance || highestDebt.currentBalance || 0, 'EUR')}
           </p>
           <p className="text-sm text-slate-500 mt-1 truncate">{highestDebt.name || 'N/A'}</p>
         </CardContent>
