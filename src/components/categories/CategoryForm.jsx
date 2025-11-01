@@ -26,7 +26,6 @@ export default function CategoryForm({ category, defaultType, onSubmit, onCancel
     name: "",
     type: defaultType || "expense",
     color: PREDEFINED_COLORS[0],
-    budget_amount: "",
     parent_id: "",
     is_active: true
   });
@@ -38,7 +37,6 @@ export default function CategoryForm({ category, defaultType, onSubmit, onCancel
         name: category.name || "",
         type: category.type || defaultType || "expense",
         color: category.color || PREDEFINED_COLORS[0],
-        budget_amount: category.budget_amount || "",
         parent_id: category.parent_id || "",
         is_active: category.is_active !== undefined ? category.is_active : true
       });
@@ -47,7 +45,6 @@ export default function CategoryForm({ category, defaultType, onSubmit, onCancel
         name: "",
         type: defaultType || "expense",
         color: PREDEFINED_COLORS[0],
-        budget_amount: "",
         parent_id: "",
         is_active: true
       });
@@ -61,11 +58,8 @@ export default function CategoryForm({ category, defaultType, onSubmit, onCancel
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    const dataToSubmit = {
-      ...formData,
-      budget_amount: formData.budget_amount ? Number(formData.budget_amount) : null
-    };
+
+    const dataToSubmit = { ...formData };
 
     // Remove empty parent_id
     if (!dataToSubmit.parent_id) {
@@ -139,23 +133,6 @@ export default function CategoryForm({ category, defaultType, onSubmit, onCancel
           className="w-20 h-10"
         />
       </div>
-
-      {formData.type === 'expense' && !isSubcategory && (
-        <div className="space-y-2">
-          <Label htmlFor="budget_amount">Monthly Budget (Optional)</Label>
-          <Input
-            id="budget_amount"
-            type="number"
-            step="0.01"
-            value={formData.budget_amount}
-            onChange={(e) => handleChange("budget_amount", e.target.value)}
-            placeholder="0.00"
-          />
-          <p className="text-xs text-slate-500">
-            Set a monthly spending limit for this category in EUR
-          </p>
-        </div>
-      )}
 
       <div className="flex justify-end gap-3 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
