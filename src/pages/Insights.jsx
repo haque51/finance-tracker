@@ -1,15 +1,12 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { User, Transaction, Account, SpendingAlert, CategorizationRule } from "@/api/entities";
-import { InvokeLLM } from "@/api/integrations";
-import { Zap, TrendingUp, AlertTriangle, Brain, Lightbulb, Target, Calendar } from "lucide-react";
+import { User, Transaction, Account } from "@/api/entities";
+import { Zap, TrendingUp, Brain, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApp } from "../context/AppContext";
 
 import SpendingInsights from "../components/insights/SpendingInsights";
-import SmartAlerts from "../components/insights/SmartAlerts";
 import AIInsights from "../components/insights/AIInsights";
-import AutoCategorizationRules from "../components/insights/AutoCategorizationRules";
 import PeriodComparison from "../components/insights/PeriodComparison";
 import HistoricalData from "../components/insights/HistoricalData";
 
@@ -18,8 +15,6 @@ export default function InsightsPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  const [spendingAlerts, setSpendingAlerts] = useState([]);
-  const [categorizationRules, setCategorizationRules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Use shared categories from AppContext
@@ -31,17 +26,13 @@ export default function InsightsPage() {
       const user = await User.me();
       setCurrentUser(user);
 
-      const [transactionsData, accountsData, alertsData, rulesData] = await Promise.all([
+      const [transactionsData, accountsData] = await Promise.all([
         Transaction.filter({}, '-date'),
-        Account.filter({ is_active: true }),
-        SpendingAlert.filter({}),
-        CategorizationRule.filter({})
+        Account.filter({ is_active: true })
       ]);
 
       setTransactions(transactionsData);
       setAccounts(accountsData);
-      setSpendingAlerts(alertsData);
-      setCategorizationRules(rulesData);
     } catch (error) {
       console.error("Error loading insights data:", error);
     }
@@ -65,7 +56,7 @@ export default function InsightsPage() {
       </div>
 
       <Tabs defaultValue="spending" className="space-y-6">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 w-full">
           <TabsTrigger value="spending" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Spending</span>
@@ -78,17 +69,9 @@ export default function InsightsPage() {
             <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Historical</span>
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="hidden sm:inline">Alerts</span>
-          </TabsTrigger>
           <TabsTrigger value="ai" className="flex items-center gap-2">
             <Brain className="w-4 h-4" />
             <span className="hidden sm:inline">AI Insights</span>
-          </TabsTrigger>
-          <TabsTrigger value="rules" className="flex items-center gap-2">
-            <Target className="w-4 h-4" />
-            <span className="hidden sm:inline">Auto Rules</span>
           </TabsTrigger>
         </TabsList>
 
@@ -118,34 +101,12 @@ export default function InsightsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="alerts">
-          <SmartAlerts
-            alerts={spendingAlerts}
-            transactions={transactions}
-            categories={categories}
-            accounts={accounts}
-            currentUser={currentUser}
-            isLoading={isLoading}
-            onDataChange={loadData}
-          />
-        </TabsContent>
-
         <TabsContent value="ai">
           <AIInsights
             transactions={transactions}
             categories={categories}
             accounts={accounts}
             isLoading={isLoading}
-          />
-        </TabsContent>
-
-        <TabsContent value="rules">
-          <AutoCategorizationRules
-            rules={categorizationRules}
-            categories={categories}
-            currentUser={currentUser}
-            isLoading={isLoading}
-            onDataChange={loadData}
           />
         </TabsContent>
       </Tabs>

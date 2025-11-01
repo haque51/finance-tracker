@@ -27,19 +27,28 @@ export default function ForecastPage() {
       const user = await User.me();
       setCurrentUser(user);
 
-      // Filter data by current user
+      // Filter data by current user - only active accounts
       const [accountsData, transactionsData] = await Promise.all([
-        Account.filter({}),
+        Account.filter({ is_active: true }),
         Transaction.filter({}),
       ]);
 
+      console.log('=== FORECAST NET WORTH CALCULATION ===');
+      console.log('Active accounts found:', accountsData.length);
+
       const netWorth = accountsData.reduce((sum, acc) => {
         const balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
+        console.log(`${acc.name} (${acc.type}): balance=${balance}`);
+
         if (acc.type === "loan" || acc.type === "credit_card") {
+          console.log(`  → Subtracting debt: ${sum} - ${balance} = ${sum - balance}`);
           return sum - balance;
         }
+        console.log(`  → Adding asset: ${sum} + ${balance} = ${sum + balance}`);
         return sum + balance;
       }, 0);
+
+      console.log('Final Net Worth:', netWorth);
       setCurrentNetWorth(netWorth);
 
       // Calculate average savings over last 6 months
