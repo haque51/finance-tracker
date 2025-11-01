@@ -19,10 +19,15 @@ import AccountForm from "../components/accounts/AccountForm";
 export default function AccountsPage() {
   const { user: currentUser } = useCurrentUser(); // Get user from AppContext
   const [accounts, setAccounts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [exchangeRates, setExchangeRates] = useState({ USD: 0.92, BDT: 0.0084, EUR: 1 });
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const fetchExchangeRates = useCallback(async () => {
     try {
@@ -49,6 +54,59 @@ export default function AccountsPage() {
     }
   }, []);
 
+  const loadTransactions = useCallback(async () => {
+    if (!currentUser) return;
+
+    try {
+      const transactionsData = await Transaction.filter({}, "-date");
+      setTransactions(transactionsData);
+    } catch (error) {
+      console.error("Error loading transactions:", error);
+      setTransactions([]);
+    }
+  }, [currentUser]);
+
+  const calculateHistoricalBalance = useCallback((account, month) => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // If current month, return live balance
+    if (month === currentMonth) {
+      return account.balance;
+    }
+
+    // Calculate historical balance at end of selected month
+    const monthEndDate = new Date(month + '-01');
+    monthEndDate.setMonth(monthEndDate.getMonth() + 1);
+    monthEndDate.setDate(0); // Last day of the month
+    monthEndDate.setHours(23, 59, 59, 999);
+
+    // Start with opening balance
+    let balance = account.opening_balance || 0;
+
+    // Apply all transactions up to the end of the selected month
+    const relevantTransactions = transactions.filter(t => {
+      const txDate = new Date(t.date);
+      return txDate <= monthEndDate;
+    });
+
+    relevantTransactions.forEach(txn => {
+      if (txn.type === 'income' && txn.account_id === account.id) {
+        balance += txn.amount || 0;
+      } else if (txn.type === 'expense' && txn.account_id === account.id) {
+        balance -= Math.abs(txn.amount || 0);
+      } else if (txn.type === 'transfer') {
+        if (txn.from_account_id === account.id) {
+          balance -= Math.abs(txn.amount || 0);
+        } else if (txn.to_account_id === account.id) {
+          balance += Math.abs(txn.amount || 0);
+        }
+      }
+    });
+
+    return balance;
+  }, [transactions]);
+
   const loadAccounts = useCallback(async () => {
     // Wait for user to be available from AppContext
     if (!currentUser) {
@@ -63,14 +121,14 @@ export default function AccountsPage() {
 
       // Calculate balance_eur for each account if not already present
       const accountsWithEur = accountsData.map(account => {
-        if (!account.balance_eur && account.balance !== undefined) {
-          const rate = exchangeRates[account.currency] || 1;
-          return {
-            ...account,
-            balance_eur: account.balance * rate
-          };
-        }
-        return account;
+        const displayBalance = calculateHistoricalBalance(account, selectedMonth);
+        const rate = exchangeRates[account.currency] || 1;
+
+        return {
+          ...account,
+          balance: displayBalance, // Override balance with historical balance
+          balance_eur: displayBalance * rate
+        };
       });
 
       setAccounts(accountsWithEur);
@@ -79,7 +137,7 @@ export default function AccountsPage() {
       setAccounts([]);
     }
     setIsLoading(false);
-  }, [currentUser, exchangeRates]); // Add exchangeRates as dependency
+  }, [currentUser, exchangeRates, selectedMonth, calculateHistoricalBalance]); // Add exchangeRates as dependency
 
   // Fetch exchange rates when user is available
   useEffect(() => {
@@ -88,12 +146,19 @@ export default function AccountsPage() {
     }
   }, [currentUser, fetchExchangeRates]);
 
-  // Load accounts when exchange rates are available
+  // Load transactions when user is available
   useEffect(() => {
-    if (currentUser && exchangeRates) {
+    if (currentUser) {
+      loadTransactions();
+    }
+  }, [currentUser, loadTransactions]);
+
+  // Load accounts when exchange rates, transactions, or selected month changes
+  useEffect(() => {
+    if (currentUser && exchangeRates && transactions.length >= 0) {
       loadAccounts();
     }
-  }, [currentUser, exchangeRates, loadAccounts]);
+  }, [currentUser, exchangeRates, transactions, selectedMonth, loadAccounts]);
 
   const handleAddNew = () => {
     setEditingAccount(null);
@@ -184,14 +249,49 @@ export default function AccountsPage() {
     }
   };
 
+  // Helper function to format month for display
+  const formatMonthDisplay = (monthStr) => {
+    const date = new Date(monthStr + '-01');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  // Generate array of last 12 months
+  const generateMonthOptions = () => {
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months.push({ value: monthStr, label: formatMonthDisplay(monthStr) });
+    }
+    return months;
+  };
+
+  const monthOptions = generateMonthOptions();
+
   return (
     <div className="p-4 md:p-8 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Manage Accounts</h1>
-          <p className="text-slate-600 mt-1">
-            View, add, and edit your financial accounts.
-          </p>
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Manage Accounts</h1>
+            <p className="text-slate-600 mt-1">
+              View, add, and edit your financial accounts.
+            </p>
+          </div>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            {monthOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
