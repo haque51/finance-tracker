@@ -33,7 +33,22 @@ class AccountAdapter {
 
       return accounts.filter(account => {
         return Object.keys(filters).every(key => {
-          return account[key] === filters[key];
+          const filterValue = filters[key];
+
+          // Handle snake_case to camelCase mapping for account properties
+          // Backend uses snake_case but frontend maps to camelCase
+          let accountValue = account[key];
+          if (accountValue === undefined && key === 'is_active') {
+            accountValue = account.isActive;
+          }
+
+          // Handle array filters (e.g., type: ['loan', 'credit_card'])
+          if (Array.isArray(filterValue)) {
+            return filterValue.includes(accountValue);
+          }
+
+          // Handle regular equality
+          return accountValue === filterValue;
         });
       });
     } catch (error) {

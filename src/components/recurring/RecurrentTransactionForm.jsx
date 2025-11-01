@@ -55,7 +55,11 @@ export default function RecurrentTransactionForm({ transaction, accounts, catego
     };
 
     const parentCategories = categories.filter(cat => !cat.parent_id && cat.type === formData.type);
-    const availableSubcategories = categories.filter(cat => cat.parent_id === formData.category_id);
+
+    // Deduplicate subcategories by ID to prevent duplicates in dropdown
+    const availableSubcategories = categories
+        .filter(cat => cat.parent_id === formData.category_id)
+        .filter((cat, index, self) => index === self.findIndex(c => c.id === cat.id));
 
     const frequencyUnit = {
         daily: 'day',
