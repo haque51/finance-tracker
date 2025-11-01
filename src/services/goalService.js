@@ -21,7 +21,9 @@ class GoalService {
         : API_ENDPOINTS.GOALS;
 
       const response = await api.get(endpoint);
-      return response.data.map(this._mapGoalFromAPI);
+      // Backend returns: { status: "success", data: [...] }
+      const goals = response.data.data || response.data;
+      return goals.map(this._mapGoalFromAPI);
     } catch (error) {
       console.error('Get goals error:', error);
       throw error;
@@ -36,7 +38,7 @@ class GoalService {
   async getGoal(id) {
     try {
       const response = await api.get(`${API_ENDPOINTS.GOALS}/${id}`);
-      return this._mapGoalFromAPI(response.data);
+      return this._mapGoalFromAPI(response.data.data || response.data);
     } catch (error) {
       console.error('Get goal error:', error);
       throw error;
@@ -52,7 +54,7 @@ class GoalService {
     try {
       const apiData = this._mapGoalToAPI(goalData);
       const response = await api.post(API_ENDPOINTS.GOALS, apiData);
-      return this._mapGoalFromAPI(response.data);
+      return this._mapGoalFromAPI(response.data.data || response.data);
     } catch (error) {
       console.error('Create goal error:', error);
       throw error;
@@ -69,7 +71,7 @@ class GoalService {
     try {
       const apiData = this._mapGoalToAPI(goalData);
       const response = await api.put(`${API_ENDPOINTS.GOALS}/${id}`, apiData);
-      return this._mapGoalFromAPI(response.data);
+      return this._mapGoalFromAPI(response.data.data || response.data);
     } catch (error) {
       console.error('Update goal error:', error);
       throw error;
