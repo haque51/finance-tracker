@@ -47,9 +47,14 @@ export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
       current_amount: Number(formData.current_amount),
     };
 
-    // Remove linked_account_id if it's empty string (None selected)
+    // Convert empty string to null for linked_account_id (backend expects null, not empty string)
     if (!dataToSubmit.linked_account_id || dataToSubmit.linked_account_id === '') {
-      delete dataToSubmit.linked_account_id;
+      dataToSubmit.linked_account_id = null;
+    }
+
+    // Convert empty string to null for target_date (backend expects null, not empty string)
+    if (!dataToSubmit.target_date || dataToSubmit.target_date === '') {
+      dataToSubmit.target_date = null;
     }
 
     onSubmit(dataToSubmit);
