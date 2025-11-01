@@ -76,15 +76,17 @@ export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="linked_account_id">Link to a Savings Account (Optional)</Label>
+        <Label htmlFor="linked_account_id">Link to an Account (Optional)</Label>
         <Select value={formData.linked_account_id} onValueChange={(value) => handleChange('linked_account_id', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select an account" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={null}>None</SelectItem>
-            {accounts.filter(a => a.type === 'savings').map(account => (
-              <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
+            <SelectItem value="">None</SelectItem>
+            {accounts.filter(a => a.type !== 'loan' && a.type !== 'credit_card').map(account => (
+              <SelectItem key={account.id} value={account.id}>
+                {account.name} ({account.type})
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
