@@ -36,19 +36,36 @@ export default function ForecastPage() {
       console.log('=== FORECAST NET WORTH CALCULATION ===');
       console.log('Active accounts found:', accountsData.length);
 
+      // Define exchange rates (BDT and USD to EUR)
+      const exchangeRates = {
+        EUR: 1,
+        BDT: 0.0084,  // 1 BDT = 0.0084 EUR
+        USD: 0.92     // 1 USD = 0.92 EUR
+      };
+
       const netWorth = accountsData.reduce((sum, acc) => {
-        const balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
-        console.log(`${acc.name} (${acc.type}): balance=${balance}`);
+        // Get balance in account's native currency
+        let balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
+
+        // Convert to EUR if balance_eur is not available
+        if (!acc.balance_eur && balance > 0) {
+          const currency = acc.currency || 'EUR';
+          const rate = exchangeRates[currency] || 1;
+          balance = balance * rate;
+          console.log(`${acc.name} (${acc.type}): ${acc.balance || acc.currentBalance} ${currency} × ${rate} = €${balance.toFixed(2)}`);
+        } else {
+          console.log(`${acc.name} (${acc.type}): balance=€${balance}`);
+        }
 
         if (acc.type === "loan" || acc.type === "credit_card") {
-          console.log(`  → Subtracting debt: ${sum} - ${balance} = ${sum - balance}`);
+          console.log(`  → Subtracting debt: €${sum.toFixed(2)} - €${balance.toFixed(2)} = €${(sum - balance).toFixed(2)}`);
           return sum - balance;
         }
-        console.log(`  → Adding asset: ${sum} + ${balance} = ${sum + balance}`);
+        console.log(`  → Adding asset: €${sum.toFixed(2)} + €${balance.toFixed(2)} = €${(sum + balance).toFixed(2)}`);
         return sum + balance;
       }, 0);
 
-      console.log('Final Net Worth:', netWorth);
+      console.log('Final Net Worth: €' + netWorth.toFixed(2));
       setCurrentNetWorth(netWorth);
 
       // Calculate average savings over last 6 months
