@@ -102,7 +102,8 @@ class BudgetService {
     return {
       id: apiBudget.id,
       categoryId: apiBudget.category_id,
-      amount: apiBudget.amount,
+      category_id: apiBudget.category_id, // Keep snake_case for compatibility
+      amount: apiBudget.budgeted || apiBudget.amount, // Backend uses 'budgeted' field
       month: apiBudget.month,
       year: apiBudget.year,
       spent: apiBudget.spent,
