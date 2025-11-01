@@ -34,10 +34,11 @@ export default function ForecastPage() {
       ]);
 
       const netWorth = accountsData.reduce((sum, acc) => {
+        const balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
         if (acc.type === "loan" || acc.type === "credit_card") {
-          return sum - (acc.balance_eur || 0);
+          return sum - balance;
         }
-        return sum + (acc.balance_eur || 0);
+        return sum + balance;
       }, 0);
       setCurrentNetWorth(netWorth);
 
@@ -58,10 +59,10 @@ export default function ForecastPage() {
 
         const income = monthTransactions
           .filter((t) => t.type === "income")
-          .reduce((sum, t) => sum + (t.amount_eur || 0), 0);
+          .reduce((sum, t) => sum + (t.amount_eur || t.amount || 0), 0);
         const expenses = monthTransactions
           .filter((t) => t.type === "expense")
-          .reduce((sum, t) => sum + (t.amount_eur || 0), 0);
+          .reduce((sum, t) => sum + (t.amount_eur || t.amount || 0), 0);
         
         return total + (income - expenses);
       }, 0);
