@@ -90,10 +90,9 @@ export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
         <Label htmlFor="linked_account_id">Link to an Account (Optional)</Label>
         <Select value={formData.linked_account_id} onValueChange={(value) => handleChange('linked_account_id', value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select an account" />
+            <SelectValue placeholder="None (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">None</SelectItem>
             {accounts.filter(a => a.type !== 'loan' && a.type !== 'credit_card').map(account => (
               <SelectItem key={account.id} value={account.id}>
                 {account.name} ({account.type})
