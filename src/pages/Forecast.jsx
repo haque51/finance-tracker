@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Account, Transaction, User } from "@/api/entities"; // Added User import
 import { format, startOfMonth, subMonths, eachMonthOfInterval } from "date-fns";
+import { fetchExchangeRates, convertCurrency } from "../utils/exchangeRateApi";
 
 import ForecastControls from "../components/forecast/ForecastControls";
 import ForecastChart from "../components/forecast/ForecastChart";
@@ -13,6 +14,7 @@ export default function ForecastPage() {
   const [currentUser, setCurrentUser] = useState(null); // Added currentUser state
   const [initialMonthlySavings, setInitialMonthlySavings] = useState(500);
   const [projectionData, setProjectionData] = useState([]);
+  const [exchangeRates, setExchangeRates] = useState({ EUR: 1 }); // Real-time exchange rates
 
   const [forecastParams, setForecastParams] = useState({
     monthlySavings: 500,
@@ -27,6 +29,12 @@ export default function ForecastPage() {
       const user = await User.me();
       setCurrentUser(user);
 
+      // Fetch real-time exchange rates
+      console.log('📡 Fetching real-time exchange rates...');
+      const rates = await fetchExchangeRates('EUR', ['USD', 'BDT']);
+      setExchangeRates(rates);
+      console.log('✅ Exchange rates loaded:', rates);
+
       // Filter data by current user - only active accounts
       const [accountsData, transactionsData] = await Promise.all([
         Account.filter({ is_active: true }),
@@ -36,36 +44,33 @@ export default function ForecastPage() {
       console.log('=== FORECAST NET WORTH CALCULATION ===');
       console.log('Active accounts found:', accountsData.length);
 
-      // Define exchange rates (BDT and USD to EUR)
-      const exchangeRates = {
-        EUR: 1,
-        BDT: 0.0084,  // 1 BDT = 0.0084 EUR
-        USD: 0.92     // 1 USD = 0.92 EUR
-      };
-
       const netWorth = accountsData.reduce((sum, acc) => {
         // Get balance in account's native currency
-        let balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
+        let balanceInOriginalCurrency = acc.balance || acc.currentBalance || 0;
+        let balanceInEUR;
 
-        // Convert to EUR if balance_eur is not available
-        if (!acc.balance_eur && balance > 0) {
+        // Use balance_eur if available, otherwise convert
+        if (acc.balance_eur !== undefined && acc.balance_eur !== null) {
+          balanceInEUR = acc.balance_eur;
+          console.log(`${acc.name} (${acc.type}): €${balanceInEUR.toFixed(2)} (pre-converted)`);
+        } else if (balanceInOriginalCurrency > 0) {
           const currency = acc.currency || 'EUR';
-          const rate = exchangeRates[currency] || 1;
-          balance = balance * rate;
-          console.log(`${acc.name} (${acc.type}): ${acc.balance || acc.currentBalance} ${currency} × ${rate} = €${balance.toFixed(2)}`);
+          balanceInEUR = convertCurrency(balanceInOriginalCurrency, currency, 'EUR', rates);
+          console.log(`${acc.name} (${acc.type}): ${balanceInOriginalCurrency.toLocaleString()} ${currency} → €${balanceInEUR.toFixed(2)} (rate: ${rates[currency] || 'N/A'})`);
         } else {
-          console.log(`${acc.name} (${acc.type}): balance=€${balance}`);
+          balanceInEUR = 0;
+          console.log(`${acc.name} (${acc.type}): €0.00 (no balance)`);
         }
 
         if (acc.type === "loan" || acc.type === "credit_card") {
-          console.log(`  → Subtracting debt: €${sum.toFixed(2)} - €${balance.toFixed(2)} = €${(sum - balance).toFixed(2)}`);
-          return sum - balance;
+          console.log(`  → Subtracting debt: €${sum.toFixed(2)} - €${balanceInEUR.toFixed(2)} = €${(sum - balanceInEUR).toFixed(2)}`);
+          return sum - balanceInEUR;
         }
-        console.log(`  → Adding asset: €${sum.toFixed(2)} + €${balance.toFixed(2)} = €${(sum + balance).toFixed(2)}`);
-        return sum + balance;
+        console.log(`  → Adding asset: €${sum.toFixed(2)} + €${balanceInEUR.toFixed(2)} = €${(sum + balanceInEUR).toFixed(2)}`);
+        return sum + balanceInEUR;
       }, 0);
 
-      console.log('Final Net Worth: €' + netWorth.toFixed(2));
+      console.log('💰 Final Net Worth: €' + netWorth.toFixed(2));
       setCurrentNetWorth(netWorth);
 
       // Calculate average savings over last 6 months
@@ -85,10 +90,20 @@ export default function ForecastPage() {
 
         const income = monthTransactions
           .filter((t) => t.type === "income")
-          .reduce((sum, t) => sum + (t.amount_eur || t.amount || 0), 0);
+          .reduce((sum, t) => {
+            if (t.amount_eur) return sum + t.amount_eur;
+            const amount = t.amount || 0;
+            const currency = t.currency || 'EUR';
+            return sum + convertCurrency(amount, currency, 'EUR', rates);
+          }, 0);
         const expenses = monthTransactions
           .filter((t) => t.type === "expense")
-          .reduce((sum, t) => sum + (t.amount_eur || t.amount || 0), 0);
+          .reduce((sum, t) => {
+            if (t.amount_eur) return sum + t.amount_eur;
+            const amount = t.amount || 0;
+            const currency = t.currency || 'EUR';
+            return sum + convertCurrency(amount, currency, 'EUR', rates);
+          }, 0);
         
         return total + (income - expenses);
       }, 0);
