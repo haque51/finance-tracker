@@ -85,8 +85,7 @@ export default function BudgetPage() {
         await Budget.create({
           month: monthString,
           category_id: categoryId,
-          amount,
-          user_id: currentUser.id,
+          amount, // Will be mapped to 'budgeted' by budgetService
         });
       }
       // Refresh budgets for the current month
@@ -107,8 +106,7 @@ export default function BudgetPage() {
       await Budget.create({
         month: monthString,
         category_id: selectedCategory,
-        amount: Number(newBudgetAmount),
-        user_id: currentUser.id,
+        amount: Number(newBudgetAmount), // Will be mapped to 'budgeted' by budgetService
       });
 
       // Refresh budgets for the current month
