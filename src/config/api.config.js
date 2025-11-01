@@ -60,6 +60,11 @@ export const API_ENDPOINTS = {
   // Currency
   CURRENCY_RATES: '/api/currency/rates',
   CURRENCY_CONVERT: '/api/currency/convert',
+
+  // Exchange Rates History
+  EXCHANGE_RATES_HISTORICAL: '/api/exchange-rates/historical/:month',
+  EXCHANGE_RATES_SNAPSHOT: '/api/exchange-rates/snapshot',
+  EXCHANGE_RATES_AVAILABLE_MONTHS: '/api/exchange-rates/available-months',
 };
 
 export const API_CONFIG = {

@@ -229,6 +229,14 @@ class TransactionService {
       memo: txn.memo || txn.notes || '',
     };
 
+    // Add exchange rate and converted EUR amount if provided
+    if (txn.amount_eur !== undefined) {
+      payload.amount_eur = txn.amount_eur;
+    }
+    if (txn.exchange_rate !== undefined) {
+      payload.exchange_rate = txn.exchange_rate;
+    }
+
     // Add account_id for income/expense
     if (txn.type !== 'transfer') {
       payload.account_id = txn.account_id || txn.accountId;
@@ -261,6 +269,15 @@ class TransactionService {
       payee: txn.payee || txn.description || '',
       memo: txn.memo || txn.notes || '',
     };
+
+    // Add exchange rate and converted EUR amount if provided
+    // (Needed when amount is updated to recalculate EUR equivalent)
+    if (txn.amount_eur !== undefined) {
+      payload.amount_eur = txn.amount_eur;
+    }
+    if (txn.exchange_rate !== undefined) {
+      payload.exchange_rate = txn.exchange_rate;
+    }
 
     // Note: type, account_id, currency cannot be updated after creation
     // These fields are immutable once a transaction is created

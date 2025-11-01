@@ -238,7 +238,7 @@ class CategoryService {
    */
   async updateCategory(id, categoryData) {
     try {
-      const apiData = this._mapCategoryToAPI(categoryData);
+      const apiData = this._mapCategoryToAPI(categoryData, true); // Pass true for isUpdate
       const response = await api.put(`${API_ENDPOINTS.CATEGORIES}/${id}`, apiData);
       return this._mapCategoryFromAPI(response.data.data);
     } catch (error) {
@@ -298,13 +298,20 @@ class CategoryService {
   /**
    * Map category from frontend format to API format
    * @private
+   * @param {Object} category - Category data
+   * @param {boolean} isUpdate - Whether this is an update operation (type field not allowed in updates)
    */
-  _mapCategoryToAPI(category) {
+  _mapCategoryToAPI(category, isUpdate = false) {
     // Build payload - only include fields backend accepts
     const payload = {
       name: category.name,
-      type: category.type,
     };
+
+    // Only include type for CREATE operations, not for UPDATE
+    // Backend's categoryUpdateSchema does not allow type field
+    if (!isUpdate && category.type) {
+      payload.type = category.type;
+    }
 
     // NOTE: Do NOT include user_id - backend gets it from JWT token automatically
     // The validation schema does not accept user_id in the request body
