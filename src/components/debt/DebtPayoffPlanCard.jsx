@@ -60,12 +60,12 @@ export default function DebtPayoffPlanCard({ plan, debtAccounts, onEdit, onDelet
         <div className="grid grid-cols-2 gap-4 text-center">
           <div className="p-3 rounded-lg bg-red-50 border border-red-100">
             <TrendingDown className="w-5 h-5 text-red-600 mx-auto mb-1" />
-            <p className="font-semibold text-red-600">{formatCurrency(totalDebt, 'EUR')}</p>
+            <p className="font-semibold text-red-600 currency">{formatCurrency(totalDebt, 'EUR')}</p>
             <p className="text-xs text-red-500">Total Debt</p>
           </div>
           <div className="p-3 rounded-lg bg-green-50 border border-green-100">
             <DollarSign className="w-5 h-5 text-green-600 mx-auto mb-1" />
-            <p className="font-semibold text-green-600">+{formatCurrency(plan.extra_monthly_payment || 0, 'EUR')}</p>
+            <p className="font-semibold text-green-600 currency">+{formatCurrency(plan.extra_monthly_payment || 0, 'EUR')}</p>
             <p className="text-xs text-green-500">Extra Payment</p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function DebtPayoffPlanCard({ plan, debtAccounts, onEdit, onDelet
         {plan.total_interest_saved > 0 && (
           <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
             <p className="text-sm font-medium text-emerald-800 mb-1">Interest Savings:</p>
-            <p className="font-bold text-emerald-900">{formatCurrency(plan.total_interest_saved, 'EUR')}</p>
+            <p className="font-bold text-emerald-900 currency">{formatCurrency(plan.total_interest_saved, 'EUR')}</p>
           </div>
         )}
 
@@ -97,7 +97,7 @@ export default function DebtPayoffPlanCard({ plan, debtAccounts, onEdit, onDelet
           {planDebtAccounts.map((item, index) => (
             <div key={item.account_id} className="flex justify-between items-center text-sm">
               <span className="text-slate-600">{index + 1}. {item.account.name}</span>
-              <span className="font-medium text-slate-900">{formatCurrency(item.current_balance, 'EUR')}</span>
+              <span className="font-medium text-slate-900 currency">{formatCurrency(item.current_balance, 'EUR')}</span>
             </div>
           ))}
         </div>

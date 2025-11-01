@@ -530,6 +530,7 @@ export default function Dashboard() {
             <SelectContent>
               {Array.from({ length: 12 }, (_, i) => {
                 const date = new Date();
+                date.setDate(1); // Set to first day to avoid month overflow issues
                 date.setMonth(date.getMonth() - i);
                 const value = format(date, 'yyyy-MM');
                 return (
@@ -644,12 +645,12 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="mt-4">
-                    <p className={`text-2xl font-bold ${
+                    <p className={`text-2xl currency-large ${
                       balanceShouldBeRed ? 'text-red-600' : 'text-emerald-600'
                     }`}>
                       {formatCurrency(account.balance || 0, account.currency, true, false)}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1 currency">
                       ≈ €{formatNumber(account.balance_eur || 0, true)}
                     </p>
                   </div>

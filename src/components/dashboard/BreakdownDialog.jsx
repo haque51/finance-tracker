@@ -21,7 +21,7 @@ export default function BreakdownDialog({ open, onOpenChange, title, data, total
             {data.map((item, index) => (
               <div key={index} className="flex justify-between items-center text-sm">
                 <span className="text-slate-600 truncate pr-4">{item.label}</span>
-                <span className={`font-medium ${item.value >= 0 ? 'text-slate-800' : 'text-red-500'}`}>
+                <span className={`font-medium currency ${item.value >= 0 ? 'text-slate-800' : 'text-red-500'}`}>
                   {formatCurrency(item.value, 'EUR')}
                 </span>
               </div>
@@ -36,7 +36,7 @@ export default function BreakdownDialog({ open, onOpenChange, title, data, total
             <Separator className="my-4" />
             <div className="flex justify-between items-center font-bold text-base">
                 <span>Total</span>
-                <span>{formatCurrency(total, 'EUR')}</span>
+                <span className="currency">{formatCurrency(total, 'EUR')}</span>
             </div>
            </>
         )}

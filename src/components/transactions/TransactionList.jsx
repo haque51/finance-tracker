@@ -157,7 +157,12 @@ export default function TransactionList({
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-slate-900">{getAccountName(transaction.account_id)}</p>
+                        <p className="font-medium text-slate-900">
+                          {transaction.type === 'transfer'
+                            ? getAccountName(transaction.from_account_id)
+                            : getAccountName(transaction.account_id)
+                          }
+                        </p>
                         {transaction.type === 'transfer' && transaction.to_account_id && (
                           <p className="text-xs text-slate-500">
                             → {getAccountName(transaction.to_account_id)}
@@ -186,9 +191,9 @@ export default function TransactionList({
                     </TableCell>
                     <TableCell>
                       <div className="text-right">
-                        <p className={`font-bold ${
-                          transaction.type === 'income' 
-                            ? 'text-emerald-600' 
+                        <p className={`font-bold currency-bold ${
+                          transaction.type === 'income'
+                            ? 'text-emerald-600'
                             : transaction.type === 'expense'
                             ? 'text-red-600'
                             : 'text-blue-600'
@@ -196,7 +201,7 @@ export default function TransactionList({
                           {formatCurrency(transaction.amount || 0, transaction.currency, true, true)}
                         </p>
                         {transaction.currency !== 'EUR' && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground currency">
                             ≈ {formatCurrency(transaction.amount_eur || 0, 'EUR', true, true)}
                           </p>
                         )}

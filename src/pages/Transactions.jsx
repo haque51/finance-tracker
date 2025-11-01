@@ -111,7 +111,11 @@ export default function TransactionsPage() {
     }
 
     if (filters.account !== "all") {
-        filtered = filtered.filter(t => t.account_id === filters.account || t.to_account_id === filters.account);
+        filtered = filtered.filter(t =>
+          t.account_id === filters.account ||
+          t.from_account_id === filters.account ||
+          t.to_account_id === filters.account
+        );
     }
 
     if (filters.type !== "all") {
@@ -150,14 +154,18 @@ export default function TransactionsPage() {
     }
   }, [accounts]);
 
+  // Load data when currentUser becomes available (run once on mount)
   useEffect(() => {
-    loadData();
-    fetchExchangeRates();
-  }, [loadData, fetchExchangeRates]);
+    if (currentUser) {
+      loadData();
+      fetchExchangeRates();
+    }
+  }, [currentUser]); // Only run when currentUser becomes available, call functions directly
 
+  // Apply filters when transactions or filters change
   useEffect(() => {
     applyFilters();
-  }, [applyFilters]);
+  }, [transactions, filters]); // Depend on data directly, not the function reference
 
   const handleAddNew = () => {
     setEditingTransaction(null);
@@ -165,7 +173,12 @@ export default function TransactionsPage() {
   };
 
   const handleEdit = (transaction) => {
-    setEditingTransaction(transaction);
+    // For transfers, convert from_account_id back to account_id for the form
+    const transactionForForm = { ...transaction };
+    if (transaction.type === 'transfer' && transaction.from_account_id) {
+      transactionForForm.account_id = transaction.from_account_id;
+    }
+    setEditingTransaction(transactionForForm);
     setIsFormOpen(true);
   };
 
@@ -297,6 +310,12 @@ export default function TransactionsPage() {
         user_id: currentUser.id,
       };
 
+      // For transfers, backend expects from_account_id instead of account_id
+      if (formData.type === 'transfer') {
+        dataToSave.from_account_id = formData.account_id;
+        delete dataToSave.account_id;
+      }
+
       console.log('Data to save:', dataToSave);
       console.log('Is update?', !!editingTransaction);
 
@@ -367,7 +386,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Total Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-bold text-emerald-600 currency-large">
               {formatCurrency(totalIncome, 'EUR', true, true)}
             </p>
           </CardContent>
@@ -377,7 +396,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-600">
+            <p className="text-2xl font-bold text-red-600 currency-large">
               {formatCurrency(totalExpenses, 'EUR', true, true)}
             </p>
           </CardContent>
@@ -387,7 +406,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Net Amount</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${netAmount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-2xl font-bold currency-large ${netAmount >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
               {formatCurrency(netAmount, 'EUR', true, true)}
             </p>
           </CardContent>
@@ -397,7 +416,7 @@ export default function TransactionsPage() {
             <CardTitle className="text-sm font-medium text-slate-600">Net Worth</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl font-bold ${netWorth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <p className={`text-2xl font-bold currency-large ${netWorth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
               {formatCurrency(netWorth, 'EUR', true, true)}
             </p>
           </CardContent>

@@ -3,7 +3,7 @@
  * Global application state management for authentication and data
  */
 
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
 import accountService from '../services/accountService';
 import transactionService from '../services/transactionService';
@@ -31,6 +31,23 @@ export function AppProvider({ children }) {
   const [goals, setGoals] = useState([]);
   const [recurringTransactions, setRecurringTransactions] = useState([]);
   const [exchangeRates, setExchangeRates] = useState({});
+
+  /**
+   * Load categories from API
+   */
+  const loadCategories = useCallback(async (filters = {}) => {
+    try {
+      console.log('📂 Loading categories from backend...');
+      const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
+      console.log(`📂 Loaded ${data.length} categories from backend`);
+      setCategories(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      throw error;
+    }
+  }, []); // No dependencies - function is stable
 
   // Check if user is logged in on mount
   useEffect(() => {
@@ -61,12 +78,12 @@ export function AppProvider({ children }) {
     };
 
     initAuth();
-  }, []);
+  }, [loadCategories]); // Add loadCategories to dependencies
 
   /**
    * Load accounts from API
    */
-  const loadAccounts = async (filters = {}) => {
+  const loadAccounts = useCallback(async (filters = {}) => {
     try {
       const data = await accountService.getAccounts(filters);
       setAccounts(data);
@@ -75,12 +92,12 @@ export function AppProvider({ children }) {
       console.error('Failed to load accounts:', error);
       throw error;
     }
-  };
+  }, []);
 
   /**
    * Load transactions from API
    */
-  const loadTransactions = async (filters = {}, page = 1, limit = 50) => {
+  const loadTransactions = useCallback(async (filters = {}, page = 1, limit = 50) => {
     try {
       const data = await transactionService.getTransactions(filters, page, limit);
       setTransactions(data.transactions);
@@ -89,24 +106,7 @@ export function AppProvider({ children }) {
       console.error('Failed to load transactions:', error);
       throw error;
     }
-  };
-
-  /**
-   * Load categories from API
-   */
-  const loadCategories = async (filters = {}) => {
-    try {
-      console.log('📂 Loading categories from backend...');
-      const data = await categoryService.getCategories(filters); // Use regular endpoint, not tree
-      console.log(`📂 Loaded ${data.length} categories from backend`);
-      setCategories(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-      console.error('Error details:', error.response?.data || error.message);
-      throw error;
-    }
-  };
+  }, []);
 
   /**
    * Create multiple categories in bulk (for new users)

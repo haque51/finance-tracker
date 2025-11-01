@@ -38,10 +38,10 @@ export default function MonthlyTrendChart({ transactions, isLoading }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border-0 rounded-lg shadow-lg border border-gray-100">
-          <p className="font-medium text-gray-900">{label}</p>
+        <div className="chart-tooltip">
+          <p className="font-medium mb-1">{label}</p>
           {payload.map((entry, index) => (
-            <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
+            <p key={index} className="text-sm font-medium chart-value" style={{ color: entry.color }}>
               {entry.name}: €{entry.value}
             </p>
           ))}
@@ -52,10 +52,10 @@ export default function MonthlyTrendChart({ transactions, isLoading }) {
   };
 
   return (
-    <Card className="border-0 shadow-sm bg-white">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-gray-900 font-semibold">
-          <Calendar className="w-5 h-5 text-gray-600" />
+    <Card className="chart-container border-0 premium-shadow">
+      <CardHeader className="pb-2">
+        <CardTitle className="chart-title flex items-center gap-2">
+          <Calendar className="w-5 h-5" />
           Monthly Trends
         </CardTitle>
       </CardHeader>
@@ -63,41 +63,87 @@ export default function MonthlyTrendChart({ transactions, isLoading }) {
         {!isLoading ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="month" fontSize={12} tick={{ fill: '#64748b' }} />
-              <YAxis fontSize={12} tick={{ fill: '#64748b' }} />
+              <defs>
+                <linearGradient id="incomeLineGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#059669" />
+                </linearGradient>
+                <linearGradient id="expenseLineGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#ef4444" />
+                  <stop offset="100%" stopColor="#dc2626" />
+                </linearGradient>
+                <linearGradient id="savingsLineGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#2563EB" />
+                  <stop offset="100%" stopColor="#7C3AED" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis
+                dataKey="month"
+                fontSize={12}
+                fontFamily="Inter, sans-serif"
+                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
+              <YAxis
+                fontSize={12}
+                fontFamily="Inter, sans-serif"
+                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
+              <Legend
+                wrapperStyle={{
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                  paddingTop: '8px'
+                }}
+              />
               <Line
                 type="monotone"
                 dataKey="income"
-                stroke="#10b981"
+                stroke="url(#incomeLineGradient)"
                 strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 name="Income"
-                dot={{ r: 4 }}
+                dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                activeDot={{ r: 6 }}
+                animationDuration={400}
+                animationEasing="ease-in-out"
               />
               <Line
                 type="monotone"
                 dataKey="expenses"
-                stroke="#ef4444"
+                stroke="url(#expenseLineGradient)"
                 strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 name="Expenses"
-                dot={{ r: 4 }}
+                dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                activeDot={{ r: 6 }}
+                animationDuration={400}
+                animationEasing="ease-in-out"
               />
               <Line
                 type="monotone"
                 dataKey="savings"
-                stroke="#3b82f6"
+                stroke="url(#savingsLineGradient)"
                 strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 name="Savings"
-                dot={{ r: 4 }}
+                dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                activeDot={{ r: 6 }}
+                animationDuration={400}
+                animationEasing="ease-in-out"
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-[300px] text-gray-500">
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
             <div className="text-center">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p className="font-medium">Loading monthly trends...</p>
             </div>
           </div>

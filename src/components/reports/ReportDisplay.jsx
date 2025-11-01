@@ -55,15 +55,15 @@ export default function ReportDisplay({ data, categories, isLoading }) {
             <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                     <span className="font-medium text-slate-600">Total Income</span>
-                    <span className="font-bold text-lg text-emerald-600">{formatCurrency(totalIncome, 'EUR')}</span>
+                    <span className="font-bold text-lg text-emerald-600 currency">{formatCurrency(totalIncome, 'EUR')}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="font-medium text-slate-600">Total Expense</span>
-                    <span className="font-bold text-lg text-red-600">{formatCurrency(totalExpense, 'EUR')}</span>
+                    <span className="font-bold text-lg text-red-600 currency">{formatCurrency(totalExpense, 'EUR')}</span>
                 </div>
                  <div className="flex justify-between items-center border-t pt-4">
                     <span className="font-medium text-slate-800">Net Result</span>
-                    <span className={`font-bold text-lg ${netResult >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <span className={`font-bold text-lg currency ${netResult >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         {formatCurrency(netResult, 'EUR')}
                     </span>
                 </div>
@@ -114,7 +114,7 @@ export default function ReportDisplay({ data, categories, isLoading }) {
                                     <TableCell>{t.payee}</TableCell>
                                     <TableCell>{category?.name || 'Uncategorized'}</TableCell>
                                     <TableCell className="text-slate-500 text-sm">{subcategory?.name || '-'}</TableCell>
-                                    <TableCell className={`text-right font-medium ${color}`}>
+                                    <TableCell className={`text-right font-medium currency ${color}`}>
                                         {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount_eur, 'EUR')}
                                     </TableCell>
                                 </TableRow>

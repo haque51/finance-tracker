@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Account, Transaction, User } from "@/api/entities"; // Added User import
+import { Account, Transaction } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
+import { useCurrentUser } from '../hooks/useCurrentUser'; // Use custom hook instead of User.me()
 import { Button } from "@/components/ui/button";
 import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import {
@@ -16,8 +17,8 @@ import AccountCard from "../components/accounts/AccountCard";
 import AccountForm from "../components/accounts/AccountForm";
 
 export default function AccountsPage() {
+  const { user: currentUser } = useCurrentUser(); // Get user from AppContext
   const [accounts, setAccounts] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null); // New state for current user
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
@@ -49,28 +50,50 @@ export default function AccountsPage() {
   }, []);
 
   const loadAccounts = useCallback(async () => {
+    // Wait for user to be available from AppContext
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Get current user first
-      const user = await User.me();
-      setCurrentUser(user);
-
       // Filter accounts by current user ID
       const accountsData = await Account.filter({}, "-created_date");
-      setAccounts(accountsData);
+
+      // Calculate balance_eur for each account if not already present
+      const accountsWithEur = accountsData.map(account => {
+        if (!account.balance_eur && account.balance !== undefined) {
+          const rate = exchangeRates[account.currency] || 1;
+          return {
+            ...account,
+            balance_eur: account.balance * rate
+          };
+        }
+        return account;
+      });
+
+      setAccounts(accountsWithEur);
     } catch (error) {
       console.error("Error loading accounts:", error);
-      // Handle cases where user might not be logged in or other errors
-      setCurrentUser(null);
       setAccounts([]);
     }
     setIsLoading(false);
-  }, []);
+  }, [currentUser, exchangeRates]); // Add exchangeRates as dependency
 
+  // Fetch exchange rates when user is available
   useEffect(() => {
-    fetchExchangeRates();
-    loadAccounts();
-  }, [fetchExchangeRates, loadAccounts]);
+    if (currentUser) {
+      fetchExchangeRates();
+    }
+  }, [currentUser, fetchExchangeRates]);
+
+  // Load accounts when exchange rates are available
+  useEffect(() => {
+    if (currentUser && exchangeRates) {
+      loadAccounts();
+    }
+  }, [currentUser, exchangeRates, loadAccounts]);
 
   const handleAddNew = () => {
     setEditingAccount(null);

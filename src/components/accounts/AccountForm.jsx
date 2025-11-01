@@ -32,8 +32,8 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
         name: account.name || "",
         type: account.type || "checking",
         currency: account.currency || "EUR",
-        opening_balance: account.opening_balance || "",
-        current_balance: account.balance || "",
+        opening_balance: account.openingBalance || account.opening_balance || "",
+        current_balance: account.currentBalance || account.balance || "",
         institution: account.institution || "",
         notes: account.notes || "",
       });
