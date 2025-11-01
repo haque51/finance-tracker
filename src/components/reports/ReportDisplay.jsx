@@ -106,14 +106,18 @@ export default function ReportDisplay({ data, categories, isLoading }) {
                     <TableBody>
                         {data.map(t => {
                             const category = categories.find(c => c.id === t.category_id);
-                            const subcategory = categories.find(c => c.id === t.subcategory_id);
+                            // If category has a parent, it's a subcategory
+                            const parentCategory = category?.parent_id ? categories.find(c => c.id === category.parent_id) : null;
+                            const displayCategory = parentCategory || category;
+                            const displaySubcategory = parentCategory ? category : null;
+
                             const color = t.type === 'income' ? 'text-emerald-600' : 'text-red-600';
                             return (
                                 <TableRow key={t.id}>
                                     <TableCell>{new Date(t.date).toLocaleDateString()}</TableCell>
                                     <TableCell>{t.payee}</TableCell>
-                                    <TableCell>{category?.name || 'Uncategorized'}</TableCell>
-                                    <TableCell className="text-slate-500 text-sm">{subcategory?.name || '-'}</TableCell>
+                                    <TableCell>{displayCategory?.name || 'Uncategorized'}</TableCell>
+                                    <TableCell className="text-slate-500 text-sm">{displaySubcategory?.name || '-'}</TableCell>
                                     <TableCell className={`text-right font-medium currency ${color}`}>
                                         {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount_eur, 'EUR')}
                                     </TableCell>

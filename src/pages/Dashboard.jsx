@@ -13,7 +13,6 @@ import {
   TrendingDown,
   Wallet,
   PiggyBank,
-  DollarSign,
   Calendar,
   ArrowRight
 } from "lucide-react";
@@ -619,47 +618,6 @@ export default function Dashboard() {
           isLoading={isLoading}
         />
       </div>
-
-      <Card className="border-0 shadow-sm bg-white">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-gray-900 font-semibold">
-            <DollarSign className="w-5 h-5 text-gray-600" />
-            Account Balances
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {accounts.map((account) => {
-              const isDebtAccount = account.type === 'loan' || account.type === 'credit_card';
-              const balanceShouldBeRed = isDebtAccount || (account.balance || 0) < 0;
-
-              return (
-                <div key={account.id} className="p-6 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">{account.name}</h3>
-                      <p className="text-sm text-gray-500 capitalize font-medium">{account.type.replace('_', ' ')}</p>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-600 bg-white px-2 py-1 rounded-md border border-gray-200">
-                      {account.currency}
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <p className={`text-2xl currency-large ${
-                      balanceShouldBeRed ? 'text-red-600' : 'text-emerald-600'
-                    }`}>
-                      {formatCurrency(account.balance || 0, account.currency, true, false)}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1 currency">
-                      ≈ €{formatNumber(account.balance_eur || 0, true)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
