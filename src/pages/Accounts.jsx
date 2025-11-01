@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Account, Transaction } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
 import { useCurrentUser } from '../hooks/useCurrentUser'; // Use custom hook instead of User.me()
+import exchangeRatesService from '../services/exchangeRatesService';
 import { Button } from "@/components/ui/button";
 import { Plus, MoreVertical, Edit, Trash2 } from "lucide-react";
 import {
@@ -24,6 +25,7 @@ export default function AccountsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [exchangeRates, setExchangeRates] = useState({ USD: 0.92, BDT: 0.0084, EUR: 1 });
+  const [historicalRates, setHistoricalRates] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -119,10 +121,10 @@ export default function AccountsPage() {
       // Filter accounts by current user ID
       const accountsData = await Account.filter({}, "-created_date");
 
-      // Calculate balance_eur for each account if not already present
+      // Calculate balance_eur for each account using historical rates
       const accountsWithEur = accountsData.map(account => {
         const displayBalance = calculateHistoricalBalance(account, selectedMonth);
-        const rate = exchangeRates[account.currency] || 1;
+        const rate = historicalRates[account.currency] || 1;
 
         return {
           ...account,
@@ -137,7 +139,7 @@ export default function AccountsPage() {
       setAccounts([]);
     }
     setIsLoading(false);
-  }, [currentUser, exchangeRates, selectedMonth, calculateHistoricalBalance]); // Add exchangeRates as dependency
+  }, [currentUser, historicalRates, selectedMonth, calculateHistoricalBalance]); // Use historicalRates dependency
 
   // Fetch exchange rates when user is available
   useEffect(() => {
@@ -153,12 +155,45 @@ export default function AccountsPage() {
     }
   }, [currentUser, loadTransactions]);
 
+  // Fetch historical rates when selected month changes
+  useEffect(() => {
+    const fetchHistoricalRatesForMonth = async () => {
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      if (selectedMonth === currentMonth) {
+        // Use live rates for current month
+        setHistoricalRates(exchangeRates);
+      } else {
+        // Fetch historical rates for selected month
+        try {
+          const rates = await exchangeRatesService.getHistoricalRates(selectedMonth);
+          if (rates && rates.rates) {
+            setHistoricalRates(rates.rates);
+          } else {
+            // Fallback to current rates if historical rates not available
+            console.warn(`No historical rates for ${selectedMonth}, using current rates`);
+            setHistoricalRates(exchangeRates);
+          }
+        } catch (error) {
+          console.error('Error fetching historical rates:', error);
+          // Fallback to current rates on error
+          setHistoricalRates(exchangeRates);
+        }
+      }
+    };
+
+    if (exchangeRates) {
+      fetchHistoricalRatesForMonth();
+    }
+  }, [selectedMonth, exchangeRates]);
+
   // Load accounts when exchange rates, transactions, or selected month changes
   useEffect(() => {
-    if (currentUser && exchangeRates && transactions.length >= 0) {
+    if (currentUser && historicalRates && transactions.length >= 0) {
       loadAccounts();
     }
-  }, [currentUser, exchangeRates, transactions, selectedMonth, loadAccounts]);
+  }, [currentUser, historicalRates, transactions, selectedMonth, loadAccounts]);
 
   const handleAddNew = () => {
     setEditingAccount(null);
