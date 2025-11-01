@@ -39,10 +39,15 @@ export default function CustomReportBuilder({ data, accounts, categories, onExpo
         return transaction.payee || '-';
       case 'category':
         const category = categories.find(c => c.id === transaction.category_id);
-        return category?.name || 'Uncategorized';
+        // If category has a parent, show parent; otherwise show category itself
+        const parentCategory = category?.parent_id ? categories.find(c => c.id === category.parent_id) : null;
+        const displayCategory = parentCategory || category;
+        return displayCategory?.name || 'Uncategorized';
       case 'subcategory':
-        const subcategory = categories.find(c => c.id === transaction.subcategory_id);
-        return subcategory?.name || '-';
+        const cat = categories.find(c => c.id === transaction.category_id);
+        // If category has a parent, it IS the subcategory
+        const displaySubcategory = cat?.parent_id ? cat : null;
+        return displaySubcategory?.name || '-';
       case 'amount':
         return formatCurrency(transaction.amount_eur || 0, 'EUR');
       case 'account':
