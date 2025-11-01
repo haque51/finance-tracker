@@ -50,6 +50,7 @@ export default function TransactionsPage() {
 
   const fetchExchangeRates = useCallback(async () => {
     try {
+      console.log('🔄 Fetching exchange rates from LLM...');
       const result = await InvokeLLM({
         prompt: "Get current exchange rates for USD to EUR and BDT to EUR.",
         add_context_from_internet: true,
@@ -61,16 +62,22 @@ export default function TransactionsPage() {
           }
         }
       });
-      
+
+      console.log('📊 LLM Response:', result);
+
       if (result.USD_to_EUR && result.BDT_to_EUR) {
-        setExchangeRates({
+        const rates = {
           USD: result.USD_to_EUR,
           BDT: result.BDT_to_EUR,
           EUR: 1
-        });
+        };
+        console.log('✅ Exchange rates set:', rates);
+        setExchangeRates(rates);
+      } else {
+        console.warn('⚠️ LLM response missing required fields:', result);
       }
     } catch (error) {
-      console.warn("Could not fetch live rates, using defaults");
+      console.error("❌ Could not fetch live rates, using defaults:", error);
     }
   }, []);
 
