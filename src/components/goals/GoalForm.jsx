@@ -10,7 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreditCard, Landmark, PiggyBank, Briefcase } from "lucide-react";
 import { format } from "date-fns";
+
+const accountIcons = {
+  checking: Landmark,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  investment: Briefcase,
+  brokerage: Briefcase,
+  loan: CreditCard
+};
 
 export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -93,11 +103,21 @@ export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
             <SelectValue placeholder="None (optional)" />
           </SelectTrigger>
           <SelectContent>
-            {accounts.filter(a => a.type !== 'loan' && a.type !== 'credit_card').map(account => (
-              <SelectItem key={account.id} value={account.id}>
-                {account.name} ({account.type})
-              </SelectItem>
-            ))}
+            {accounts.filter(a => a.type !== 'loan' && a.type !== 'credit_card').map(account => {
+              const Icon = accountIcons[account.type] || Landmark;
+              return (
+                <SelectItem key={account.id} value={account.id}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    <span className="font-medium">{account.name}</span>
+                    <span className="text-slate-500">({account.currency})</span>
+                    <span className="text-xs text-slate-400 capitalize">
+                      {account.type.replace('_', ' ')}
+                    </span>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         <p className="text-xs text-slate-500 mt-1">Linking an account will automatically track its balance as your saved amount.</p>

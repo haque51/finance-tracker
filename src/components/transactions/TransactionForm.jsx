@@ -14,10 +14,19 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { FileText, Paperclip, X, Eye, CalendarIcon } from "lucide-react";
+import { FileText, Paperclip, X, Eye, CalendarIcon, CreditCard, Landmark, PiggyBank, Briefcase } from "lucide-react";
 import { UploadPrivateFile, CreateFileSignedUrl } from "@/api/integrations"; // Import integrations
 
 const TRANSACTION_TYPES = ["income", "expense", "transfer"];
+
+const accountIcons = {
+  checking: Landmark,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  investment: Briefcase,
+  brokerage: Briefcase,
+  loan: CreditCard
+};
 
 export default function TransactionForm({ 
   transaction, 
@@ -251,11 +260,21 @@ export default function TransactionForm({
             <SelectValue placeholder="Select account" />
           </SelectTrigger>
           <SelectContent>
-            {accounts.map((account) => (
-              <SelectItem key={account.id} value={account.id}>
-                {account.name} ({account.currency})
-              </SelectItem>
-            ))}
+            {accounts.map((account) => {
+              const Icon = accountIcons[account.type] || Landmark;
+              return (
+                <SelectItem key={account.id} value={account.id}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    <span className="font-medium">{account.name}</span>
+                    <span className="text-slate-500">({account.currency})</span>
+                    <span className="text-xs text-slate-400 capitalize">
+                      {account.type.replace('_', ' ')}
+                    </span>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -272,11 +291,21 @@ export default function TransactionForm({
               <SelectValue placeholder="Select destination account" />
             </SelectTrigger>
             <SelectContent>
-              {accounts.filter(a => a.id !== formData.account_id).map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name} ({account.currency})
-                </SelectItem>
-              ))}
+              {accounts.filter(a => a.id !== formData.account_id).map((account) => {
+                const Icon = accountIcons[account.type] || Landmark;
+                return (
+                  <SelectItem key={account.id} value={account.id}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-4 h-4" />
+                      <span className="font-medium">{account.name}</span>
+                      <span className="text-slate-500">({account.currency})</span>
+                      <span className="text-xs text-slate-400 capitalize">
+                        {account.type.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

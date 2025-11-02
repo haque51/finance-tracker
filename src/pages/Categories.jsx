@@ -65,32 +65,50 @@ export default function CategoriesPage() {
     setIsSettingUp(true);
 
     try {
-        console.log('🏗️ Setting up default categories...');
+        console.log('🏗️ Setting up default categories (optimized)...');
+
+        // Step 1: Create all parent categories in parallel
+        const parentCategoryPromises = [];
+        const parentCategoryMetadata = [];
+
         for (const type in DEFAULT_CATEGORIES) {
             for (const cat of DEFAULT_CATEGORIES[type]) {
-                const parentCategory = await Category.create({
-                    name: cat.name,
-                    type: type,
-                    // user_id removed - backend gets it from JWT token
-                });
-
-                if (parentCategory && cat.sub) {
-                    for (const subName of cat.sub) {
-                        try {
-                            await Category.create({
-                                name: subName,
-                                type: type,
-                                parent_id: parentCategory.id,
-                                // user_id removed - backend gets it from JWT token
-                            });
-                        } catch (subError) {
-                            console.error(`Failed to create subcategory ${subName}:`, subError);
-                        }
-                    }
-                }
+                parentCategoryMetadata.push({ type, cat });
+                parentCategoryPromises.push(
+                    Category.create({
+                        name: cat.name,
+                        type: type,
+                    })
+                );
             }
         }
-        console.log('✅ Default categories setup complete');
+
+        const parentCategories = await Promise.all(parentCategoryPromises);
+        console.log(`✅ Created ${parentCategories.length} parent categories`);
+
+        // Step 2: Create all subcategories in parallel
+        const subcategoryPromises = [];
+        parentCategories.forEach((parentCategory, index) => {
+            const metadata = parentCategoryMetadata[index];
+            if (parentCategory && metadata.cat.sub) {
+                metadata.cat.sub.forEach(subName => {
+                    subcategoryPromises.push(
+                        Category.create({
+                            name: subName,
+                            type: metadata.type,
+                            parent_id: parentCategory.id,
+                        }).catch(subError => {
+                            console.error(`Failed to create subcategory ${subName}:`, subError);
+                            return null; // Return null on error to continue with others
+                        })
+                    );
+                });
+            }
+        });
+
+        await Promise.all(subcategoryPromises);
+        console.log(`✅ Created ${subcategoryPromises.length} subcategories`);
+        console.log('✅ Default categories setup complete (optimized)');
     } catch(e) {
         console.error("❌ Failed to set up default categories", e);
     } finally {
@@ -143,11 +161,11 @@ export default function CategoriesPage() {
 
     setIsSettingUp(true);
     try {
-      // Delete all existing categories
+      // Delete all existing categories in parallel (optimized)
       console.log('Deleting all categories...');
-      for (const category of categories) {
-        await Category.delete(category.id);
-      }
+      await Promise.all(
+        categories.map(category => Category.delete(category.id))
+      );
       console.log('All categories deleted');
 
       // Recreate default categories with subcategories
@@ -182,10 +200,10 @@ export default function CategoriesPage() {
         return;
       }
 
-      // Delete subcategories first
-      for (const subcategory of subcategories) {
-        await Category.delete(subcategory.id);
-      }
+      // Delete subcategories in parallel (optimized)
+      await Promise.all(
+        subcategories.map(subcategory => Category.delete(subcategory.id))
+      );
     } else {
       // Simple confirmation for categories without subcategories
       if (!window.confirm('Are you sure you want to delete this category?')) {
