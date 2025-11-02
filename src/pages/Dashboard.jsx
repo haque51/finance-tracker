@@ -561,7 +561,7 @@ export default function Dashboard() {
           bgColor="bg-red-500"
           trendValue={`${expenseChange >= 0 ? '+' : ''}${formatCurrency(expenseChange, 'EUR', true, false)} (${expensePercentChange >= 0 ? '+' : ''}${expensePercentChange.toFixed(0)}%)`}
           trendText="vs last month"
-          trendDirection={expenseChange <= 0 ? 'up' : 'down'}
+          trendDirection={expenseChange >= 0 ? 'down' : 'up'}
           onClick={showExpenseBreakdown}
         />
         <StatsCards
