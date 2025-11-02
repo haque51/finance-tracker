@@ -85,6 +85,7 @@ export default function NetWorthChart({ accounts, isLoading }) {
                 radius={[8, 8, 0, 0]}
                 animationDuration={300}
                 animationEasing="ease-out"
+                activeBar={false}
               >
                 {data.map((entry, index) => (
                   <Cell
