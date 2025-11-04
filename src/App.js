@@ -2638,6 +2638,16 @@ function InsightsView() {
         >
           Auto-Categorization
         </button>
+        <button
+          onClick={() => setActiveTab('historical')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'historical'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          Historical Trends
+        </button>
       </div>
 
       {activeTab === 'spending' && <SpendingAnalysis />}
@@ -2645,6 +2655,7 @@ function InsightsView() {
       {activeTab === 'alerts' && <SmartAlerts />}
       {activeTab === 'ai' && <AIInsights />}
       {activeTab === 'autocategorization' && <AutoCategorization />}
+      {activeTab === 'historical' && <HistoricalTrends />}
     </div>
   );
 }
@@ -2703,38 +2714,58 @@ function SpendingAnalysis() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Spending by Category</h3>
-        <div className="space-y-4">
-          {sortedCategories.map(([category, data]) => {
+      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+        <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white flex items-center">
+          <BarChart3 className="w-5 h-5 mr-2" />
+          Top 10 Spending Categories
+        </h3>
+        <div className="space-y-3">
+          {sortedCategories.slice(0, 10).reverse().map(([category, data], index) => {
             const percentage = ((data.total / totalSpending) * 100).toFixed(1);
+            const colorIndex = (9 - index) % 6;
+            const gradients = [
+              'from-blue-500 to-blue-600',
+              'from-purple-500 to-purple-600',
+              'from-pink-500 to-pink-600',
+              'from-red-500 to-red-600',
+              'from-orange-500 to-orange-600',
+              'from-yellow-500 to-yellow-600'
+            ];
+            const gradient = gradients[colorIndex];
+
             return (
-              <div key={category}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{category}</span>
-                  <div className="text-right">
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                      €{data.total.toLocaleString()}
+              <div key={category} className="group relative">
+                <div className="flex items-center space-x-3 mb-1.5">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                    {category}
+                  </span>
+                  <div className="flex-1 relative h-10">
+                    <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-700/30 rounded-lg backdrop-blur-sm"></div>
+                    <div
+                      className={`absolute inset-y-0 left-0 bg-gradient-to-r ${gradient} rounded-lg shadow-md transform transition-all duration-300 group-hover:shadow-xl group-hover:scale-x-[1.02] flex items-center justify-end px-3`}
+                      style={{ width: `${percentage}%` }}
+                    >
+                      <span className="text-white text-xs font-semibold whitespace-nowrap drop-shadow-lg">
+                        €{data.total.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right min-w-[60px]">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      {percentage}%
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                      ({percentage}%)
-                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {data.count} txn{data.count !== 1 ? 's' : ''}
+                    </p>
                   </div>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {data.count} transaction{data.count !== 1 ? 's' : ''} • 
-                  Avg: €{(data.total / data.count).toFixed(2)}
-                </p>
               </div>
             );
           })}
         </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center italic">
+          Showing top 10 categories • Highest spending at bottom
+        </p>
       </div>
     </div>
   );
@@ -3589,6 +3620,175 @@ function AutoCatRule({ rule, onClose }) {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function HistoricalTrends() {
+  const { state } = useApp();
+
+  // Generate monthly data for the last 6 months
+  const months = [];
+  const currentDate = new Date('2025-10-01');
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(currentDate);
+    date.setMonth(date.getMonth() - i);
+    const monthStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    months.push({
+      month: monthStr,
+      label: date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+    });
+  }
+
+  // Calculate income, expense, and savings for each month
+  const financialData = months.map(({ month, label }) => {
+    const monthTxns = state.transactions.filter(t => t.date.startsWith(month));
+    const income = monthTxns.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = Math.abs(monthTxns.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
+    const savings = income - expenses;
+
+    return {
+      month: label,
+      Income: income,
+      Expenses: expenses,
+      Savings: savings
+    };
+  });
+
+  // Calculate net worth progression
+  let runningNetWorth = state.accounts.reduce((sum, acc) => sum + acc.currentBalance, 0);
+  const netWorthData = [...months].reverse().map(({ month, label }, index) => {
+    if (index === 0) {
+      // Current net worth
+      return {
+        month: label,
+        'Net Worth': runningNetWorth
+      };
+    }
+
+    // Calculate net worth for previous months by subtracting savings
+    const monthIndex = months.length - 1 - index;
+    const savings = financialData[monthIndex].Savings;
+    runningNetWorth -= savings;
+
+    return {
+      month: label,
+      'Net Worth': runningNetWorth
+    };
+  }).reverse();
+
+  return (
+    <div className="space-y-6">
+      {/* Income vs Expense vs Savings Trend */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Income vs Expense vs Savings Trend
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Track your monthly income, expenses, and savings over the last 6 months
+        </p>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={financialData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+            <XAxis
+              dataKey="month"
+              stroke="#6B7280"
+              style={{ fontSize: '12px' }}
+            />
+            <YAxis
+              stroke="#6B7280"
+              style={{ fontSize: '12px' }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#F3F4F6'
+              }}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="Income"
+              stroke="#10B981"
+              strokeWidth={3}
+              dot={{ fill: '#10B981', r: 5 }}
+              activeDot={{ r: 7 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="Expenses"
+              stroke="#EF4444"
+              strokeWidth={3}
+              dot={{ fill: '#EF4444', r: 5 }}
+              activeDot={{ r: 7 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="Savings"
+              stroke="#3B82F6"
+              strokeWidth={3}
+              dot={{ fill: '#3B82F6', r: 5 }}
+              activeDot={{ r: 7 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Net Worth Trend */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+          Net Worth Trend
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          Monitor your net worth progression over the last 6 months
+        </p>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart data={netWorthData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+            <XAxis
+              dataKey="month"
+              stroke="#6B7280"
+              style={{ fontSize: '12px' }}
+            />
+            <YAxis
+              stroke="#6B7280"
+              style={{ fontSize: '12px' }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '8px',
+                color: '#F3F4F6'
+              }}
+            />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="Net Worth"
+              stroke="#8B5CF6"
+              strokeWidth={3}
+              dot={{ fill: '#8B5CF6', r: 5 }}
+              activeDot={{ r: 7 }}
+              fill="url(#netWorthGradient)"
+            />
+            <defs>
+              <linearGradient id="netWorthGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-300">
+          <strong>Tip:</strong> These trend graphs show your financial health over time. Consistent positive savings and growing net worth indicate good financial management.
+        </p>
+      </div>
     </div>
   );
 }
