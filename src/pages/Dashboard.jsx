@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Account, Transaction, RecurrentTransaction } from "@/api/entities";
-import { InvokeLLM } from "@/api/integrations";
-import { convertCurrency } from "../utils/exchangeRateApi";
+import { fetchExchangeRates as fetchRealTimeRates, convertCurrency } from "../utils/exchangeRateApi";
 import { useApp } from '../context/AppContext';  // Import useApp to access shared categories and user
 import { useCurrentUser } from '../hooks/useCurrentUser';  // Import custom hook
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -209,55 +208,38 @@ export default function Dashboard() {
     }
   };
 
-  // This function now returns the rates instead of setting state directly
+  // Fetch real-time exchange rates with caching
   const fetchExchangeRates = async () => {
     const localStorageKey = 'exchangeRatesCache';
     const lastFetchedKey = 'lastExchangeRateFetch';
-    
+
     // Check if we've fetched rates recently (within last hour)
     const lastFetched = localStorage.getItem(lastFetchedKey);
     const cachedRates = localStorage.getItem(localStorageKey);
-    
+
     if (lastFetched && cachedRates) {
       const hoursSinceLastFetch = (Date.now() - parseInt(lastFetched)) / (1000 * 60 * 60);
       if (hoursSinceLastFetch < 1) { // Cache for 1 hour
-        // Use cached rates
+        console.log('📦 Using cached exchange rates');
         return JSON.parse(cachedRates);
       }
     }
 
     try {
-      const result = await InvokeLLM({
-        prompt: "Get current exchange rates for USD to EUR and BDT to EUR. Return only the current rates.",
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            USD_to_EUR: { type: "number" },
-            BDT_to_EUR: { type: "number" }
-          }
-        }
-      });
+      console.log('📡 Fetching real-time exchange rates for Dashboard...');
+      const rates = await fetchRealTimeRates('EUR', ['USD', 'BDT']);
 
-      if (result.USD_to_EUR && result.BDT_to_EUR) {
-        const newRates = {
-          USD: result.USD_to_EUR,
-          BDT: result.BDT_to_EUR,
-          EUR: 1 // Explicitly set EUR to EUR rate as 1
-        };
-        
-        // Cache the rates
-        localStorage.setItem(localStorageKey, JSON.stringify(newRates));
-        localStorage.setItem(lastFetchedKey, Date.now().toString());
-        return newRates;
-      }
+      // Cache the rates
+      localStorage.setItem(localStorageKey, JSON.stringify(rates));
+      localStorage.setItem(lastFetchedKey, Date.now().toString());
+      console.log('✅ Exchange rates loaded:', rates);
+
+      return rates;
     } catch (error) {
       console.warn('Could not fetch live rates, using defaults', error);
-      // Don't re-throw, use default rates. If LLM call fails, we still want to load other data.
+      // Return default rates if fetching fails (in correct format for convertCurrency)
+      return { EUR: 1, USD: 1.08, BDT: 118.5 };
     }
-    
-    // Return default rates if fetching fails
-    return { USD: 0.92, BDT: 0.0084, EUR: 1 };
   };
 
   // Effect for initial load (fetch rates, load all data including recurring processing)
