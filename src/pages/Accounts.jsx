@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Account, Transaction } from "@/api/entities";
-import { InvokeLLM } from "@/api/integrations";
+import { fetchExchangeRates, convertCurrency } from "../utils/exchangeRateApi";
 import { useCurrentUser } from '../hooks/useCurrentUser'; // Use custom hook instead of User.me()
 import exchangeRatesService from '../services/exchangeRatesService';
 import { Button } from "@/components/ui/button";
@@ -31,28 +31,16 @@ export default function AccountsPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const fetchExchangeRates = useCallback(async () => {
+  const fetchLiveExchangeRates = useCallback(async () => {
     try {
-      const result = await InvokeLLM({
-        prompt: "Get current exchange rates for USD to EUR and BDT to EUR.",
-        add_context_from_internet: true,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            USD_to_EUR: { type: "number" },
-            BDT_to_EUR: { type: "number" },
-          },
-        },
-      });
-      if (result.USD_to_EUR && result.BDT_to_EUR) {
-        setExchangeRates({
-          USD: result.USD_to_EUR,
-          BDT: result.BDT_to_EUR,
-          EUR: 1,
-        });
-      }
+      console.log('📡 Fetching real-time exchange rates for Accounts page...');
+      const rates = await fetchExchangeRates('EUR', ['USD', 'BDT']);
+      setExchangeRates(rates);
+      console.log('✅ Exchange rates loaded:', rates);
     } catch (error) {
-      console.warn("Could not fetch live rates, using defaults.");
+      console.warn("Could not fetch live rates, using defaults:", error);
+      // Use default rates as fallback
+      setExchangeRates({ EUR: 1, USD: 1.08, BDT: 118.5 });
     }
   }, []);
 
@@ -124,12 +112,21 @@ export default function AccountsPage() {
       // Calculate balance_eur for each account using historical rates
       const accountsWithEur = accountsData.map(account => {
         const displayBalance = calculateHistoricalBalance(account, selectedMonth);
-        const rate = historicalRates[account.currency] || 1;
+
+        // Convert to EUR using proper conversion function
+        const balance_eur = convertCurrency(
+          displayBalance,
+          account.currency,
+          'EUR',
+          historicalRates
+        );
+
+        console.log(`Account: ${account.name} | ${displayBalance} ${account.currency} → €${balance_eur.toFixed(2)}`);
 
         return {
           ...account,
           balance: displayBalance, // Override balance with historical balance
-          balance_eur: displayBalance * rate
+          balance_eur: balance_eur
         };
       });
 
@@ -144,9 +141,9 @@ export default function AccountsPage() {
   // Fetch exchange rates when user is available
   useEffect(() => {
     if (currentUser) {
-      fetchExchangeRates();
+      fetchLiveExchangeRates();
     }
-  }, [currentUser, fetchExchangeRates]);
+  }, [currentUser, fetchLiveExchangeRates]);
 
   // Load transactions when user is available
   useEffect(() => {
@@ -239,19 +236,26 @@ export default function AccountsPage() {
     }
 
     try {
-      const rate = exchangeRates[formData.currency] || 1;
-
       if (editingAccount) {
         // For editing, use the current_balance from the form
+        const balance_eur = convertCurrency(
+          formData.current_balance,
+          formData.currency,
+          'EUR',
+          exchangeRates
+        );
+
         let dataToSave = {
           ...formData,
           balance: formData.current_balance,
-          balance_eur: formData.current_balance * rate,
+          balance_eur: balance_eur,
         };
         // Don't update opening_balance when editing, it's an initial value
         delete dataToSave.opening_balance;
         // Remove current_balance as it's a form-specific field, not a database field
         delete dataToSave.current_balance;
+
+        console.log(`Saving account: ${formData.current_balance} ${formData.currency} → €${balance_eur.toFixed(2)}`);
 
         await Account.update(editingAccount.id, dataToSave);
       } else {
@@ -271,6 +275,8 @@ export default function AccountsPage() {
         if (formData.notes) {
           dataToSave.notes = formData.notes;
         }
+
+        console.log(`Creating ${formData.type} account:`, dataToSave);
 
         await Account.create(dataToSave);
       }

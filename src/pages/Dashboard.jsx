@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Account, Transaction, RecurrentTransaction } from "@/api/entities";
 import { InvokeLLM } from "@/api/integrations";
+import { convertCurrency } from "../utils/exchangeRateApi";
 import { useApp } from '../context/AppContext';  // Import useApp to access shared categories and user
 import { useCurrentUser } from '../hooks/useCurrentUser';  // Import custom hook
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,7 +137,7 @@ export default function Dashboard() {
             }
 
             fromAccount.balance = newBalance; // Update mutable copy
-            fromAccount.balance_eur = newBalance * (rates[fromAccount.currency] || 1); // Update mutable copy
+            fromAccount.balance_eur = convertCurrency(newBalance, fromAccount.currency, 'EUR', rates); // Update mutable copy
             accountsToUpdate.set(fromAccount.id, { balance: fromAccount.balance, balance_eur: fromAccount.balance_eur });
           }
 
@@ -155,7 +156,7 @@ export default function Dashboard() {
               : toAccount.balance + amountInToAccountCurrency;
 
             toAccount.balance = newToBalance; // Update mutable copy
-            toAccount.balance_eur = newToBalance * (rates[toAccount.currency] || 1); // Update mutable copy
+            toAccount.balance_eur = convertCurrency(newToBalance, toAccount.currency, 'EUR', rates); // Update mutable copy
             accountsToUpdate.set(toAccount.id, { balance: toAccount.balance, balance_eur: toAccount.balance_eur });
           }
 
@@ -290,8 +291,8 @@ export default function Dashboard() {
         // Calculate balance_eur for each account if not provided by backend
         const accountsWithEurBalance = accountsData.map(acc => {
           if (!acc.balance_eur) {
-            const rate = rates[acc.currency] || 1;
-            acc.balance_eur = (acc.balance || acc.currentBalance || 0) * rate;
+            const balance = acc.balance || acc.currentBalance || 0;
+            acc.balance_eur = convertCurrency(balance, acc.currency, 'EUR', rates);
           }
           return acc;
         });
