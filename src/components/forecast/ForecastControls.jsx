@@ -20,11 +20,11 @@ export default function ForecastControls({ params, setParams, initialMonthlySavi
           <Input
             id="monthly-savings"
             type="number"
-            value={params.monthlySavings}
+            value={params.monthlySavings || ''}
             onChange={(e) =>
-              setParams({ ...params, monthlySavings: Number(e.target.value) })
+              setParams({ ...params, monthlySavings: Number(e.target.value) || 0 })
             }
-            placeholder={`e.g. ${initialMonthlySavings}`}
+            placeholder={`e.g. ${Math.round(initialMonthlySavings)}`}
           />
           <p className="text-xs text-slate-500">
             Average based on last 6 months: €{initialMonthlySavings.toFixed(2)}

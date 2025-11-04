@@ -63,7 +63,11 @@ export default function TransactionTemplateForm({ template, accounts, categories
     };
 
     const parentCategories = categories.filter(cat => !cat.parent_id && cat.type === formData.type);
-    const availableSubcategories = categories.filter(cat => cat.parent_id === formData.category_id);
+
+    // Deduplicate subcategories by ID to prevent duplicates in dropdown
+    const availableSubcategories = categories
+        .filter(cat => cat.parent_id === formData.category_id)
+        .filter((cat, index, self) => index === self.findIndex(c => c.id === cat.id));
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">

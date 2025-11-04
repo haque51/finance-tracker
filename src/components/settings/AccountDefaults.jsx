@@ -50,10 +50,9 @@ export default function AccountDefaults({ user, accounts, onUpdate, isSaving }) 
                 onValueChange={setSelectedDefaultAccount}
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select default account" />
+                  <SelectValue placeholder="No default account (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>No default account</SelectItem>
                   {accounts.map((account) => {
                     const Icon = accountIcons[account.type] || Landmark;
                     return (

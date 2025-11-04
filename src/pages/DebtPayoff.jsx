@@ -30,16 +30,35 @@ export default function DebtPayoffPage() {
       setCurrentUser(user);
 
       const [accountsData, plansData] = await Promise.all([
-        Account.filter({ 
-          
+        Account.filter({
+
           is_active: true,
-          type: ['loan', 'credit_card'] 
+          type: ['loan', 'credit_card']
         }),
         DebtPayoffPlan.filter({})
       ]);
 
+      console.log('=== DEBT PAYOFF DEBUG ===');
+      console.log('All debt accounts found:', accountsData);
+      accountsData.forEach(acc => {
+        console.log(`Account: ${acc.name}`);
+        console.log('  - Type:', acc.type);
+        console.log('  - Balance:', acc.balance);
+        console.log('  - Current Balance:', acc.currentBalance);
+        console.log('  - Balance EUR:', acc.balance_eur);
+        console.log('  - Opening Balance:', acc.openingBalance);
+      });
+
       // Filter for debt accounts with balances > 0
-      const activeDebtAccounts = accountsData.filter(acc => (acc.balance || 0) > 0);
+      // For debt accounts, balance should be positive (amount owed)
+      const activeDebtAccounts = accountsData.filter(acc => {
+        const balance = Math.abs(acc.balance || acc.currentBalance || 0);
+        console.log(`${acc.name} absolute balance: ${balance}`);
+        return balance > 0;
+      });
+      console.log('Active debt accounts (balance > 0):', activeDebtAccounts);
+      console.log('========================');
+
       setDebtAccounts(activeDebtAccounts);
       setPayoffPlans(plansData);
     } catch (error) {

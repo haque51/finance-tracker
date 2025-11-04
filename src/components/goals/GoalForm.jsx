@@ -10,7 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreditCard, Landmark, PiggyBank, Briefcase } from "lucide-react";
 import { format } from "date-fns";
+
+const accountIcons = {
+  checking: Landmark,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  investment: Briefcase,
+  brokerage: Briefcase,
+  loan: CreditCard
+};
 
 export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -46,6 +56,17 @@ export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
       target_amount: Number(formData.target_amount),
       current_amount: Number(formData.current_amount),
     };
+
+    // Convert empty string to null for linked_account_id (backend expects null, not empty string)
+    if (!dataToSubmit.linked_account_id || dataToSubmit.linked_account_id === '') {
+      dataToSubmit.linked_account_id = null;
+    }
+
+    // Convert empty string to null for target_date (backend expects null, not empty string)
+    if (!dataToSubmit.target_date || dataToSubmit.target_date === '') {
+      dataToSubmit.target_date = null;
+    }
+
     onSubmit(dataToSubmit);
   };
 
@@ -76,16 +97,27 @@ export default function GoalForm({ goal, accounts, onSubmit, onCancel }) {
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="linked_account_id">Link to a Savings Account (Optional)</Label>
+        <Label htmlFor="linked_account_id">Link to an Account (Optional)</Label>
         <Select value={formData.linked_account_id} onValueChange={(value) => handleChange('linked_account_id', value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select an account" />
+            <SelectValue placeholder="None (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={null}>None</SelectItem>
-            {accounts.filter(a => a.type === 'savings').map(account => (
-              <SelectItem key={account.id} value={account.id}>{account.name}</SelectItem>
-            ))}
+            {accounts.filter(a => a.type !== 'loan' && a.type !== 'credit_card').map(account => {
+              const Icon = accountIcons[account.type] || Landmark;
+              return (
+                <SelectItem key={account.id} value={account.id}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    <span className="font-medium">{account.name}</span>
+                    <span className="text-slate-500">({account.currency})</span>
+                    <span className="text-xs text-slate-400 capitalize">
+                      {account.type.replace('_', ' ')}
+                    </span>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         <p className="text-xs text-slate-500 mt-1">Linking an account will automatically track its balance as your saved amount.</p>

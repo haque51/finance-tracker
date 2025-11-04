@@ -23,7 +23,9 @@ class BudgetService {
         : API_ENDPOINTS.BUDGETS;
 
       const response = await api.get(endpoint);
-      return response.data.map(this._mapBudgetFromAPI);
+      // Backend returns: { status: "success", data: [...] }
+      const budgets = response.data.data || response.data;
+      return budgets.map(this._mapBudgetFromAPI);
     } catch (error) {
       console.error('Get budgets error:', error);
       throw error;
@@ -38,7 +40,7 @@ class BudgetService {
   async getBudget(id) {
     try {
       const response = await api.get(`${API_ENDPOINTS.BUDGETS}/${id}`);
-      return this._mapBudgetFromAPI(response.data);
+      return this._mapBudgetFromAPI(response.data.data || response.data);
     } catch (error) {
       console.error('Get budget error:', error);
       throw error;
@@ -54,7 +56,7 @@ class BudgetService {
     try {
       const apiData = this._mapBudgetToAPI(budgetData);
       const response = await api.post(API_ENDPOINTS.BUDGETS, apiData);
-      return this._mapBudgetFromAPI(response.data);
+      return this._mapBudgetFromAPI(response.data.data || response.data);
     } catch (error) {
       console.error('Create budget error:', error);
       throw error;
@@ -71,7 +73,7 @@ class BudgetService {
     try {
       const apiData = this._mapBudgetToAPI(budgetData);
       const response = await api.put(`${API_ENDPOINTS.BUDGETS}/${id}`, apiData);
-      return this._mapBudgetFromAPI(response.data);
+      return this._mapBudgetFromAPI(response.data.data || response.data);
     } catch (error) {
       console.error('Update budget error:', error);
       throw error;
@@ -100,7 +102,8 @@ class BudgetService {
     return {
       id: apiBudget.id,
       categoryId: apiBudget.category_id,
-      amount: apiBudget.amount,
+      category_id: apiBudget.category_id, // Keep snake_case for compatibility
+      amount: apiBudget.budgeted || apiBudget.amount, // Backend uses 'budgeted' field
       month: apiBudget.month,
       year: apiBudget.year,
       spent: apiBudget.spent,
@@ -120,12 +123,16 @@ class BudgetService {
    * @private
    */
   _mapBudgetToAPI(budget) {
-    return {
+    const payload = {
       category_id: budget.categoryId || budget.category_id,
-      amount: budget.amount,
+      budgeted: budget.budgeted || budget.amount, // Backend expects 'budgeted' not 'amount'
       month: budget.month,
-      year: budget.year,
     };
+
+    // Don't send user_id - backend gets it from JWT token
+    // Don't send year - backend only uses month in YYYY-MM format
+
+    return payload;
   }
 }
 

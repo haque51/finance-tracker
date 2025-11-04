@@ -9,7 +9,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, CreditCard, Landmark, PiggyBank, Briefcase } from "lucide-react";
+
+const accountIcons = {
+  checking: Landmark,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  investment: Briefcase,
+  brokerage: Briefcase,
+  loan: CreditCard
+};
 
 export default function TransactionFilters({ 
   filters, 
@@ -57,11 +66,21 @@ export default function TransactionFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Accounts</SelectItem>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
+                {accounts.map((account) => {
+                  const Icon = accountIcons[account.type] || Landmark;
+                  return (
+                    <SelectItem key={account.id} value={account.id}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        <span className="font-medium">{account.name}</span>
+                        <span className="text-slate-500">({account.currency})</span>
+                        <span className="text-xs text-slate-400 capitalize">
+                          {account.type.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
