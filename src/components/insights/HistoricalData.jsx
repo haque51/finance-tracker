@@ -31,7 +31,8 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
 
-    return months.map(month => {
+    // Calculate cumulative savings to estimate historical net worth
+    const monthlyData = months.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
 
@@ -52,46 +53,34 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
       const savings = income - expense;
 
-      // Calculate net worth at end of this month by working backwards from current net worth
-      // Subtract the impact of all transactions that occurred AFTER this month
-      const transactionsAfterMonth = transactions.filter(t => {
-        const txDate = parseISO(t.date);
-        return txDate > monthEnd;
-      });
+      return {
+        month,
+        monthStart,
+        monthEnd,
+        income,
+        expense,
+        savings
+      };
+    });
 
-      const netImpactAfterMonth = transactionsAfterMonth.reduce((impact, t) => {
-        const fromAccount = accounts.find(a => a.id === t.account_id);
-        const toAccount = t.to_account_id ? accounts.find(a => a.id === t.to_account_id) : null;
-        const isFromDebt = fromAccount && (fromAccount.type === 'loan' || fromAccount.type === 'credit_card');
-        const isToDebt = toAccount && (toAccount.type === 'loan' || toAccount.type === 'credit_card');
+    // Calculate cumulative savings from the start month to now
+    const totalSavingsInPeriod = monthlyData.reduce((sum, m) => sum + m.savings, 0);
 
-        if (t.type === 'income') {
-          return impact + (t.amount_eur || 0);
-        } else if (t.type === 'expense') {
-          return impact - (t.amount_eur || 0);
-        } else if (t.type === 'transfer') {
-          // Transfers between debt and non-debt accounts affect net worth
-          if (isFromDebt && !isToDebt) {
-            // Paying off debt increases net worth
-            return impact - (t.amount_eur || 0);
-          } else if (!isFromDebt && isToDebt) {
-            // Borrowing decreases net worth
-            return impact + (t.amount_eur || 0);
-          }
-          // Transfers between same account types don't affect net worth
-          return impact;
-        }
-        return impact;
-      }, 0);
+    // Estimate starting net worth = current net worth - total savings in the period
+    const startingNetWorth = currentNetWorth - totalSavingsInPeriod;
 
-      const netWorth = currentNetWorth - netImpactAfterMonth;
+    // Now build the final data with cumulative net worth
+    let cumulativeNetWorth = startingNetWorth;
+
+    return monthlyData.map(m => {
+      cumulativeNetWorth += m.savings;
 
       return {
-        month: format(month, 'MMM yyyy'),
-        income: Number(income.toFixed(2)),
-        expense: Number(expense.toFixed(2)),
-        savings: Number(savings.toFixed(2)),
-        netWorth: Number(netWorth.toFixed(2))
+        month: format(m.month, 'MMM yyyy'),
+        income: Number(m.income.toFixed(2)),
+        expense: Number(m.expense.toFixed(2)),
+        savings: Number(m.savings.toFixed(2)),
+        netWorth: Number(cumulativeNetWorth.toFixed(2))
       };
     });
   }, [fromDate, toDate, transactions, accounts]);
