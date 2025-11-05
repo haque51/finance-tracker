@@ -175,7 +175,11 @@ export default function SpendingInsights({ transactions, categories, accounts, i
                     })}
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis type="number" />
+                  <XAxis
+                    type="number"
+                    domain={[0, 'dataMax']}
+                    tickFormatter={(value) => `€${value.toFixed(0)}`}
+                  />
                   <YAxis
                     type="category"
                     dataKey="name"
@@ -191,7 +195,11 @@ export default function SpendingInsights({ transactions, categories, accounts, i
                       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
                   />
-                  <Bar dataKey="amount" radius={[0, 8, 8, 0]}>
+                  <Bar
+                    dataKey="amount"
+                    radius={[0, 8, 8, 0]}
+                    maxBarSize={40}
+                  >
                     {insights.topCategories.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={`url(#barGradient${index})`} />
                     ))}
