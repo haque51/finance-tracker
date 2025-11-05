@@ -75,7 +75,11 @@ export default function CategorySpendingChart({ transactions, categories, isLoad
                 })}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis type="number" />
+              <XAxis
+                type="number"
+                domain={[0, 'dataMax']}
+                tickFormatter={(value) => `€${value.toFixed(0)}`}
+              />
               <YAxis
                 type="category"
                 dataKey="name"
@@ -83,7 +87,11 @@ export default function CategorySpendingChart({ transactions, categories, isLoad
                 tick={{ fontSize: 12 }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" radius={[0, 8, 8, 0]}>
+              <Bar
+                dataKey="value"
+                radius={[0, 8, 8, 0]}
+                maxBarSize={40}
+              >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={`url(#dashboardBarGradient${index})`} />
                 ))}
