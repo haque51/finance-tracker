@@ -190,10 +190,10 @@ export default function HistoricalData({ transactions, accounts, categories, isL
         </Card>
       </div>
 
-      {/* Historical Trends Chart */}
+      {/* Income, Expense & Savings Trends */}
       <Card className="shadow-sm border-slate-200">
         <CardHeader>
-          <CardTitle>Historical Trends</CardTitle>
+          <CardTitle>Income, Expense & Savings Trends</CardTitle>
         </CardHeader>
         <CardContent>
           {historicalData.length === 0 ? (
@@ -230,6 +230,31 @@ export default function HistoricalData({ transactions, accounts, categories, isL
                   strokeWidth={2}
                   name="Savings"
                 />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Net Worth Trends */}
+      <Card className="shadow-sm border-slate-200">
+        <CardHeader>
+          <CardTitle>Net Worth Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {historicalData.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <p>No data available for the selected date range.</p>
+              <p className="text-sm mt-2">Adjust your date range or add transactions.</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={historicalData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `€${value}`} />
+                <Legend />
                 <Line
                   type="monotone"
                   dataKey="netWorth"

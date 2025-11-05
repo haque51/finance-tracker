@@ -9,8 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Wallet, Milestone, Scale } from "lucide-react";
+import { ClipboardCheck, Wallet, Milestone, Scale, Landmark, PiggyBank, CreditCard, Briefcase } from "lucide-react";
 import { format, startOfMonth } from "date-fns";
+
+const accountIcons = {
+  checking: Landmark,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  investment: Briefcase,
+  brokerage: Briefcase,
+  loan: CreditCard
+};
 
 export default function ReconciliationPage() {
     const { user: currentUser } = useCurrentUser(); // Get user from AppContext
@@ -168,9 +177,21 @@ export default function ReconciliationPage() {
                             <SelectValue placeholder="Choose an account..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {accounts.map(acc => (
-                                <SelectItem key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</SelectItem>
-                            ))}
+                            {accounts.map(account => {
+                              const Icon = accountIcons[account.type] || Landmark;
+                              return (
+                                <SelectItem key={account.id} value={account.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4" />
+                                    <span className="font-medium">{account.name}</span>
+                                    <span className="text-slate-500">({account.currency})</span>
+                                    <span className="text-xs text-slate-400 capitalize">
+                                      {account.type.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                         </SelectContent>
                     </Select>
                     {selectedAccount && (
