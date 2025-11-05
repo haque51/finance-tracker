@@ -69,6 +69,13 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     // Estimate starting net worth = current net worth - total savings in the period
     const startingNetWorth = currentNetWorth - totalSavingsInPeriod;
 
+    console.log('HistoricalData Debug:', {
+      currentNetWorth,
+      totalSavingsInPeriod,
+      startingNetWorth,
+      monthCount: monthlyData.length
+    });
+
     // Now build the final data with cumulative net worth
     let cumulativeNetWorth = startingNetWorth;
 

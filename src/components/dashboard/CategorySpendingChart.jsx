@@ -77,20 +77,21 @@ export default function CategorySpendingChart({ transactions, categories, isLoad
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis
                 type="number"
-                domain={[0, 'dataMax']}
+                domain={[0, 'auto']}
                 tickFormatter={(value) => `€${value.toFixed(0)}`}
+                padding={{ right: 20 }}
               />
               <YAxis
                 type="category"
                 dataKey="name"
-                width={110}
+                width={120}
                 tick={{ fontSize: 12 }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="value"
                 radius={[0, 8, 8, 0]}
-                maxBarSize={40}
+                barSize={50}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={`url(#dashboardBarGradient${index})`} />
