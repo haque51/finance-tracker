@@ -21,6 +21,13 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
     if (from > to) return [];
 
+    // Calculate current net worth (sum of all account balances, treating debt as negative)
+    const currentNetWorth = accounts.reduce((sum, acc) => {
+      const isDebt = acc.type === 'loan' || acc.type === 'credit_card';
+      const balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
+      return sum + (isDebt ? -balance : balance);
+    }, 0);
+
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
 
@@ -45,10 +52,39 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
       const savings = income - expense;
 
-      // Calculate net worth at end of this month (simplified - sum of all account balances)
-      // Note: This is a snapshot calculation, ideally should use historical balance data
-      const netWorth = accounts.reduce((sum, acc) =>
-        sum + (acc.balance_eur || acc.balance || acc.currentBalance || 0), 0);
+      // Calculate net worth at end of this month by working backwards from current net worth
+      // Subtract the impact of all transactions that occurred AFTER this month
+      const transactionsAfterMonth = transactions.filter(t => {
+        const txDate = parseISO(t.date);
+        return txDate > monthEnd;
+      });
+
+      const netImpactAfterMonth = transactionsAfterMonth.reduce((impact, t) => {
+        const fromAccount = accounts.find(a => a.id === t.account_id);
+        const toAccount = t.to_account_id ? accounts.find(a => a.id === t.to_account_id) : null;
+        const isFromDebt = fromAccount && (fromAccount.type === 'loan' || fromAccount.type === 'credit_card');
+        const isToDebt = toAccount && (toAccount.type === 'loan' || toAccount.type === 'credit_card');
+
+        if (t.type === 'income') {
+          return impact + (t.amount_eur || 0);
+        } else if (t.type === 'expense') {
+          return impact - (t.amount_eur || 0);
+        } else if (t.type === 'transfer') {
+          // Transfers between debt and non-debt accounts affect net worth
+          if (isFromDebt && !isToDebt) {
+            // Paying off debt increases net worth
+            return impact - (t.amount_eur || 0);
+          } else if (!isFromDebt && isToDebt) {
+            // Borrowing decreases net worth
+            return impact + (t.amount_eur || 0);
+          }
+          // Transfers between same account types don't affect net worth
+          return impact;
+        }
+        return impact;
+      }, 0);
+
+      const netWorth = currentNetWorth - netImpactAfterMonth;
 
       return {
         month: format(month, 'MMM yyyy'),
