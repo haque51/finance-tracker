@@ -22,11 +22,28 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     if (from > to) return [];
 
     // Calculate current net worth (sum of all account balances, treating debt as negative)
+    console.log('=== ACCOUNTS DEBUG ===');
+    console.log('Number of accounts:', accounts.length);
+    accounts.forEach((acc, idx) => {
+      console.log(`Account ${idx + 1}:`, {
+        id: acc.id,
+        name: acc.name,
+        type: acc.type,
+        balance_eur: acc.balance_eur,
+        balance: acc.balance,
+        currentBalance: acc.currentBalance
+      });
+    });
+
     const currentNetWorth = accounts.reduce((sum, acc) => {
       const isDebt = acc.type === 'loan' || acc.type === 'credit_card';
       const balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
+      console.log(`${acc.name}: ${isDebt ? '-' : '+'}€${balance} (type: ${acc.type})`);
       return sum + (isDebt ? -balance : balance);
     }, 0);
+
+    console.log('Total currentNetWorth:', currentNetWorth);
+    console.log('=== END ACCOUNTS DEBUG ===');
 
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
