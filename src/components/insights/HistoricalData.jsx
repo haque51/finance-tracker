@@ -7,7 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import exchangeRatesService from "../../services/exchangeRatesService";
-import { convertCurrency } from "../../utils/exchangeRateApi";
+import { fetchExchangeRates, convertCurrency } from "../../utils/exchangeRateApi";
 
 export default function HistoricalData({ transactions, accounts, categories, isLoading }) {
   const currentDate = new Date();
@@ -16,9 +16,9 @@ export default function HistoricalData({ transactions, accounts, categories, isL
   const [historicalRates, setHistoricalRates] = useState({});
   const [ratesLoading, setRatesLoading] = useState(false);
 
-  // Fetch historical exchange rates when date range changes
+  // Fetch exchange rates when date range changes
   useEffect(() => {
-    const fetchHistoricalRates = async () => {
+    const fetchRates = async () => {
       if (!fromDate || !toDate) return;
 
       setRatesLoading(true);
@@ -28,13 +28,28 @@ export default function HistoricalData({ transactions, accounts, categories, isL
         if (from > to) return;
 
         const months = eachMonthOfInterval({ start: from, end: to });
+        const currentMonthStr = format(new Date(), 'yyyy-MM');
+
+        // Fetch real-time rates for the current month
+        console.log('Fetching real-time rates for current month...');
+        const realTimeRates = await fetchExchangeRates('EUR', ['USD', 'BDT']);
+        console.log('Real-time rates:', realTimeRates);
+
         const ratesPromises = months.map(async (month) => {
           const monthStr = format(month, 'yyyy-MM');
+
+          // Use real-time rates for current month
+          if (monthStr === currentMonthStr) {
+            console.log(`Using real-time rates for current month ${monthStr}`);
+            return { month: monthStr, rates: realTimeRates };
+          }
+
+          // Use historical rates for past months
           try {
             const rates = await exchangeRatesService.getHistoricalRates(monthStr);
             return { month: monthStr, rates };
           } catch (error) {
-            console.warn(`Failed to fetch rates for ${monthStr}, using defaults`);
+            console.warn(`Failed to fetch historical rates for ${monthStr}, using defaults`);
             // Return default rates if historical rates not available
             return { month: monthStr, rates: { EUR: 1, USD: 1.08, BDT: 118.5 } };
           }
@@ -48,13 +63,13 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
         setHistoricalRates(ratesMap);
       } catch (error) {
-        console.error('Error fetching historical rates:', error);
+        console.error('Error fetching exchange rates:', error);
       } finally {
         setRatesLoading(false);
       }
     };
 
-    fetchHistoricalRates();
+    fetchRates();
   }, [fromDate, toDate]);
 
   // Calculate historical data for the selected date range
@@ -83,16 +98,16 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
 
-    // Get current month rates (latest month in range)
-    const currentMonthStr = format(to, 'yyyy-MM');
-    const currentRates = historicalRates[currentMonthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
+    // Get actual current month (today's date, not the "to" date from the range)
+    const actualCurrentMonthStr = format(new Date(), 'yyyy-MM');
+    const currentRates = historicalRates[actualCurrentMonthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
 
     console.log('=== INSIGHTS NET WORTH DEBUG ===');
-    console.log('Current month:', currentMonthStr);
-    console.log('Exchange rates used:', currentRates);
+    console.log('Actual current month:', actualCurrentMonthStr);
+    console.log('Exchange rates used (should be real-time for current month):', currentRates);
 
     // Calculate CURRENT net worth using CURRENT month's exchange rates
-    const currentNetWorth = calculateNetWorthForMonth(currentMonthStr, currentRates);
+    const currentNetWorth = calculateNetWorthForMonth(actualCurrentMonthStr, currentRates);
 
     console.log('Calculated current net worth:', currentNetWorth);
     console.log('Accounts breakdown:');
