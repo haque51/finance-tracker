@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -6,60 +6,100 @@ import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, PiggyBank } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
+import exchangeRatesService from "../../services/exchangeRatesService";
+import { convertCurrency } from "../../utils/exchangeRateApi";
 
 export default function HistoricalData({ transactions, accounts, categories, isLoading }) {
   const currentDate = new Date();
   const [fromDate, setFromDate] = useState(format(new Date(currentDate.getFullYear(), currentDate.getMonth() - 5, 1), 'yyyy-MM'));
   const [toDate, setToDate] = useState(format(currentDate, 'yyyy-MM'));
+  const [historicalRates, setHistoricalRates] = useState({});
+  const [ratesLoading, setRatesLoading] = useState(false);
+
+  // Fetch historical exchange rates when date range changes
+  useEffect(() => {
+    const fetchHistoricalRates = async () => {
+      if (!fromDate || !toDate) return;
+
+      setRatesLoading(true);
+      try {
+        const from = parseISO(fromDate + '-01');
+        const to = parseISO(toDate + '-01');
+        if (from > to) return;
+
+        const months = eachMonthOfInterval({ start: from, end: to });
+        const ratesPromises = months.map(async (month) => {
+          const monthStr = format(month, 'yyyy-MM');
+          try {
+            const rates = await exchangeRatesService.getHistoricalRates(monthStr);
+            return { month: monthStr, rates };
+          } catch (error) {
+            console.warn(`Failed to fetch rates for ${monthStr}, using defaults`);
+            // Return default rates if historical rates not available
+            return { month: monthStr, rates: { EUR: 1, USD: 1.08, BDT: 118.5 } };
+          }
+        });
+
+        const allRates = await Promise.all(ratesPromises);
+        const ratesMap = {};
+        allRates.forEach(({ month, rates }) => {
+          ratesMap[month] = rates || { EUR: 1, USD: 1.08, BDT: 118.5 };
+        });
+
+        setHistoricalRates(ratesMap);
+      } catch (error) {
+        console.error('Error fetching historical rates:', error);
+      } finally {
+        setRatesLoading(false);
+      }
+    };
+
+    fetchHistoricalRates();
+  }, [fromDate, toDate]);
 
   // Calculate historical data for the selected date range
   const historicalData = useMemo(() => {
-    if (!fromDate || !toDate) return [];
+    if (!fromDate || !toDate || Object.keys(historicalRates).length === 0) return [];
 
     const from = parseISO(fromDate + '-01');
     const to = parseISO(toDate + '-01');
 
     if (from > to) return [];
 
-    // Calculate current net worth (sum of all account balances, treating debt as negative)
-    console.log('=== ACCOUNTS DEBUG ===');
-    console.log('Number of accounts:', accounts.length);
-    accounts.forEach((acc, idx) => {
-      console.log(`Account ${idx + 1}:`, {
-        id: acc.id,
-        name: acc.name,
-        type: acc.type,
-        balance_eur: acc.balance_eur,
-        balance: acc.balance,
-        currentBalance: acc.currentBalance
-      });
-    });
+    // Helper function to calculate net worth for a specific month using historical rates
+    const calculateNetWorthForMonth = (monthStr, rates) => {
+      return accounts.reduce((sum, acc) => {
+        const isDebt = acc.type === 'loan' || acc.type === 'credit_card';
+        const balance = acc.balance || acc.currentBalance || 0;
+        const currency = acc.currency || 'EUR';
 
-    const currentNetWorth = accounts.reduce((sum, acc) => {
-      const isDebt = acc.type === 'loan' || acc.type === 'credit_card';
-      const balance = acc.balance_eur || acc.balance || acc.currentBalance || 0;
-      console.log(`${acc.name}: ${isDebt ? '-' : '+'}€${balance} (type: ${acc.type})`);
-      return sum + (isDebt ? -balance : balance);
-    }, 0);
+        // Convert balance to EUR using historical rates for this month
+        const balanceInEur = convertCurrency(balance, currency, 'EUR', rates);
 
-    console.log('Total currentNetWorth:', currentNetWorth);
-    console.log('=== END ACCOUNTS DEBUG ===');
+        return sum + (isDebt ? -balanceInEur : balanceInEur);
+      }, 0);
+    };
 
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
 
-    // Calculate cumulative savings to estimate historical net worth
+    // Get current month rates (latest month in range)
+    const currentMonthStr = format(to, 'yyyy-MM');
+    const currentRates = historicalRates[currentMonthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
+
+    // Calculate CURRENT net worth using CURRENT month's exchange rates
+    const currentNetWorth = calculateNetWorthForMonth(currentMonthStr, currentRates);
+
+    // Calculate income/expense/savings for each month
     const monthlyData = months.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
 
-      // Filter transactions for this month
       const monthTransactions = transactions.filter(t => {
         const txDate = parseISO(t.date);
         return txDate >= monthStart && txDate <= monthEnd;
       });
 
-      // Calculate income, expense
       const income = monthTransactions
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + (t.amount_eur || t.amount || 0), 0);
@@ -72,28 +112,19 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
       return {
         month,
-        monthStart,
-        monthEnd,
         income,
         expense,
         savings
       };
     });
 
-    // Calculate cumulative savings from the start month to now
+    // Calculate total savings from start to end of period
     const totalSavingsInPeriod = monthlyData.reduce((sum, m) => sum + m.savings, 0);
 
-    // Estimate starting net worth = current net worth - total savings in the period
+    // Estimate starting net worth by working backwards from current
     const startingNetWorth = currentNetWorth - totalSavingsInPeriod;
 
-    console.log('HistoricalData Debug:', {
-      currentNetWorth,
-      totalSavingsInPeriod,
-      startingNetWorth,
-      monthCount: monthlyData.length
-    });
-
-    // Now build the final data with cumulative net worth
+    // Build final data with cumulative net worth
     let cumulativeNetWorth = startingNetWorth;
 
     return monthlyData.map(m => {
@@ -107,7 +138,7 @@ export default function HistoricalData({ transactions, accounts, categories, isL
         netWorth: Number(cumulativeNetWorth.toFixed(2))
       };
     });
-  }, [fromDate, toDate, transactions, accounts]);
+  }, [fromDate, toDate, transactions, accounts, historicalRates]);
 
   // Calculate summary statistics
   const summary = useMemo(() => {
