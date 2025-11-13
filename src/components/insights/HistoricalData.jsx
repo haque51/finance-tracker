@@ -83,22 +83,23 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
 
-    // Calculate data for each month
-    return months.map(month => {
+    // Get current month rates (latest month in range)
+    const currentMonthStr = format(to, 'yyyy-MM');
+    const currentRates = historicalRates[currentMonthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
+
+    // Calculate CURRENT net worth using CURRENT month's exchange rates
+    const currentNetWorth = calculateNetWorthForMonth(currentMonthStr, currentRates);
+
+    // Calculate income/expense/savings for each month
+    const monthlyData = months.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
-      const monthStr = format(month, 'yyyy-MM');
 
-      // Get historical exchange rates for this month
-      const rates = historicalRates[monthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
-
-      // Filter transactions for this month
       const monthTransactions = transactions.filter(t => {
         const txDate = parseISO(t.date);
         return txDate >= monthStart && txDate <= monthEnd;
       });
 
-      // Calculate income, expense (already in EUR from backend)
       const income = monthTransactions
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + (t.amount_eur || t.amount || 0), 0);
@@ -109,16 +110,32 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
       const savings = income - expense;
 
-      // Calculate net worth using CURRENT account balances converted with HISTORICAL rates
-      // Note: This is an approximation since we don't track historical account balances
-      const netWorth = calculateNetWorthForMonth(monthStr, rates);
+      return {
+        month,
+        income,
+        expense,
+        savings
+      };
+    });
+
+    // Calculate total savings from start to end of period
+    const totalSavingsInPeriod = monthlyData.reduce((sum, m) => sum + m.savings, 0);
+
+    // Estimate starting net worth by working backwards from current
+    const startingNetWorth = currentNetWorth - totalSavingsInPeriod;
+
+    // Build final data with cumulative net worth
+    let cumulativeNetWorth = startingNetWorth;
+
+    return monthlyData.map(m => {
+      cumulativeNetWorth += m.savings;
 
       return {
-        month: format(month, 'MMM yyyy'),
-        income: Number(income.toFixed(2)),
-        expense: Number(expense.toFixed(2)),
-        savings: Number(savings.toFixed(2)),
-        netWorth: Number(netWorth.toFixed(2))
+        month: format(m.month, 'MMM yyyy'),
+        income: Number(m.income.toFixed(2)),
+        expense: Number(m.expense.toFixed(2)),
+        savings: Number(m.savings.toFixed(2)),
+        netWorth: Number(cumulativeNetWorth.toFixed(2))
       };
     });
   }, [fromDate, toDate, transactions, accounts, historicalRates]);
