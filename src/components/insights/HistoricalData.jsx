@@ -87,8 +87,22 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     const currentMonthStr = format(to, 'yyyy-MM');
     const currentRates = historicalRates[currentMonthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
 
+    console.log('=== INSIGHTS NET WORTH DEBUG ===');
+    console.log('Current month:', currentMonthStr);
+    console.log('Exchange rates used:', currentRates);
+
     // Calculate CURRENT net worth using CURRENT month's exchange rates
     const currentNetWorth = calculateNetWorthForMonth(currentMonthStr, currentRates);
+
+    console.log('Calculated current net worth:', currentNetWorth);
+    console.log('Accounts breakdown:');
+    accounts.forEach(acc => {
+      const balance = acc.balance || acc.currentBalance || 0;
+      const currency = acc.currency || 'EUR';
+      const balanceInEur = convertCurrency(balance, currency, 'EUR', currentRates);
+      console.log(`  ${acc.name} (${currency}): ${balance.toFixed(2)} ${currency} = €${balanceInEur.toFixed(2)}`);
+    });
+    console.log('=== END INSIGHTS DEBUG ===');
 
     // Calculate income/expense/savings for each month
     const monthlyData = months.map(month => {
