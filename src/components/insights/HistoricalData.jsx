@@ -116,14 +116,53 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
     if (from > to) return [];
 
-    // Helper function to calculate net worth for a specific month using historical rates
-    const calculateNetWorthForMonth = (monthStr, rates) => {
+    // Helper function to calculate actual historical balance for an account at end of specific month
+    const calculateHistoricalBalance = (account, monthEndDate) => {
+      const now = new Date();
+      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // If it's the current month, use the live balance
+      if (monthEndDate >= currentMonth) {
+        return account.balance || account.currentBalance || 0;
+      }
+
+      // For historical months, calculate from opening balance + all transactions up to that month
+      let balance = account.opening_balance || 0;
+
+      // Get all transactions up to the end of this month for this account
+      const relevantTransactions = transactions.filter(t => {
+        const txDate = parseISO(t.date);
+        return txDate <= monthEndDate;
+      });
+
+      // Apply each transaction to the balance
+      relevantTransactions.forEach(txn => {
+        if (txn.type === 'income' && txn.account_id === account.id) {
+          balance += txn.amount || 0;
+        } else if (txn.type === 'expense' && txn.account_id === account.id) {
+          balance -= Math.abs(txn.amount || 0);
+        } else if (txn.type === 'transfer') {
+          if (txn.from_account_id === account.id) {
+            balance -= Math.abs(txn.amount || 0);
+          } else if (txn.to_account_id === account.id) {
+            balance += Math.abs(txn.amount || 0);
+          }
+        }
+      });
+
+      return balance;
+    };
+
+    // Helper function to calculate actual net worth for a specific month
+    const calculateActualNetWorthForMonth = (monthEndDate, rates) => {
       return accounts.reduce((sum, acc) => {
         const isDebt = acc.type === 'loan' || acc.type === 'credit_card';
-        const balance = acc.balance || acc.currentBalance || 0;
         const currency = acc.currency || 'EUR';
 
-        // Convert balance to EUR using historical rates for this month
+        // Get ACTUAL historical balance for this account at this month
+        const balance = calculateHistoricalBalance(acc, monthEndDate);
+
+        // Convert to EUR using historical rates for this month
         const balanceInEur = convertCurrency(balance, currency, 'EUR', rates);
 
         return sum + (isDebt ? -balanceInEur : balanceInEur);
@@ -133,32 +172,19 @@ export default function HistoricalData({ transactions, accounts, categories, isL
     // Get all months in the range
     const months = eachMonthOfInterval({ start: from, end: to });
 
-    // Get actual current month (today's date, not the "to" date from the range)
-    const actualCurrentMonthStr = format(new Date(), 'yyyy-MM');
-    const currentRates = historicalRates[actualCurrentMonthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
+    console.log('=== INSIGHTS NET WORTH CALCULATION ===');
+    console.log('Using actual historical balance calculation (not estimation)');
 
-    console.log('=== INSIGHTS NET WORTH DEBUG ===');
-    console.log('Actual current month:', actualCurrentMonthStr);
-    console.log('Exchange rates used (should be real-time for current month):', currentRates);
-
-    // Calculate CURRENT net worth using CURRENT month's exchange rates
-    const currentNetWorth = calculateNetWorthForMonth(actualCurrentMonthStr, currentRates);
-
-    console.log('Calculated current net worth:', currentNetWorth);
-    console.log('Accounts breakdown:');
-    accounts.forEach(acc => {
-      const balance = acc.balance || acc.currentBalance || 0;
-      const currency = acc.currency || 'EUR';
-      const balanceInEur = convertCurrency(balance, currency, 'EUR', currentRates);
-      console.log(`  ${acc.name} (${currency}): ${balance.toFixed(2)} ${currency} = €${balanceInEur.toFixed(2)}`);
-    });
-    console.log('=== END INSIGHTS DEBUG ===');
-
-    // Calculate income/expense/savings for each month
+    // Calculate data for each month with ACTUAL net worth
     const monthlyData = months.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
+      const monthStr = format(month, 'yyyy-MM');
 
+      // Get exchange rates for this specific month
+      const rates = historicalRates[monthStr] || { EUR: 1, USD: 1.08, BDT: 118.5 };
+
+      // Filter transactions for this specific month
       const monthTransactions = transactions.filter(t => {
         const txDate = parseISO(t.date);
         return txDate >= monthStart && txDate <= monthEnd;
@@ -174,34 +200,30 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
       const savings = income - expense;
 
+      // Calculate ACTUAL net worth at end of this month
+      const netWorth = calculateActualNetWorthForMonth(monthEnd, rates);
+
+      console.log(`${monthStr}: Net Worth = €${netWorth.toFixed(2)} (using ${Object.keys(rates).length} currency rates)`);
+
       return {
         month,
+        monthStr,
         income,
         expense,
-        savings
+        savings,
+        netWorth
       };
     });
 
-    // Calculate total savings from start to end of period
-    const totalSavingsInPeriod = monthlyData.reduce((sum, m) => sum + m.savings, 0);
+    console.log('=== END INSIGHTS NET WORTH CALCULATION ===');
 
-    // Estimate starting net worth by working backwards from current
-    const startingNetWorth = currentNetWorth - totalSavingsInPeriod;
-
-    // Build final data with cumulative net worth
-    let cumulativeNetWorth = startingNetWorth;
-
-    return monthlyData.map(m => {
-      cumulativeNetWorth += m.savings;
-
-      return {
-        month: format(m.month, 'MMM yyyy'),
-        income: Number(m.income.toFixed(2)),
-        expense: Number(m.expense.toFixed(2)),
-        savings: Number(m.savings.toFixed(2)),
-        netWorth: Number(cumulativeNetWorth.toFixed(2))
-      };
-    });
+    return monthlyData.map(m => ({
+      month: format(m.month, 'MMM yyyy'),
+      income: Number(m.income.toFixed(2)),
+      expense: Number(m.expense.toFixed(2)),
+      savings: Number(m.savings.toFixed(2)),
+      netWorth: Number(m.netWorth.toFixed(2))
+    }));
   }, [fromDate, toDate, transactions, accounts, historicalRates]);
 
   // Calculate summary statistics
