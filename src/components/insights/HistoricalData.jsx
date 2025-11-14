@@ -35,6 +35,15 @@ export default function HistoricalData({ transactions, accounts, categories, isL
         const realTimeRates = await fetchExchangeRates('EUR', ['USD', 'BDT']);
         console.log('Real-time rates:', realTimeRates);
 
+        // AUTO-SAVE: Save current month's rates to database for future historical use
+        try {
+          await exchangeRatesService.saveRatesSnapshot(currentMonthStr, realTimeRates);
+          console.log(`✅ Saved current month rates to database for ${currentMonthStr}`);
+        } catch (error) {
+          // Don't fail if save fails (might already exist or backend error)
+          console.warn(`Could not save rates for ${currentMonthStr}:`, error.message);
+        }
+
         const ratesPromises = months.map(async (month) => {
           const monthStr = format(month, 'yyyy-MM');
 
@@ -46,12 +55,38 @@ export default function HistoricalData({ transactions, accounts, categories, isL
 
           // Use historical rates for past months
           try {
-            const rates = await exchangeRatesService.getHistoricalRates(monthStr);
-            return { month: monthStr, rates };
+            const ratesData = await exchangeRatesService.getHistoricalRates(monthStr);
+            if (ratesData && ratesData.rates) {
+              console.log(`Loaded historical rates for ${monthStr}:`, ratesData.rates);
+              return { month: monthStr, rates: ratesData.rates };
+            } else {
+              console.warn(`No historical rates found for ${monthStr}, fetching and saving...`);
+
+              // If no historical data exists, fetch current rates and save them as backfill
+              // This helps populate missing months automatically
+              try {
+                const backfillRates = await fetchExchangeRates('EUR', ['USD', 'BDT']);
+                await exchangeRatesService.saveRatesSnapshot(monthStr, backfillRates);
+                console.log(`✅ Backfilled rates for ${monthStr}`);
+                return { month: monthStr, rates: backfillRates };
+              } catch (backfillError) {
+                console.warn(`Failed to backfill ${monthStr}, using defaults`);
+                return { month: monthStr, rates: { EUR: 1, USD: 1.08, BDT: 118.5 } };
+              }
+            }
           } catch (error) {
-            console.warn(`Failed to fetch historical rates for ${monthStr}, using defaults`);
-            // Return default rates if historical rates not available
-            return { month: monthStr, rates: { EUR: 1, USD: 1.08, BDT: 118.5 } };
+            console.warn(`Failed to fetch historical rates for ${monthStr}, attempting backfill...`);
+
+            // Try to backfill missing historical data
+            try {
+              const backfillRates = await fetchExchangeRates('EUR', ['USD', 'BDT']);
+              await exchangeRatesService.saveRatesSnapshot(monthStr, backfillRates);
+              console.log(`✅ Backfilled rates for ${monthStr}`);
+              return { month: monthStr, rates: backfillRates };
+            } catch (backfillError) {
+              console.warn(`Failed to backfill ${monthStr}, using defaults`);
+              return { month: monthStr, rates: { EUR: 1, USD: 1.08, BDT: 118.5 } };
+            }
           }
         });
 
