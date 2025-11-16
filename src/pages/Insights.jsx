@@ -9,8 +9,10 @@ import SpendingInsights from "../components/insights/SpendingInsights";
 import AIInsights from "../components/insights/AIInsights";
 import PeriodComparison from "../components/insights/PeriodComparison";
 import HistoricalData from "../components/insights/HistoricalData";
+import PremiumPageWrapper from "../components/PremiumPageWrapper";
+import { FEATURES } from "../utils/featureAccess";
 
-export default function InsightsPage() {
+function InsightsPageContent() {
   const { categories: sharedCategories } = useApp();
   const [currentUser, setCurrentUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -111,5 +113,13 @@ export default function InsightsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function InsightsPage() {
+  return (
+    <PremiumPageWrapper feature={FEATURES.AI_INSIGHTS} featureName="AI-Powered Insights">
+      <InsightsPageContent />
+    </PremiumPageWrapper>
   );
 }

@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClipboardCheck, Wallet, Milestone, Scale, Landmark, PiggyBank, CreditCard, Briefcase } from "lucide-react";
 import { format, startOfMonth } from "date-fns";
+import PremiumPageWrapper from "../components/PremiumPageWrapper";
+import { FEATURES } from "../utils/featureAccess";
 
 const accountIcons = {
   checking: Landmark,
@@ -21,7 +23,7 @@ const accountIcons = {
   loan: CreditCard
 };
 
-export default function ReconciliationPage() {
+function ReconciliationPageContent() {
     const { user: currentUser } = useCurrentUser(); // Get user from AppContext
     const [accounts, setAccounts] = useState([]);
     const [selectedAccountId, setSelectedAccountId] = useState("");
@@ -296,5 +298,13 @@ export default function ReconciliationPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ReconciliationPage() {
+    return (
+        <PremiumPageWrapper feature={FEATURES.RECONCILIATION} featureName="Account Reconciliation">
+            <ReconciliationPageContent />
+        </PremiumPageWrapper>
     );
 }

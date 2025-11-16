@@ -7,10 +7,12 @@ import ReportFilters from '../components/reports/ReportFilters';
 import ReportDisplay from '../components/reports/ReportDisplay';
 import CustomReportBuilder from '../components/reports/CustomReportBuilder';
 import { useApp } from '../context/AppContext';
+import PremiumPageWrapper from '../components/PremiumPageWrapper';
+import { FEATURES } from '../utils/featureAccess';
 
 import { startOfMonth, endOfMonth } from 'date-fns';
 
-export default function ReportsPage() {
+function ReportsPageContent() {
   const { categories } = useApp();
   const [currentUser, setCurrentUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -111,5 +113,13 @@ export default function ReportsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <PremiumPageWrapper feature={FEATURES.REPORTS} featureName="Advanced Reports">
+      <ReportsPageContent />
+    </PremiumPageWrapper>
   );
 }
