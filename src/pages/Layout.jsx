@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { 
-  LayoutDashboard, 
-  CreditCard, 
-  Receipt, 
-  FolderTree, 
+import {
+  LayoutDashboard,
+  CreditCard,
+  Receipt,
+  FolderTree,
   Settings,
   Target,
   TrendingUp,
@@ -18,7 +18,8 @@ import {
   PiggyBank,
   FilePieChart,
   TrendingDown, // New icon for debt management
-  Zap // New icon for insights
+  Zap, // New icon for insights
+  Crown
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,77 +37,100 @@ import {
 } from "@/components/ui/sidebar";
 
 import UserMenu from "@/components/layout/UserMenu";
+import { useApp } from "@/context/AppContext";
+import { FEATURES, hasFeatureAccess } from "@/utils/featureAccess";
 
 const navigationItems = [
   {
     title: "Dashboard",
     url: createPageUrl("Dashboard"),
     icon: LayoutDashboard,
+    feature: FEATURES.DASHBOARD_BASIC,
   },
   {
     title: "Accounts",
     url: createPageUrl("Accounts"),
     icon: CreditCard,
+    feature: null, // Always available
   },
   {
-    title: "Transactions", 
+    title: "Transactions",
     url: createPageUrl("Transactions"),
     icon: Receipt,
+    feature: null, // Always available
   },
   {
     title: "Budget",
     url: createPageUrl("Budget"),
     icon: PiggyBank,
+    feature: FEATURES.BASIC_BUDGET,
   },
   {
     title: "Reports",
     url: createPageUrl("Reports"),
     icon: FilePieChart,
+    feature: FEATURES.CUSTOM_REPORTS,
+    isPremium: true,
   },
   {
     title: "Categories",
     url: createPageUrl("Categories"),
     icon: FolderTree,
+    feature: null, // Always available (but creation limited)
   },
   {
     title: "Recurring",
     url: createPageUrl("Recurring"),
     icon: Repeat,
+    feature: FEATURES.RECURRING_TRANSACTIONS,
+    isPremium: true,
   },
   {
     title: "Reconciliation",
     url: createPageUrl("Reconciliation"),
     icon: ClipboardCheck,
+    feature: FEATURES.RECONCILIATION,
+    isPremium: true,
   },
   {
     title: "Goals",
     url: createPageUrl("Goals"),
     icon: Target,
+    feature: FEATURES.FINANCIAL_GOALS,
+    isPremium: true,
   },
   {
-    title: "Debt Payoff", // New navigation item
+    title: "Debt Payoff",
     url: createPageUrl("DebtPayoff"),
     icon: TrendingDown,
+    feature: FEATURES.DEBT_PAYOFF,
+    isPremium: true,
   },
   {
-    title: "Insights", // New navigation item
+    title: "Insights",
     url: createPageUrl("Insights"),
     icon: Zap,
+    feature: FEATURES.AI_INSIGHTS,
+    isPremium: true,
   },
   {
     title: "Forecast",
     url: createPageUrl("Forecast"),
     icon: BrainCircuit,
+    feature: FEATURES.FORECASTING,
+    isPremium: true,
   },
   {
     title: "Settings",
     url: createPageUrl("Settings"),
     icon: Settings,
+    feature: null, // Always available
   },
 ];
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const { user } = useApp();
   const [theme, setTheme] = useState(() => {
     // Initialize from localStorage first, fallback to system
     const savedTheme = localStorage.getItem('app-theme');
@@ -182,23 +206,31 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="space-y-1">
-                  {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
-                        className={`transition-all duration-200 rounded-xl px-3 py-3 ${
-                          location.pathname === item.url 
-                            ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-semibold border border-indigo-200 shadow-sm' 
-                            : 'hover:bg-accent/80 text-muted-foreground hover:text-foreground border border-transparent hover:border-border/80'
-                        }`}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3">
-                          <item.icon className="w-4 h-4 shrink-0" />
-                          <span className="font-medium text-sm">{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {navigationItems.map((item) => {
+                    const hasAccess = !item.feature || hasFeatureAccess(user, item.feature);
+                    const isActive = location.pathname === item.url;
+
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          className={`transition-all duration-200 rounded-xl px-3 py-3 ${
+                            isActive
+                              ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-semibold border border-indigo-200 shadow-sm'
+                              : 'hover:bg-accent/80 text-muted-foreground hover:text-foreground border border-transparent hover:border-border/80'
+                          }`}
+                        >
+                          <Link to={item.url} className="flex items-center gap-3 w-full">
+                            <item.icon className="w-4 h-4 shrink-0" />
+                            <span className="font-medium text-sm flex-1">{item.title}</span>
+                            {item.isPremium && !hasAccess && (
+                              <Crown className="w-3 h-3 text-amber-500 shrink-0" />
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
