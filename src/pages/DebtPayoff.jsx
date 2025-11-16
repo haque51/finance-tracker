@@ -14,8 +14,10 @@ import {
 import DebtPayoffPlanCard from "../components/debt/DebtPayoffPlanCard";
 import DebtPayoffPlanForm from "../components/debt/DebtPayoffPlanForm";
 import DebtOverview from "../components/debt/DebtOverview";
+import PremiumPageWrapper from "../components/PremiumPageWrapper";
+import { FEATURES } from "../utils/featureAccess";
 
-export default function DebtPayoffPage() {
+function DebtPayoffPageContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [debtAccounts, setDebtAccounts] = useState([]);
   const [payoffPlans, setPayoffPlans] = useState([]);
@@ -199,5 +201,13 @@ export default function DebtPayoffPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DebtPayoffPage() {
+  return (
+    <PremiumPageWrapper feature={FEATURES.DEBT_PAYOFF} featureName="Debt Payoff Planner">
+      <DebtPayoffPageContent />
+    </PremiumPageWrapper>
   );
 }
