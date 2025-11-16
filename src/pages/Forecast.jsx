@@ -7,8 +7,10 @@ import { fetchExchangeRates, convertCurrency } from "../utils/exchangeRateApi";
 import ForecastControls from "../components/forecast/ForecastControls";
 import ForecastChart from "../components/forecast/ForecastChart";
 import ForecastSummary from "../components/forecast/ForecastSummary";
+import PremiumPageWrapper from "../components/PremiumPageWrapper";
+import { FEATURES } from "../utils/featureAccess";
 
-export default function ForecastPage() {
+function ForecastPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentNetWorth, setCurrentNetWorth] = useState(0);
   const [currentUser, setCurrentUser] = useState(null); // Added currentUser state
@@ -163,5 +165,13 @@ export default function ForecastPage() {
 
       <ForecastChart data={projectionData} isLoading={isLoading} />
     </div>
+  );
+}
+
+export default function ForecastPage() {
+  return (
+    <PremiumPageWrapper feature={FEATURES.FORECAST} featureName="Financial Forecast">
+      <ForecastPageContent />
+    </PremiumPageWrapper>
   );
 }
