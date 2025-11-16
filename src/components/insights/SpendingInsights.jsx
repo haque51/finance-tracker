@@ -2,10 +2,10 @@
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from "lucide-react";
 import { formatCurrency } from "../utils/CurrencyFormatter";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function SpendingInsights({ transactions, categories, accounts, isLoading }) {
   const insights = useMemo(() => {
@@ -39,8 +39,9 @@ export default function SpendingInsights({ transactions, categories, accounts, i
 
     const topCategories = Object.entries(categorySpending)
       .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([name, amount]) => ({ name, amount }));
+      .slice(0, 10)
+      .map(([name, amount]) => ({ name, amount }))
+      .reverse(); // Reverse so largest is at bottom
 
     // Unusual spending detection
     const averageTransactionAmount = currentExpenses.length > 0 
@@ -140,26 +141,77 @@ export default function SpendingInsights({ transactions, categories, accounts, i
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-sm border-slate-200 glass-effect">
           <CardHeader>
-            <CardTitle className="text-lg">Top Spending Categories</CardTitle>
+            <CardTitle className="text-lg">Top 10 Spending Categories</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {insights.topCategories.map((category, index) => {
-              const percentage = insights.currentTotal === 0 ? 0 : (category.amount / insights.currentTotal) * 100;
-              return (
-                <div key={category.name} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-slate-800">
-                      #{index + 1} {category.name}
-                    </span>
-                    <span className="text-slate-600 currency">{formatCurrency(category.amount, 'EUR')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={percentage} className="flex-1" />
-                    <span className="text-sm text-slate-500 w-12">{percentage.toFixed(0)}%</span>
-                  </div>
-                </div>
-              );
-            })}
+          <CardContent>
+            {insights.topCategories.length > 0 ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart
+                  data={insights.topCategories}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+                >
+                  <defs>
+                    {insights.topCategories.map((entry, index) => {
+                      const colors = [
+                        ['#ef4444', '#dc2626'], // red
+                        ['#f59e0b', '#d97706'], // orange
+                        ['#eab308', '#ca8a04'], // yellow
+                        ['#84cc16', '#65a30d'], // lime
+                        ['#10b981', '#059669'], // green
+                        ['#06b6d4', '#0891b2'], // cyan
+                        ['#3b82f6', '#2563eb'], // blue
+                        ['#6366f1', '#4f46e5'], // indigo
+                        ['#8b5cf6', '#7c3aed'], // violet
+                        ['#d946ef', '#c026d3'], // fuchsia
+                      ];
+                      const [color1, color2] = colors[index % colors.length];
+                      return (
+                        <linearGradient key={`gradient-${index}`} id={`barGradient${index}`} x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={color1} stopOpacity={0.9} />
+                          <stop offset="100%" stopColor={color2} stopOpacity={0.7} />
+                        </linearGradient>
+                      );
+                    })}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis
+                    type="number"
+                    domain={[0, 'auto']}
+                    tickFormatter={(value) => `€${value.toFixed(0)}`}
+                    padding={{ right: 20 }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={120}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value, 'EUR')}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    radius={[0, 8, 8, 0]}
+                    barSize={50}
+                  >
+                    {insights.topCategories.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`url(#barGradient${index})`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-12 text-slate-500">
+                <p>No spending data available.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

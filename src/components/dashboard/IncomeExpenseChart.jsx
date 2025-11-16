@@ -12,6 +12,8 @@ export default function IncomeExpenseChart({ income, expenses, isLoading }) {
     { name: 'Expenses', value: expenses, color: '#ef4444' }
   ];
 
+  const netSavings = income - expenses;
+
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
@@ -73,6 +75,12 @@ export default function IncomeExpenseChart({ income, expenses, isLoading }) {
                   paddingTop: '16px'
                 }}
               />
+              <text x="50%" y="47%" textAnchor="middle" dominantBaseline="middle" className="fill-slate-500 text-sm">
+                Net Savings
+              </text>
+              <text x="50%" y="53%" textAnchor="middle" dominantBaseline="middle" className={`text-xl ${netSavings >= 0 ? 'fill-emerald-600' : 'fill-red-500'}`}>
+                €{Math.abs(netSavings).toFixed(2)}
+              </text>
             </PieChart>
           </ResponsiveContainer>
         ) : (

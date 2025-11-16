@@ -5,6 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
+import { Landmark, PiggyBank, CreditCard, Briefcase } from 'lucide-react';
+
+const accountIcons = {
+  checking: Landmark,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  investment: Briefcase,
+  brokerage: Briefcase,
+  loan: CreditCard
+};
 
 export default function RecurrentTransactionForm({ transaction, accounts, categories, onSubmit, onCancel }) {
     const [formData, setFormData] = useState({
@@ -139,7 +149,21 @@ export default function RecurrentTransactionForm({ transaction, accounts, catego
                     <Select value={formData.account_id} onValueChange={v => handleChange('account_id', v)} required>
                         <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                         <SelectContent>
-                            {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                            {accounts.map(account => {
+                              const Icon = accountIcons[account.type] || Landmark;
+                              return (
+                                <SelectItem key={account.id} value={account.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4" />
+                                    <span className="font-medium">{account.name}</span>
+                                    <span className="text-slate-500">({account.currency})</span>
+                                    <span className="text-xs text-slate-400 capitalize">
+                                      {account.type.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                         </SelectContent>
                     </Select>
                 </div>
@@ -148,14 +172,28 @@ export default function RecurrentTransactionForm({ transaction, accounts, catego
             {formData.type === 'transfer' && (
                 <div className="space-y-2">
                     <Label htmlFor="to_account_id">To Account *</Label>
-                    <Select 
-                        value={formData.to_account_id} 
-                        onValueChange={v => handleChange('to_account_id', v)} 
+                    <Select
+                        value={formData.to_account_id}
+                        onValueChange={v => handleChange('to_account_id', v)}
                         required
                     >
                         <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                         <SelectContent>
-                            {accounts.filter(a => a.id !== formData.account_id).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                            {accounts.filter(a => a.id !== formData.account_id).map(account => {
+                              const Icon = accountIcons[account.type] || Landmark;
+                              return (
+                                <SelectItem key={account.id} value={account.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4" />
+                                    <span className="font-medium">{account.name}</span>
+                                    <span className="text-slate-500">({account.currency})</span>
+                                    <span className="text-xs text-slate-400 capitalize">
+                                      {account.type.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
                         </SelectContent>
                     </Select>
                 </div>
