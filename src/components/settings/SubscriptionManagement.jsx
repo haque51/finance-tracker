@@ -31,8 +31,8 @@ export default function SubscriptionManagement() {
     setIsUpgrading(true);
     try {
       // TODO: Integrate with payment provider (Stripe, etc.)
-      // For now, just update the user tier locally
-      updateUser({ subscription_tier: SUBSCRIPTION_TIERS.PREMIUM });
+      // For now, just update the user tier via backend API
+      await updateUser({ subscription_tier: SUBSCRIPTION_TIERS.PREMIUM });
       toast.success('Successfully upgraded to Premium!');
     } catch (error) {
       console.error('Upgrade failed:', error);
@@ -45,7 +45,7 @@ export default function SubscriptionManagement() {
   const handleDowngrade = async () => {
     if (window.confirm('Are you sure you want to downgrade to Basic? You will lose access to premium features.')) {
       try {
-        updateUser({ subscription_tier: SUBSCRIPTION_TIERS.BASIC });
+        await updateUser({ subscription_tier: SUBSCRIPTION_TIERS.BASIC });
         toast.success('Downgraded to Basic plan');
       } catch (error) {
         console.error('Downgrade failed:', error);

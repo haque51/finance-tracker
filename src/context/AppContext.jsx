@@ -13,6 +13,7 @@ import goalService from '../services/goalService';
 import recurringService from '../services/recurringService';
 import analyticsService from '../services/analyticsService';
 import currencyService from '../services/currencyService';
+import userService from '../services/userService';
 import tokenManager from '../services/tokenManager';
 import { DEFAULT_CATEGORIES } from '../data/defaultCategories';
 
@@ -332,12 +333,21 @@ export function AppProvider({ children }) {
    * Update user profile
    * @param {Object} updates - User updates
    */
-  const updateUser = (updates) => {
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
-    // Persist to localStorage so theme and other preferences are saved
-    tokenManager.setUser(updatedUser);
-    // Note: Backend profile update for other fields will be added in Settings integration
+  const updateUser = async (updates) => {
+    try {
+      console.log('📝 Updating user profile:', updates);
+      // Call backend API to update profile
+      const updatedUser = await userService.updateProfile(updates);
+
+      // Update local state with backend response
+      setUser(updatedUser);
+      console.log('✅ Profile updated successfully:', updatedUser);
+
+      return updatedUser;
+    } catch (error) {
+      console.error('❌ Failed to update profile:', error);
+      throw error;
+    }
   };
 
   /**
