@@ -12,8 +12,10 @@ import {
 
 import GoalCard from "../components/goals/GoalCard";
 import GoalForm from "../components/goals/GoalForm";
+import PremiumPageWrapper from "../components/PremiumPageWrapper";
+import { FEATURES } from "@/utils/featureAccess";
 
-export default function GoalsPage() {
+function GoalsPage() {
   const [goals, setGoals] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -154,5 +156,16 @@ export default function GoalsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Goals() {
+  return (
+    <PremiumPageWrapper
+      feature={FEATURES.FINANCIAL_GOALS}
+      featureName="Financial Goals"
+    >
+      <GoalsPage />
+    </PremiumPageWrapper>
   );
 }

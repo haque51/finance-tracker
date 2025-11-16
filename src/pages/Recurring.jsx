@@ -6,8 +6,10 @@ import { Plus, Repeat, FileText } from "lucide-react";
 import RecurrentTransactionList from "../components/recurring/RecurrentTransactionList";
 import TransactionTemplateList from "../components/recurring/TransactionTemplateList";
 import { useApp } from "../context/AppContext";
+import PremiumPageWrapper from "../components/PremiumPageWrapper";
+import { FEATURES } from "@/utils/featureAccess";
 
-export default function RecurringPage() {
+function RecurringPage() {
     const { categories } = useApp();
     const [recurrentTransactions, setRecurrentTransactions] = useState([]);
     const [transactionTemplates, setTransactionTemplates] = useState([]);
@@ -83,5 +85,16 @@ export default function RecurringPage() {
                 </TabsContent>
             </Tabs>
         </div>
+    );
+}
+
+export default function Recurring() {
+    return (
+        <PremiumPageWrapper
+            feature={FEATURES.RECURRING_TRANSACTIONS}
+            featureName="Recurring Transactions & Templates"
+        >
+            <RecurringPage />
+        </PremiumPageWrapper>
     );
 }

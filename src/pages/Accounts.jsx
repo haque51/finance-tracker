@@ -16,9 +16,13 @@ import {
 
 import AccountCard from "../components/accounts/AccountCard";
 import AccountForm from "../components/accounts/AccountForm";
+import { LimitWarningBanner } from "../components/UpgradeBanner";
+import { hasReachedAccountLimit, getRemainingQuota } from "@/utils/featureAccess";
+import { useNavigate } from "react-router-dom";
 
 export default function AccountsPage() {
   const { user: currentUser } = useCurrentUser(); // Get user from AppContext
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -193,6 +197,12 @@ export default function AccountsPage() {
   }, [currentUser, historicalRates, transactions, selectedMonth, loadAccounts]);
 
   const handleAddNew = () => {
+    // Check if user has reached account limit (basic tier only)
+    if (hasReachedAccountLimit(currentUser, accounts.length)) {
+      alert('You have reached the maximum number of accounts for the Basic plan. Upgrade to Premium for unlimited accounts.');
+      navigate('/settings?tab=subscription');
+      return;
+    }
     setEditingAccount(null);
     setIsFormOpen(true);
   };
@@ -312,8 +322,20 @@ export default function AccountsPage() {
 
   const monthOptions = generateMonthOptions();
 
+  const accountQuota = getRemainingQuota(currentUser, 'accounts', accounts.length);
+
   return (
     <div className="p-4 md:p-8 space-y-8">
+      {/* Account Limit Warning */}
+      {!accountQuota.unlimited && (
+        <LimitWarningBanner
+          limitType="Accounts"
+          current={accounts.length}
+          limit={accountQuota.limit}
+          onUpgrade={() => navigate('/settings?tab=subscription')}
+        />
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
           <div>

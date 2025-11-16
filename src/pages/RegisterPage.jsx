@@ -20,6 +20,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     baseCurrency: 'EUR',
+    subscription_tier: 'basic', // Default to basic tier
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +89,7 @@ export default function RegisterPage() {
         password: formData.password,
         base_currency: formData.baseCurrency,
         enabled_currencies: [formData.baseCurrency], // Backend requires array
+        subscription_tier: formData.subscription_tier, // Include subscription tier
       });
 
       // Show success message

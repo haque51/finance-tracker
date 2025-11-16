@@ -16,15 +16,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Settings as SettingsIcon, 
-  User as UserIcon, 
+import {
+  Settings as SettingsIcon,
+  User as UserIcon,
   DollarSign,
   RefreshCw,
   Target,
   CreditCard,
   Globe,
-  Database
+  Database,
+  Crown
 } from "lucide-react";
 
 import UserProfile from "../components/settings/UserProfile";
@@ -33,6 +34,7 @@ import FinancialGoals from "../components/settings/FinancialGoals";
 import AccountDefaults from "../components/settings/AccountDefaults";
 import DataManagement from "../components/settings/DataManagement";
 import StartOver from "../components/settings/StartOver";
+import SubscriptionManagement from "../components/settings/SubscriptionManagement";
 
 export default function SettingsPage() {
   const { setAccounts: setGlobalAccounts, setTransactions, setCategories } = useApp(); // Get context setters
@@ -155,10 +157,14 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <UserIcon className="w-4 h-4" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="flex items-center gap-2">
+            <Crown className="w-4 h-4" />
+            Subscription
           </TabsTrigger>
           <TabsTrigger value="currency" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
@@ -183,11 +189,15 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <UserProfile 
+          <UserProfile
             user={currentUser}
             onUpdate={handleUserUpdate}
             isSaving={isSaving}
           />
+        </TabsContent>
+
+        <TabsContent value="subscription">
+          <SubscriptionManagement />
         </TabsContent>
 
         <TabsContent value="currency">
